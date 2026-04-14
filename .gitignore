@@ -1,6 +1,7 @@
 # Python & uv / FastAPI
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 *.so
 .Python
@@ -12,6 +13,7 @@ venv.bak/
 .venv/
 uv.lock
 .python-version
+serviceAccountKey.json
 
 # Backend specific
 backend/.env

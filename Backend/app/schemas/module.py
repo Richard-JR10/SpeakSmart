@@ -17,3 +17,6 @@ class ModuleCreateRequest(BaseModel):
     title: str
     description: str | None
     order_index: int = 0
+
+class ModuleResponse(ModuleBase):
+    created_at: datetime

@@ -3,14 +3,12 @@ import httpx
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from dotenv import load_dotenv
-load_dotenv()
+from app.config import settings
 
 # Replace these with a real test account you created in Firebase Console
 TEST_EMAIL = "testuser@speaksmart.dev"
 TEST_PASSWORD = "testpassword123"
-FIREBASE_API_KEY = "AIzaSyBBJC-_jc_jUN8pen7v2aC9yTMgmsD4ajY"  # From Firebase Console → Project Settings → Web API Key
+FIREBASE_API_KEY = settings.FIREBASE_API_KEY  # From Firebase Console → Project Settings → Web API Key
 
 def get_token():
     url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"

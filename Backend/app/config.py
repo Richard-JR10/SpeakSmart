@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
 
+    FIREBASE_API_KEY: str
     FIREBASE_PROJECT_ID: str
     FIREBASE_PRIVATE_KEY_ID: str
     FIREBASE_PRIVATE_KEY: str

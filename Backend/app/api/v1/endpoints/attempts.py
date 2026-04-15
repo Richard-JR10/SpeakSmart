@@ -14,6 +14,7 @@ from app.services.r2_storage import upload_audio, download_audio, get_object_key
 from app.services.scoring import score_attempt
 from app.services.speech import validate_audio
 from app.config import settings
+from app.services.progress import update_progress_summary
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 
@@ -97,7 +98,12 @@ async def submit_attempt(
     db.add(attempt)
     await db.commit()
     await db.refresh(attempt)
-
+    await update_progress_summary(
+        db=db,
+        student_uid=current_user.uid,
+        module_id=phrase.module_id,
+    )
+    
     return attempt
 
 

@@ -17,7 +17,7 @@ async def get_current_user(
     token = credentials.credentials
 
     try:
-        claims = await verify_firebase_token(token)
+        claims = verify_firebase_token(token)
     except ValueError:
         raise UnauthorizedException("Invalid or expired token")
     

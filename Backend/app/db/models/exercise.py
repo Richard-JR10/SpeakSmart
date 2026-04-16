@@ -13,8 +13,16 @@ class Exercise(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     due_date: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    phrases: Mapped[list["ExercisePhrase"]] = relationship("ExercisePhrase", back_populates="exercise")
-    assignments: Mapped[list["ExerciseAssignment"]] = relationship("ExerciseAssignment", back_populates="exercise")
+    phrases: Mapped[list["ExercisePhrase"]] = relationship(
+        "ExercisePhrase", 
+        back_populates="exercise",
+        cascade="all, delete-orphan"
+    )
+    assignments: Mapped[list["ExerciseAssignment"]] = relationship(
+        "ExerciseAssignment", 
+        back_populates="exercise",
+        cascade="all, delete-orphan"
+    )
 
 
 class ExercisePhrase(Base):

@@ -143,3 +143,25 @@ export interface StudentExercise {
   is_overdue: boolean
   phrase_ids: string[]
 }
+
+export interface StudentDrillDown {
+  uid: string
+  display_name: string
+  email: string
+  overall_average: number
+  total_attempts: number
+  streak_days: number
+  phoneme_breakdown: PhonemeBreakdown
+  weakest_module_id: string | null
+  weakest_module_score: number | null
+  recent_attempts: {
+    attempt_id: string
+    phrase_id: string
+    accuracy_score: number
+    mora_timing_score: number
+    consonant_score: number
+    vowel_score: number
+    feedback_text: string | null
+    attempted_at: string
+  }[]
+}

@@ -1,15 +1,12 @@
-<!-- src/components/shared/ScoreCircle.vue -->
 <template>
   <div class="score-circle" :class="scoreClass">
     <svg viewBox="0 0 120 120" class="score-circle__svg">
-      <!-- Background ring -->
       <circle
         cx="60" cy="60" r="50"
         fill="none"
-        stroke="#E5E7EB"
+        stroke="#d7e1da"
         stroke-width="10"
       />
-      <!-- Score arc -->
       <circle
         cx="60" cy="60" r="50"
         fill="none"
@@ -38,17 +35,17 @@ const props = defineProps<{
   size?: 'sm' | 'md' | 'lg'
 }>()
 
-const circumference = 2 * Math.PI * 50  // 314.16
+const circumference = 2 * Math.PI * 50
 
 const dashOffset = computed(() =>
-  circumference - (props.score / 100) * circumference
+  circumference - (props.score / 100) * circumference,
 )
 
 const strokeColor = computed(() => {
-  if (props.score >= 85) return '#1D9E75'
-  if (props.score >= 70) return '#10B981'
-  if (props.score >= 55) return '#F59E0B'
-  return '#EF4444'
+  if (props.score >= 85) return '#2e8a67'
+  if (props.score >= 70) return '#4ca07e'
+  if (props.score >= 55) return '#b87b26'
+  return '#c65549'
 })
 
 const label = computed(() => {
@@ -69,6 +66,7 @@ const scoreClass = computed(() => ({
   position: relative;
   width: 160px;
   height: 160px;
+  filter: drop-shadow(0 18px 28px rgba(25, 48, 38, 0.08));
 }
 
 .score-circle--sm {
@@ -96,10 +94,11 @@ const scoreClass = computed(() => ({
 }
 
 .score-circle__value {
-  font-size: 32px;
+  font-family: var(--font-display);
+  font-size: 34px;
   font-weight: 700;
   line-height: 1;
-  color: var(--color-text);
+  color: var(--color-heading);
 }
 
 .score-circle--sm .score-circle__value {
@@ -119,7 +118,9 @@ const scoreClass = computed(() => ({
 .score-circle__label {
   font-size: 11px;
   color: var(--color-subtext);
-  margin-top: 2px;
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .score-circle--sm .score-circle__label {

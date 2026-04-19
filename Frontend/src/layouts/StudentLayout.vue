@@ -1,18 +1,12 @@
-<!-- src/layouts/StudentLayout.vue -->
 <template>
   <div class="student-layout">
-
-    <!-- Top bar -->
     <TopBar :title="title" :show-back="showBack" @back="router.back()" />
-
-    <!-- Main content -->
     <main class="student-layout__content">
-      <slot />
+      <div class="student-layout__content-inner">
+        <slot />
+      </div>
     </main>
-
-    <!-- Bottom navigation -->
     <BottomNav />
-
   </div>
 </template>
 
@@ -33,17 +27,23 @@ const router = useRouter()
 .student-layout {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  width: min(100%, 480px);
+  min-height: 100dvh;
+  width: min(100%, 500px);
   margin: 0 auto;
-  background: #ffffff;
+  background:
+    radial-gradient(circle at top, rgba(46, 138, 103, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(250, 247, 239, 0.96), rgba(242, 238, 230, 0.98));
   overflow: hidden;
 }
 
 .student-layout__content {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 80px; /* space for bottom nav */
+  padding: 0 0 110px;
   -webkit-overflow-scrolling: touch;
+}
+
+.student-layout__content-inner {
+  min-height: 100%;
 }
 </style>

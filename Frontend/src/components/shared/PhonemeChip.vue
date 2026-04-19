@@ -1,4 +1,3 @@
-<!-- src/components/shared/PhonemeChip.vue -->
 <template>
   <div class="phoneme-chip" :class="chipClass">
     <span class="phoneme-chip__label">{{ label }}</span>
@@ -26,20 +25,24 @@ const chipClass = computed(() => ({
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  min-height: 34px;
+  padding: 7px 12px;
   border-radius: 20px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  border: 1px solid transparent;
 }
 
 .phoneme-chip--ok {
-  background: #d1fae5;
-  color: #065f46;
+  background: rgba(46, 138, 103, 0.12);
+  color: #185843;
+  border-color: rgba(46, 138, 103, 0.16);
 }
 
 .phoneme-chip--error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(198, 85, 73, 0.12);
+  color: #8b2f26;
+  border-color: rgba(198, 85, 73, 0.16);
 }
 
 .phoneme-chip__score {

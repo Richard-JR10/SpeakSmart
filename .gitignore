@@ -52,6 +52,7 @@ build/
 # Temporary / cache files
 .cache/
 .tmp/
+.playwright-cli/
 
 # Logs
 logs

@@ -1,4 +1,3 @@
-<!-- src/components/shared/LoadingSpinner.vue -->
 <template>
   <div class="spinner-wrap" :class="{ 'spinner-wrap--full': fullScreen }">
     <div class="spinner" :class="`spinner--${size}`" />
@@ -32,8 +31,9 @@ defineProps<{
 .spinner {
   border-radius: 50%;
   border-style: solid;
-  border-color: var(--color-primary) transparent transparent transparent;
-  animation: spin 0.7s linear infinite;
+  border-color: var(--color-primary) rgba(46, 138, 103, 0.14) rgba(184, 141, 70, 0.14) rgba(46, 138, 103, 0.14);
+  animation: spin 0.8s linear infinite;
+  box-shadow: 0 0 0 1px rgba(46, 138, 103, 0.04);
 }
 
 .spinner--sm { width: 20px; height: 20px; border-width: 2px; }
@@ -49,6 +49,7 @@ defineProps<{
 .spinner__message {
   font-size: 14px;
   color: var(--color-subtext);
+  text-align: center;
 }
 
 @keyframes spin {

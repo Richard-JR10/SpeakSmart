@@ -1,4 +1,3 @@
-<!-- src/components/shared/BottomNav.vue -->
 <template>
   <nav class="bottom-nav">
     <RouterLink
@@ -8,7 +7,9 @@
       class="bottom-nav__item"
       :class="{ 'bottom-nav__item--active': route.name === item.name }"
     >
-      <span class="bottom-nav__icon">{{ item.icon }}</span>
+      <span class="bottom-nav__icon">
+        <AppIcon :name="item.icon" :size="20" />
+      </span>
       <span class="bottom-nav__label">{{ item.label }}</span>
     </RouterLink>
   </nav>
@@ -16,58 +17,73 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import AppIcon from './AppIcon.vue'
 
 const route = useRoute()
 
 const navItems = [
-  { name: 'home',     label: 'Home',     icon: '🏠', to: '/home' },
-  { name: 'lessons',  label: 'Lessons',  icon: '📚', to: '/lessons' },
-  { name: 'progress', label: 'Progress', icon: '📈', to: '/progress' },
-  { name: 'settings', label: 'Settings', icon: '⚙️', to: '/settings' },
+  { name: 'home', label: 'Home', icon: 'home', to: '/home' },
+  { name: 'lessons', label: 'Lessons', icon: 'book', to: '/lessons' },
+  { name: 'progress', label: 'Progress', icon: 'chart', to: '/progress' },
+  { name: 'settings', label: 'Settings', icon: 'settings', to: '/settings' },
 ]
 </script>
 
 <style scoped>
 .bottom-nav {
   position: fixed;
-  bottom: 0;
+  bottom: max(12px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
-  width: 100%;
+  width: calc(100% - 24px);
   max-width: 480px;
-  height: 64px;
-  background: #ffffff;
-  border-top: 1px solid var(--color-border);
+  min-height: 72px;
+  background: rgba(255, 252, 246, 0.92);
+  border: 1px solid rgba(215, 225, 218, 0.9);
+  border-radius: 24px;
+  box-shadow: 0 18px 38px rgba(25, 48, 38, 0.16);
+  backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 20;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding: 8px;
 }
 
 .bottom-nav__item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   text-decoration: none;
   color: var(--color-subtext);
   flex: 1;
-  padding: 6px 0;
-  transition: color 0.15s;
+  min-height: 56px;
+  padding: 8px 0;
+  border-radius: 18px;
+  transition: color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
 }
 
 .bottom-nav__item--active {
-  color: var(--color-primary);
+  color: var(--color-primary-dark);
+  background: linear-gradient(180deg, rgba(46, 138, 103, 0.14), rgba(228, 242, 234, 0.9));
+  transform: translateY(-1px);
 }
 
 .bottom-nav__icon {
-  font-size: 20px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .bottom-nav__label {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .bottom-nav {
+    width: min(520px, calc(100% - 40px));
+  }
 }
 </style>

@@ -45,23 +45,26 @@ const checklist = computed(() => [
 
 <style scoped>
 .password-checklist {
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: #f6faf8;
-  border: 1px solid #ddebe4;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(237, 244, 239, 0.98), rgba(251, 246, 234, 0.92));
+  border: 1px solid rgba(215, 225, 218, 0.92);
 }
 
 .password-checklist__title {
+  margin: 0;
   font-size: 13px;
-  font-weight: 700;
-  color: #26473a;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-heading);
 }
 
 .password-checklist__list {
   list-style: none;
   display: grid;
   gap: 8px;
-  margin-top: 12px;
+  margin: 12px 0 0;
   padding: 0;
 }
 
@@ -69,12 +72,12 @@ const checklist = computed(() => [
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #5f776b;
+  color: var(--color-subtext);
   font-size: 14px;
 }
 
 .password-checklist__item--met {
-  color: #146649;
+  color: var(--color-primary-dark);
 }
 
 .password-checklist__indicator {

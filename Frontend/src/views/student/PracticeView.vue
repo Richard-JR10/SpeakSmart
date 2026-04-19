@@ -92,6 +92,16 @@
         <!-- Recorder error -->
         <ErrorMessage :message="recorder.error.value" />
 
+        <div v-if="recorder.audioUrl.value" class="practice__playback">
+          <p class="practice__playback-label">Playback your recording</p>
+          <audio
+            class="practice__audio-player"
+            :src="recorder.audioUrl.value"
+            controls
+            preload="metadata"
+          />
+        </div>
+
         <!-- Submit button -->
         <button
           v-if="recorder.audioBlob.value && !attemptsStore.submitting"
@@ -400,6 +410,25 @@ onMounted(async () => {
 .practice__record-hint {
   font-size: 13px;
   color: var(--color-subtext);
+}
+
+.practice__playback {
+  width: 100%;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.practice__playback-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 10px;
+}
+
+.practice__audio-player {
+  width: 100%;
 }
 
 .practice__submit-btn {

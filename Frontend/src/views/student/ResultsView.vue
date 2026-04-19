@@ -24,6 +24,16 @@
           <p class="results__feedback-text">{{ attempt.feedback_text }}</p>
         </div>
 
+        <div v-if="submittedAudioUrl" class="results__section results__section--card">
+          <h3 class="results__section-title">Your Recording</h3>
+          <audio
+            class="results__audio-player"
+            :src="submittedAudioUrl"
+            controls
+            preload="metadata"
+          />
+        </div>
+
         <!-- Phoneme breakdown -->
         <div class="results__section">
           <h3 class="results__section-title">Phoneme Breakdown</h3>
@@ -134,6 +144,7 @@ const attemptsStore = useAttemptsStore()
 const modulesStore = useModulesStore()
 
 const attempt = computed(() => attemptsStore.lastAttempt)
+const submittedAudioUrl = computed(() => attemptsStore.lastSubmittedAudioUrl)
 
 const currentPhrase = computed(() => {
   if (!attempt.value) return null
@@ -228,6 +239,17 @@ function nextPhrase() {
   font-weight: 700;
   color: var(--color-text);
   margin-bottom: 14px;
+}
+
+.results__section--card {
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.results__audio-player {
+  width: 100%;
 }
 
 .results__chips {

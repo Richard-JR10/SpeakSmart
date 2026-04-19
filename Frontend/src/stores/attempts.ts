@@ -7,6 +7,7 @@ import type { Attempt, AttemptSummary } from '@/types'
 export const useAttemptsStore = defineStore('attempts', () => {
   // State
   const lastAttempt = ref<Attempt | null>(null)
+  const lastSubmittedAudioUrl = ref<string | null>(null)
   const attemptHistory = ref<AttemptSummary[]>([])
   const submitting = ref(false)
   const loading = ref(false)
@@ -17,10 +18,19 @@ export const useAttemptsStore = defineStore('attempts', () => {
     submitting.value = true
     error.value = null
     try {
+      if (lastSubmittedAudioUrl.value) {
+        URL.revokeObjectURL(lastSubmittedAudioUrl.value)
+      }
+      lastSubmittedAudioUrl.value = URL.createObjectURL(audioBlob)
+
       const attempt = await submitAttempt(phraseId, audioBlob)
       lastAttempt.value = attempt
       return attempt
     } catch (e: any) {
+      if (lastSubmittedAudioUrl.value) {
+        URL.revokeObjectURL(lastSubmittedAudioUrl.value)
+        lastSubmittedAudioUrl.value = null
+      }
       error.value =
         e.response?.data?.detail ?? 'Submission failed. Please try again.'
       throw e
@@ -44,6 +54,10 @@ export const useAttemptsStore = defineStore('attempts', () => {
 
   function clearLastAttempt() {
     lastAttempt.value = null
+    if (lastSubmittedAudioUrl.value) {
+      URL.revokeObjectURL(lastSubmittedAudioUrl.value)
+      lastSubmittedAudioUrl.value = null
+    }
   }
 
   function clearHistory() {
@@ -52,6 +66,7 @@ export const useAttemptsStore = defineStore('attempts', () => {
 
   return {
     lastAttempt,
+    lastSubmittedAudioUrl,
     attemptHistory,
     submitting,
     loading,

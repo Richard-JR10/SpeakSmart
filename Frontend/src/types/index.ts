@@ -1,3 +1,5 @@
+import 'vue-router'
+
 export interface User {
     uid: string
     email: string
@@ -7,6 +9,10 @@ export interface User {
     created_at: string
     last_login: string | null
 }
+
+export type UserRole = 'student' | 'instructor'
+
+export type AuthFlowResult = 'signed-in' | 'profile-setup' | 'redirect'
 
 export interface Module {
     module_id: string
@@ -164,4 +170,12 @@ export interface StudentDrillDown {
     feedback_text: string | null
     attempted_at: string
   }[]
+}
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean
+    role?: 'student' | 'instructor'
+    allowPendingProfile?: boolean
+  }
 }

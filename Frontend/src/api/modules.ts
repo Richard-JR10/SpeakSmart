@@ -11,7 +11,7 @@ export const getModule = async (moduleId: string): Promise<Module> => {
     return res.data;
 }
 
-export const getModulesPhrases = async (moduleId: string): Promise<Phrase[]> => {
+export const getModulePhrases = async (moduleId: string): Promise<Phrase[]> => {
     const res = await api.get(`/api/v1/modules/${moduleId}/phrases`)
     return res.data;
 }

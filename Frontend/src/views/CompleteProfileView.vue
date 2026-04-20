@@ -24,7 +24,7 @@
                 <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
                   Complete profile
                 </p>
-                <h1 class="text-balance font-[var(--font-display)] text-5xl leading-[0.95] tracking-[-0.04em] text-[var(--color-heading)] sm:text-6xl">
+                <h1 class="text-balance font-(--font-display) text-5xl leading-[0.95] tracking-[-0.04em] text-(--color-heading) sm:text-6xl">
                   Finish your <span translate="no">SpeakSmart</span> setup in one clean step.
                 </h1>
                 <p class="max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
@@ -51,7 +51,7 @@
                 <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary-foreground/70">
                   Account access
                 </p>
-                <CardTitle class="font-[var(--font-display)] text-3xl leading-none text-primary-foreground">
+                <CardTitle class="font-(--font-display) text-3xl leading-none text-primary-foreground">
                   Pick the role once, then move straight into practice or oversight.
                 </CardTitle>
                 <CardDescription class="text-primary-foreground/75">
@@ -67,7 +67,7 @@
               <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
                 Finish setting up
               </p>
-              <CardTitle class="text-balance font-[var(--font-display)] text-4xl leading-none text-[var(--color-heading)]">
+              <CardTitle class="text-balance font-(--font-display) text-4xl leading-none text-(--color-heading)">
                 Complete your profile
               </CardTitle>
               <CardDescription>

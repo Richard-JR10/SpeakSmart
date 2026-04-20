@@ -1,143 +1,308 @@
-<!-- src/views/student/PracticeView.vue -->
 <template>
   <StudentLayout :title="module?.title ?? 'Practice'" show-back>
-
-    <div class="practice">
-
-      <LoadingSpinner v-if="loading" full-screen message="Loading phrase..." />
+    <div class="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <Card v-if="loading" class="border-border/80 bg-card/95">
+        <CardContent class="flex min-h-72 flex-col items-center justify-center gap-4 py-12 text-center">
+          <LoaderCircle class="animate-spin text-primary" />
+          <div class="flex flex-col gap-1">
+            <p class="font-semibold text-(--color-heading)">Loading phrase</p>
+            <p class="text-sm text-muted-foreground">
+              Preparing the practice prompt and recording tools.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       <template v-else-if="phrase">
+        <Card class="border-border/80 bg-card/95">
+          <CardContent class="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex min-w-0 flex-col gap-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                  Practice session
+                </Badge>
+                <Badge variant="outline" class="rounded-full px-3 py-1">
+                  {{ phraseIndex + 1 }} of {{ phrases.length }}
+                </Badge>
+              </div>
 
-        <!-- Phrase navigation -->
-        <div class="practice__nav">
-          <button
-            class="practice__nav-btn"
-            :disabled="phraseIndex === 0"
-            @click="goToPhrase(phraseIndex - 1)"
-          >←</button>
-          <span class="practice__nav-count">
-            {{ phraseIndex + 1 }} / {{ phrases.length }}
-          </span>
-          <button
-            class="practice__nav-btn"
-            :disabled="phraseIndex === phrases.length - 1"
-            @click="goToPhrase(phraseIndex + 1)"
-          >→</button>
+              <div class="flex flex-col gap-1">
+                <p class="text-lg font-semibold text-(--color-heading)">
+                  {{ module?.title ?? 'Module' }}
+                </p>
+                <p class="text-sm leading-7 text-muted-foreground">
+                  Move phrase by phrase and keep your recording focused on one prompt at a time.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+              <Button
+                variant="outline"
+                size="icon"
+                :disabled="phraseIndex <= 0 || attemptsStore.submitting"
+                @click="goToPhrase(phraseIndex - 1)"
+              >
+                <ChevronLeft />
+                <span class="sr-only">Previous phrase</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                :disabled="phraseIndex >= phrases.length - 1 || attemptsStore.submitting"
+                @click="goToPhrase(phraseIndex + 1)"
+              >
+                <ChevronRight />
+                <span class="sr-only">Next phrase</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div class="grid w-full grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
+          <Card class="w-full overflow-hidden border-border/80 bg-card/95">
+            <CardHeader class="gap-4 ">
+              <div class="flex flex-wrap items-center gap-2">
+                <Badge :variant="difficultyBadgeVariant" class="rounded-full px-3 py-1">
+                  {{ difficultyLabel }}
+                </Badge>
+                <Badge variant="outline" class="rounded-full px-3 py-1">
+                  Prompt
+                </Badge>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <CardTitle class="font-(--font-display) text-[clamp(2.35rem,7vw,4.5rem)] leading-none text-(--color-heading)">
+                  {{ phrase.japanese_text }}
+                </CardTitle>
+                <CardDescription class="text-lg font-semibold text-primary">
+                  {{ phrase.romaji }}
+                </CardDescription>
+                <p class="max-w-2xl text-sm leading-8 text-muted-foreground">
+                  {{ phrase.english_translation }}
+                </p>
+              </div>
+            </CardHeader>
+
+            <CardContent class="flex flex-col gap-5">
+              <div class="grid gap-3 sm:grid-cols-3">
+                <Card class="gap-0 border-border/70 bg-muted/40 shadow-none">
+                  <CardHeader class="gap-2">
+                    <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Reference
+                    </p>
+                    <CardTitle class="text-base text-(--color-heading)">
+                      {{ phrase.reference_audio_url ? 'Available' : 'Unavailable' }}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+
+                <Card class="gap-0 border-border/70 bg-muted/40 shadow-none">
+                  <CardHeader class="gap-2">
+                    <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Module
+                    </p>
+                    <CardTitle class="text-base text-(--color-heading)">
+                      {{ module?.title ?? 'Current lesson' }}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+
+                <Card class="gap-0 border-border/70 bg-muted/40 shadow-none">
+                  <CardHeader class="gap-2">
+                    <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Recording
+                    </p>
+                    <CardTitle class="text-base text-(--color-heading)">
+                      {{ recorder.audioBlob.value ? 'Ready to submit' : recorder.isRecording.value ? 'Recording live' : 'Waiting' }}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+              </div>
+
+              <Alert v-if="!phrase.reference_audio_url">
+                <CircleAlert />
+                <AlertTitle>Reference audio unavailable</AlertTitle>
+                <AlertDescription>
+                  You can still record this phrase, but there is no model audio attached to it yet.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+
+            <CardFooter class="border-t">
+              <Button
+                variant="outline"
+                size="lg"
+                class="w-full sm:w-auto"
+                :disabled="!phrase.reference_audio_url || playingReference || recorder.isRecording.value || attemptsStore.submitting"
+                @click="playReference"
+              >
+                <LoaderCircle v-if="playingReference" class="animate-spin" data-icon="inline-start" />
+                <Volume2 v-else data-icon="inline-start" />
+                <span>{{ playingReference ? 'Playing reference...' : 'Play reference audio' }}</span>
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card class="w-full border-border/80 bg-card/95">
+            <CardHeader class="gap-3">
+              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                Recording booth
+              </Badge>
+              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                Record your response
+              </CardTitle>
+              <CardDescription>
+                Listen first if needed, then record one clear attempt before sending it for scoring.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent class="flex flex-col gap-5">
+              <Alert :variant="recorder.error.value || attemptsStore.error ? 'destructive' : 'default'">
+                <TriangleAlert v-if="recorder.error.value || attemptsStore.error" />
+                <Mic v-else />
+                <AlertTitle>{{ recordingStateTitle }}</AlertTitle>
+                <AlertDescription>
+                  {{ recorder.error.value ?? attemptsStore.error ?? recordingStateCopy }}
+                </AlertDescription>
+              </Alert>
+
+              <div class="flex flex-col items-center gap-5 rounded-3xl border border-dashed border-border/80 bg-muted/30 px-5 py-6 text-center">
+                <Button
+                  :variant="recorder.isRecording.value ? 'destructive' : 'default'"
+                  size="icon-lg"
+                  class="size-24 rounded-full shadow-sm"
+                  :disabled="attemptsStore.submitting"
+                  @click="toggleRecording"
+                >
+                  <Square v-if="recorder.isRecording.value" />
+                  <Mic v-else />
+                  <span class="sr-only">{{ recorder.isRecording.value ? 'Stop recording' : 'Start recording' }}</span>
+                </Button>
+
+                <div class="flex flex-col gap-1">
+                  <p class="text-lg font-semibold text-(--color-heading)">
+                    {{ recorder.isRecording.value ? `Recording live - ${recorder.duration.value}s` : recorder.audioBlob.value ? 'Recording captured' : 'Ready to record' }}
+                  </p>
+                  <p class="text-sm leading-7 text-muted-foreground">
+                    {{ recorderHint }}
+                  </p>
+                </div>
+
+                <div class="flex h-28 w-full items-end justify-center gap-1 overflow-hidden rounded-2xl bg-secondary/50 px-4 py-4">
+                  <div
+                    v-for="(bar, i) in waveformBars"
+                    :key="i"
+                    class="w-1.5 shrink-0 rounded-full transition-[height,background] duration-75"
+                    :class="recorder.isRecording.value ? 'bg-primary' : 'bg-primary/20'"
+                    :style="{ height: `${bar}px` }"
+                  />
+                </div>
+              </div>
+
+              <template v-if="recorder.audioUrl.value">
+                <Separator />
+                <div class="flex flex-col gap-3">
+                  <div class="flex items-center gap-2">
+                    <AudioLines class="text-primary" />
+                    <p class="font-semibold text-(--color-heading)">Preview before submission</p>
+                  </div>
+                  <audio
+                    class="w-full"
+                    :src="recorder.audioUrl.value"
+                    controls
+                    preload="metadata"
+                  />
+                </div>
+              </template>
+            </CardContent>
+
+            <CardFooter class="flex flex-col gap-3 border-t sm:flex-row sm:flex-wrap">
+              <Button
+                :variant="recorder.isRecording.value ? 'destructive' : 'default'"
+                size="lg"
+                class="w-full sm:w-auto"
+                :disabled="attemptsStore.submitting"
+                @click="toggleRecording"
+              >
+                <Square v-if="recorder.isRecording.value" data-icon="inline-start" />
+                <Mic v-else data-icon="inline-start" />
+                <span>{{ recorder.isRecording.value ? 'Stop recording' : recorder.audioBlob.value ? 'Record again' : 'Start recording' }}</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="lg"
+                class="w-full sm:w-auto"
+                :disabled="!recorder.audioBlob.value || attemptsStore.submitting || recorder.isRecording.value"
+                @click="clearRecording"
+              >
+                <RotateCcw data-icon="inline-start" />
+                <span>Clear take</span>
+              </Button>
+
+              <Button
+                size="lg"
+                class="w-full sm:w-auto"
+                :disabled="!recorder.audioBlob.value || attemptsStore.submitting || recorder.isRecording.value"
+                @click="submitAttempt"
+              >
+                <LoaderCircle v-if="attemptsStore.submitting" class="animate-spin" data-icon="inline-start" />
+                <Send v-else data-icon="inline-start" />
+                <span>{{ attemptsStore.submitting ? 'Submitting...' : 'Submit for scoring' }}</span>
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
-
-        <!-- Difficulty badge -->
-        <div class="practice__difficulty">
-          <span
-            v-for="i in 5"
-            :key="i"
-            class="practice__dot"
-            :class="{ 'practice__dot--active': i <= phrase.difficulty_level }"
-          />
-          <span class="practice__difficulty-label">
-            {{ difficultyLabel }}
-          </span>
-        </div>
-
-        <!-- Phrase card -->
-        <div class="practice__card">
-          <p class="practice__japanese">{{ phrase.japanese_text }}</p>
-          <p class="practice__romaji">{{ phrase.romaji }}</p>
-          <p class="practice__english">{{ phrase.english_translation }}</p>
-        </div>
-
-        <!-- Hear reference button -->
-        <button
-          class="practice__reference-btn"
-          :disabled="!phrase.reference_audio_url || playingReference"
-          @click="playReference"
-        >
-          <span>{{ playingReference ? '🔊 Playing...' : '▶ Hear Reference' }}</span>
-        </button>
-
-        <!-- Waveform visualizer -->
-        <div class="practice__waveform">
-          <div
-            v-for="(bar, i) in waveformBars"
-            :key="i"
-            class="practice__waveform-bar"
-            :class="{ 'practice__waveform-bar--active': recorder.isRecording.value }"
-            :style="{ height: bar + 'px' }"
-          />
-        </div>
-
-        <!-- Recording duration -->
-        <p v-if="recorder.isRecording.value" class="practice__duration">
-          {{ recorder.duration.value }}s
-        </p>
-
-        <!-- Record button -->
-        <div class="practice__record-wrap">
-          <button
-            class="practice__record-btn"
-            :class="{ 'practice__record-btn--recording': recorder.isRecording.value }"
-            @click="toggleRecording"
-          >
-            <span v-if="recorder.isRecording.value">⏹</span>
-            <span v-else>🎙️</span>
-          </button>
-          <p class="practice__record-hint">
-            {{ recorder.isRecording.value
-                ? 'Tap to stop'
-                : recorder.audioBlob.value
-                  ? 'Recorded — tap to re-record'
-                  : 'Tap to record' }}
-          </p>
-        </div>
-
-        <!-- Recorder error -->
-        <ErrorMessage :message="recorder.error.value" />
-
-        <div v-if="recorder.audioUrl.value" class="practice__playback">
-          <p class="practice__playback-label">Playback your recording</p>
-          <audio
-            class="practice__audio-player"
-            :src="recorder.audioUrl.value"
-            controls
-            preload="metadata"
-          />
-        </div>
-
-        <!-- Submit button -->
-        <button
-          v-if="recorder.audioBlob.value && !attemptsStore.submitting"
-          class="practice__submit-btn"
-          @click="submitAttempt"
-        >
-          Submit for Scoring →
-        </button>
-
-        <LoadingSpinner
-          v-if="attemptsStore.submitting"
-          message="Analyzing pronunciation..."
-        />
-
-        <ErrorMessage
-          v-if="attemptsStore.error"
-          :message="attemptsStore.error"
-          dismissible
-        />
-
       </template>
 
+      <Card v-else class="border-border/80 bg-card/95">
+        <CardContent class="flex min-h-72 flex-col items-center justify-center gap-4 py-12 text-center">
+          <TriangleAlert class="text-destructive" />
+          <div class="flex flex-col gap-2">
+            <p class="font-semibold text-(--color-heading)">Practice prompt unavailable</p>
+            <p class="max-w-lg text-sm leading-7 text-muted-foreground">
+              {{ modulesStore.error ?? 'This phrase could not be loaded. Return to the lesson list and choose another prompt.' }}
+            </p>
+          </div>
+          <Button variant="outline" @click="router.push('/lessons')">
+            <BookOpen data-icon="inline-start" />
+            <span>Back to lessons</span>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   </StudentLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import {
+  AudioLines,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  LoaderCircle,
+  Mic,
+  RotateCcw,
+  Send,
+  Square,
+  TriangleAlert,
+  Volume2,
+} from 'lucide-vue-next'
+
 import StudentLayout from '@/layouts/StudentLayout.vue'
-import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
-import ErrorMessage from '@/components/shared/ErrorMessage.vue'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { useModulesStore } from '@/stores/modules'
 import { useAttemptsStore } from '@/stores/attempts'
 import { useAudioRecorder } from '@/composables/useAudioRecorder'
-import type { Phrase, Module } from '@/types'
+import type { Module, Phrase } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -147,21 +312,22 @@ const recorder = useAudioRecorder()
 
 const loading = ref(false)
 const playingReference = ref(false)
+const waveformTick = ref(0)
 
-const moduleId = computed(() => route.params.moduleId as string)
-const phraseId = computed(() => route.params.phraseId as string)
+const moduleId = computed(() => String(route.params.moduleId ?? ''))
+const phraseId = computed(() => String(route.params.phraseId ?? ''))
 
 const module = computed<Module | undefined>(() =>
-  modulesStore.getModuleById(moduleId.value)
+  modulesStore.getModuleById(moduleId.value),
 )
 const phrases = computed<Phrase[]>(() =>
-  modulesStore.getPhrasesForModule(moduleId.value)
+  modulesStore.getPhrasesForModule(moduleId.value),
 )
 const phrase = computed<Phrase | undefined>(() =>
-  phrases.value.find((p) => p.phrase_id === phraseId.value)
+  phrases.value.find((item) => item.phrase_id === phraseId.value),
 )
 const phraseIndex = computed(() =>
-  phrases.value.findIndex((p) => p.phrase_id === phraseId.value)
+  phrases.value.findIndex((item) => item.phrase_id === phraseId.value),
 )
 
 const difficultyLabel = computed(() => {
@@ -169,287 +335,185 @@ const difficultyLabel = computed(() => {
   return labels[phrase.value?.difficulty_level ?? 1]
 })
 
-// Animated waveform bars
-const waveformBars = computed(() => {
-  return Array.from({ length: 30 }, (_, i) => {
-    if (!recorder.isRecording.value) return 4
-    return Math.max(4, Math.sin(i * 0.5 + Date.now() * 0.005) * 20 + 20)
-  })
+const difficultyBadgeVariant = computed(() => {
+  const level = phrase.value?.difficulty_level ?? 1
+  if (level >= 4) return 'default'
+  if (level === 3) return 'secondary'
+  return 'outline'
 })
 
-// Auto-animate waveform while recording
-let waveformInterval: ReturnType<typeof setInterval> | null = null
-watch(() => recorder.isRecording.value, (recording) => {
-  if (recording) {
-    waveformInterval = setInterval(() => {}, 50)
-  } else {
-    if (waveformInterval) clearInterval(waveformInterval)
+const waveformBars = computed(() =>
+  Array.from({ length: 28 }, (_, index) => {
+    if (!recorder.isRecording.value) return 10
+    return Math.max(10, Math.sin(index * 0.55 + waveformTick.value * 0.6) * 18 + 30)
+  }),
+)
+
+const recorderHint = computed(() => {
+  if (recorder.isRecording.value) {
+    return 'Speak clearly, then stop the recording when you finish the phrase.'
   }
+
+  if (recorder.audioBlob.value) {
+    return 'Preview the take below. Clear it and record again if you want a cleaner attempt.'
+  }
+
+  return 'Use a quiet space if possible, and keep the microphone close enough for a clear capture.'
 })
+
+const recordingStateTitle = computed(() => {
+  if (recorder.error.value || attemptsStore.error) {
+    return 'Recording problem'
+  }
+
+  if (attemptsStore.submitting) {
+    return 'Submitting attempt'
+  }
+
+  if (recorder.isRecording.value) {
+    return 'Recording in progress'
+  }
+
+  if (recorder.audioBlob.value) {
+    return 'Recording ready'
+  }
+
+  return 'Microphone ready'
+})
+
+const recordingStateCopy = computed(() => {
+  if (attemptsStore.submitting) {
+    return 'Your pronunciation is being uploaded and analyzed now.'
+  }
+
+  if (recorder.isRecording.value) {
+    return `Live capture is running. Current duration: ${recorder.duration.value}s.`
+  }
+
+  if (recorder.audioBlob.value) {
+    return 'You can preview the audio, clear it, or send it for scoring.'
+  }
+
+  return 'Start a recording when you are ready to practice this phrase.'
+})
+
+let waveformInterval: ReturnType<typeof setInterval> | null = null
+let referenceAudio: HTMLAudioElement | null = null
+
+watch(
+  () => recorder.isRecording.value,
+  (recording) => {
+    if (recording) {
+      waveformInterval = setInterval(() => {
+        waveformTick.value += 1
+      }, 70)
+      return
+    }
+
+    if (waveformInterval) {
+      clearInterval(waveformInterval)
+      waveformInterval = null
+    }
+  },
+)
+
+watch(moduleId, async () => {
+  await loadPracticeData()
+})
+
+onMounted(async () => {
+  await loadPracticeData()
+})
+
+onBeforeUnmount(() => {
+  if (waveformInterval) {
+    clearInterval(waveformInterval)
+  }
+  if (recorder.isRecording.value) {
+    recorder.stopRecording()
+  }
+  stopReferenceAudio()
+  recorder.clearRecording()
+})
+
+async function loadPracticeData() {
+  loading.value = true
+  try {
+    await modulesStore.fetchModules()
+    await modulesStore.fetchPhrases(moduleId.value)
+  } finally {
+    loading.value = false
+  }
+}
+
+function stopReferenceAudio() {
+  if (referenceAudio) {
+    referenceAudio.pause()
+    referenceAudio.currentTime = 0
+    referenceAudio = null
+  }
+  playingReference.value = false
+}
 
 async function playReference() {
   if (!phrase.value?.reference_audio_url) return
+
+  stopReferenceAudio()
   playingReference.value = true
+
   try {
-    const audio = new Audio(phrase.value.reference_audio_url)
-    audio.onended = () => { playingReference.value = false }
-    audio.onerror = () => { playingReference.value = false }
-    await audio.play()
+    referenceAudio = new Audio(phrase.value.reference_audio_url)
+    referenceAudio.onended = () => {
+      playingReference.value = false
+      referenceAudio = null
+    }
+    referenceAudio.onerror = () => {
+      playingReference.value = false
+      referenceAudio = null
+    }
+    await referenceAudio.play()
   } catch {
     playingReference.value = false
+    referenceAudio = null
   }
 }
 
 async function toggleRecording() {
+  stopReferenceAudio()
+
   if (recorder.isRecording.value) {
     recorder.stopRecording()
-  } else {
-    recorder.clearRecording()
-    attemptsStore.clearLastAttempt()
-    await recorder.startRecording()
+    return
   }
+
+  recorder.clearRecording()
+  attemptsStore.clearLastAttempt()
+  await recorder.startRecording()
+}
+
+function clearRecording() {
+  recorder.clearRecording()
+  attemptsStore.clearLastAttempt()
 }
 
 async function submitAttempt() {
   if (!recorder.audioBlob.value || !phrase.value) return
+
   try {
     await attemptsStore.submit(phrase.value.phrase_id, recorder.audioBlob.value)
-    router.push('/results')
+    await router.push('/results')
   } catch {
-    // error shown via ErrorMessage
+    // Submission errors are shown inline.
   }
 }
 
-function goToPhrase(index: number) {
+async function goToPhrase(index: number) {
   const target = phrases.value[index]
-  if (target) {
-    recorder.clearRecording()
-    attemptsStore.clearLastAttempt()
-    router.push(`/practice/${moduleId.value}/${target.phrase_id}`)
-  }
-}
+  if (!target) return
 
-onMounted(async () => {
-  loading.value = true
-  await modulesStore.fetchModules()
-  await modulesStore.fetchPhrases(moduleId.value)
-  loading.value = false
-})
+  stopReferenceAudio()
+  recorder.clearRecording()
+  attemptsStore.clearLastAttempt()
+  await router.push(`/practice/${moduleId.value}/${target.phrase_id}`)
+}
 </script>
-
-<style scoped>
-.practice {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
-}
-
-.practice__nav {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-  justify-content: center;
-}
-
-.practice__nav-btn {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 16px;
-  cursor: pointer;
-  color: var(--color-text);
-  transition: background 0.15s;
-}
-
-.practice__nav-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.practice__nav-count {
-  font-size: 14px;
-  color: var(--color-subtext);
-  font-weight: 600;
-}
-
-.practice__difficulty {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.practice__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-border);
-}
-
-.practice__dot--active {
-  background: var(--color-primary);
-}
-
-.practice__difficulty-label {
-  font-size: 12px;
-  color: var(--color-subtext);
-  margin-left: 6px;
-}
-
-.practice__card {
-  width: 100%;
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 28px 20px;
-  text-align: center;
-}
-
-.practice__japanese {
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--color-text);
-  line-height: 1.4;
-}
-
-.practice__romaji {
-  font-size: 18px;
-  color: var(--color-primary);
-  font-weight: 600;
-  margin-top: 8px;
-}
-
-.practice__english {
-  font-size: 14px;
-  color: var(--color-subtext);
-  margin-top: 8px;
-}
-
-.practice__reference-btn {
-  padding: 12px 24px;
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border: 1.5px solid var(--color-primary);
-  border-radius: 24px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.practice__reference-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.practice__waveform {
-  width: 100%;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  background: var(--color-bg);
-  border-radius: var(--radius);
-  padding: 8px;
-}
-
-.practice__waveform-bar {
-  width: 4px;
-  background: var(--color-border);
-  border-radius: 2px;
-  min-height: 4px;
-  transition: height 0.05s ease;
-}
-
-.practice__waveform-bar--active {
-  background: var(--color-primary);
-}
-
-.practice__duration {
-  font-size: 14px;
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.practice__record-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.practice__record-btn {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  border: none;
-  font-size: 32px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.1s, background 0.15s;
-  box-shadow: 0 4px 20px rgba(29, 158, 117, 0.4);
-}
-
-.practice__record-btn--recording {
-  background: #EF4444;
-  animation: pulse 1s infinite;
-  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
-}
-
-.practice__record-btn:active {
-  transform: scale(0.93);
-}
-
-.practice__record-hint {
-  font-size: 13px;
-  color: var(--color-subtext);
-}
-
-.practice__playback {
-  width: 100%;
-  padding: 14px 16px;
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-}
-
-.practice__playback-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-text);
-  margin-bottom: 10px;
-}
-
-.practice__audio-player {
-  width: 100%;
-}
-
-.practice__submit-btn {
-  width: 100%;
-  padding: 18px;
-  background: var(--color-primary);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.practice__submit-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
-}
-</style>

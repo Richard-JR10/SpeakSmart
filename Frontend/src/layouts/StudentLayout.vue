@@ -154,6 +154,69 @@
           </div>
         </main>
       </div>
+
+      <DialogRoot v-model:open="signOutConfirm">
+        <DialogPortal>
+          <DialogOverlay class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
+          <DialogContent
+            class="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-border/80 bg-card shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
+          >
+            <div class="flex flex-col gap-5 p-6">
+              <div class="flex items-start gap-3">
+                <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+                  <TriangleAlert />
+                </div>
+
+                <div class="min-w-0">
+                  <DialogTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                    Confirm Sign Out
+                  </DialogTitle>
+                  <DialogDescription class="mt-2 text-sm leading-6 text-muted-foreground">
+                    You will need to sign in again to continue.
+                  </DialogDescription>
+                </div>
+              </div>
+
+              <Alert v-if="signOutError" variant="destructive">
+                <TriangleAlert />
+                <AlertTitle>Sign out failed</AlertTitle>
+                <AlertDescription>{{ signOutError }}</AlertDescription>
+              </Alert>
+
+              <Alert v-else variant="destructive">
+                <TriangleAlert />
+                <AlertTitle>Leaving this session</AlertTitle>
+                <AlertDescription>
+                  Use sign out when you are done practicing, especially on a shared computer.
+                </AlertDescription>
+              </Alert>
+
+              <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="w-full sm:w-auto"
+                  :disabled="signingOut"
+                  @click="signOutConfirm = false"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  class="w-full sm:w-auto"
+                  :disabled="signingOut"
+                  @click="confirmSignOut"
+                >
+                  <LoaderCircle v-if="signingOut" class="animate-spin" data-icon="inline-start" />
+                  <LogOut v-else data-icon="inline-start" />
+                  <span>{{ signingOut ? 'Signing Out...' : 'Confirm Sign Out' }}</span>
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </DialogPortal>
+      </DialogRoot>
     </div>
   </div>
 </template>
@@ -168,10 +231,21 @@ import {
   ChevronLeft,
   ChevronRight,
   House,
+  LoaderCircle,
   LogOut,
   Menu,
   Settings,
+  TriangleAlert,
 } from 'lucide-vue-next'
+import {
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
+} from 'reka-ui'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
 import {
@@ -204,6 +278,9 @@ const SIDEBAR_COLLAPSED_KEY = 'student-layout-sidebar-collapsed'
 
 const mobileNavOpen = ref(false)
 const sidebarCollapsed = ref(getInitialSidebarCollapsed())
+const signOutConfirm = ref(false)
+const signingOut = ref(false)
+const signOutError = ref<string | null>(null)
 
 const navItems: NavItem[] = [
   { section: 'home', label: 'Home', icon: House, to: '/home' },
@@ -298,9 +375,38 @@ function toggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
-async function handleSignOut() {
+function handleSignOut() {
   mobileNavOpen.value = false
-  await authStore.signOut()
-  await router.push('/')
+  signOutError.value = null
+  signOutConfirm.value = true
 }
+
+async function confirmSignOut() {
+  signOutError.value = null
+  signingOut.value = true
+
+  try {
+    await authStore.signOut()
+    signOutConfirm.value = false
+    await router.push('/')
+  } catch (error) {
+    console.error('Failed to sign out:', error)
+    signOutError.value = 'We could not sign you out right now. Please try again.'
+  } finally {
+    signingOut.value = false
+  }
+}
+
+watch(signOutConfirm, (open) => {
+  if (open) return
+  if (signingOut.value) return
+  signOutError.value = null
+})
+
+watch(
+  () => route.fullPath,
+  () => {
+    signOutConfirm.value = false
+  },
+)
 </script>

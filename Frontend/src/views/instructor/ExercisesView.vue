@@ -1,51 +1,55 @@
-<!-- src/views/instructor/ExercisesView.vue -->
 <template>
   <InstructorLayout>
-    <div class="exercises">
-
-      <div class="exercises__header">
-        <h1 class="exercises__title">Exercises</h1>
-        <button class="exercises__new-btn" @click="showForm = true">
-          + New Exercise
+    <div class="exercises page-shell">
+      <section class="exercises__header">
+        <div>
+          <p class="eyebrow">Practice assignments</p>
+          <h1 class="display-title">Create and track exercises</h1>
+          <p class="exercises__subtitle">
+            Build curated phrase sets, assign them to students, and review
+            completion at a glance.
+          </p>
+        </div>
+        <button type="button" class="button-primary" @click="showForm = true">
+          <AppIcon name="plus" :size="16" />
+          <span>New exercise</span>
         </button>
-      </div>
+      </section>
 
       <LoadingSpinner v-if="loading" full-screen message="Loading exercises..." />
       <ErrorMessage v-else-if="error" :message="error" />
 
       <template v-else>
-
-        <!-- Exercise list -->
-        <div v-if="exercises.length" class="exercises__list">
-          <div
+        <section v-if="exercises.length" class="exercises__list">
+          <article
             v-for="exercise in exercises"
             :key="exercise.exercise_id"
-            class="exercises__card"
+            class="surface-card exercises__card"
           >
             <div class="exercises__card-header">
               <div>
                 <p class="exercises__card-title">{{ exercise.title }}</p>
                 <p class="exercises__card-meta">
-                  {{ exercise.phrases.length }} phrases ·
+                  {{ exercise.phrases.length }} phrases -
                   {{ exercise.assignments.length }} students assigned
                   <span v-if="exercise.due_date">
-                    · Due {{ formatDate(exercise.due_date) }}
+                    - Due {{ formatDate(exercise.due_date) }}
                   </span>
                 </p>
               </div>
               <button
+                type="button"
                 class="exercises__delete-btn"
                 @click="handleDelete(exercise.exercise_id)"
               >
-                🗑️
+                <AppIcon name="trash" :size="16" />
               </button>
             </div>
 
-            <!-- Completion progress -->
             <div class="exercises__completion">
-              <div class="exercises__completion-bar-wrap">
+              <div class="progress-track">
                 <div
-                  class="exercises__completion-bar"
+                  class="progress-fill"
                   :style="{ width: completionPercent(exercise) + '%' }"
                 />
               </div>
@@ -53,67 +57,70 @@
                 {{ completedCount(exercise) }}/{{ exercise.assignments.length }} completed
               </span>
             </div>
+          </article>
+        </section>
 
-          </div>
-        </div>
-
-        <div v-else class="exercises__empty">
-          <p>No exercises yet — create one to assign practice sets to students.</p>
-        </div>
-
+        <section v-else class="surface-card empty-block">
+          <p>No exercises yet. Create one to assign a guided practice set to students.</p>
+        </section>
       </template>
 
-      <!-- New exercise form modal -->
       <div v-if="showForm" class="exercises__modal-overlay" @click.self="showForm = false">
-        <div class="exercises__modal">
-
+        <div class="exercises__modal surface-card">
           <div class="exercises__modal-header">
-            <h3 class="exercises__modal-title">New Exercise</h3>
-            <button class="exercises__modal-close" @click="showForm = false">✕</button>
+            <div>
+              <p class="eyebrow">New exercise</p>
+              <h2 class="section-title">Build an assignment</h2>
+            </div>
+            <button type="button" class="exercises__modal-close" @click="showForm = false">
+              <AppIcon name="close" :size="18" />
+            </button>
           </div>
 
           <div class="exercises__form">
-
             <div class="exercises__form-field">
-              <label class="exercises__form-label">Title</label>
+              <label class="exercises__form-label" for="exercise-title">Title</label>
               <input
+                id="exercise-title"
                 v-model="form.title"
                 type="text"
                 class="exercises__form-input"
-                placeholder="e.g. Greetings Drill Set"
+                placeholder="Greetings drill set"
               />
             </div>
 
             <div class="exercises__form-field">
-              <label class="exercises__form-label">Select Phrases</label>
-              <div class="exercises__phrase-list">
+              <label class="exercises__form-label">Select phrases</label>
+              <div class="exercises__picker">
                 <label
                   v-for="module in modulesStore.modules"
                   :key="module.module_id"
-                  class="exercises__phrase-group"
+                  class="exercises__picker-group"
                 >
-                  <p class="exercises__phrase-group-title">
-                    {{ moduleIcon(module.module_id) }} {{ module.title }}
+                  <p class="exercises__picker-title">
+                    <AppIcon :name="moduleIconName(module.module_id)" :size="16" />
+                    <span>{{ module.title }}</span>
                   </p>
                   <div
                     v-for="phrase in modulesStore.getPhrasesForModule(module.module_id)"
                     :key="phrase.phrase_id"
-                    class="exercises__phrase-item"
+                    class="exercises__picker-item"
                   >
                     <input
                       type="checkbox"
                       :value="phrase.phrase_id"
                       v-model="form.phrase_ids"
                     />
-                    <span>{{ phrase.romaji }} — {{ phrase.english_translation }}</span>
+                    <span>{{ phrase.romaji }} - {{ phrase.english_translation }}</span>
                   </div>
                 </label>
               </div>
             </div>
 
             <div class="exercises__form-field">
-              <label class="exercises__form-label">Due Date (optional)</label>
+              <label class="exercises__form-label" for="exercise-due-date">Due date</label>
               <input
+                id="exercise-due-date"
                 v-model="form.due_date"
                 type="datetime-local"
                 class="exercises__form-input"
@@ -121,12 +128,12 @@
             </div>
 
             <div class="exercises__form-field">
-              <label class="exercises__form-label">Assign to Students</label>
-              <div class="exercises__student-list">
+              <label class="exercises__form-label">Assign to students</label>
+              <div class="exercises__picker">
                 <label
                   v-for="student in students"
                   :key="student.uid"
-                  class="exercises__student-item"
+                  class="exercises__picker-item"
                 >
                   <input
                     type="checkbox"
@@ -141,31 +148,32 @@
             <ErrorMessage :message="formError" />
 
             <button
-              class="exercises__form-submit"
+              type="button"
+              class="button-primary exercises__submit"
               :disabled="submitting || !form.title || !form.phrase_ids.length || !form.student_uids.length"
               @click="handleCreate"
             >
               <LoadingSpinner v-if="submitting" size="sm" />
-              <span v-else>Create &amp; Assign</span>
+              <span v-else>Create and assign</span>
             </button>
-
           </div>
         </div>
       </div>
-
     </div>
   </InstructorLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import ErrorMessage from '@/components/shared/ErrorMessage.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useModulesStore } from '@/stores/modules'
 import { getMyExercises, createExercise, deleteExercise } from '@/api/exercises'
 import { getAllStudents } from '@/api/analytics'
+import { moduleIconName } from '@/constants/modules'
 import type { Exercise, StudentStat } from '@/types'
 
 const authStore = useAuthStore()
@@ -185,19 +193,6 @@ const form = ref({
   student_uids: [] as string[],
   due_date: '',
 })
-
-const MODULE_ICONS: Record<string, string> = {
-  module_greetings:  '👋',
-  module_hotel:      '🏨',
-  module_directions: '🗺️',
-  module_food:       '🍜',
-  module_emergency:  '🚨',
-  module_tour_guide: '🎌',
-}
-
-function moduleIcon(id: string) {
-  return MODULE_ICONS[id] ?? '📚'
-}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -267,277 +262,168 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.exercises {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
 .exercises__header {
   display: flex;
-  align-items: center;
+  align-items: end;
   justify-content: space-between;
+  gap: 18px;
 }
 
-.exercises__title {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--color-text);
-}
-
-.exercises__new-btn {
-  padding: 10px 20px;
-  background: var(--color-primary);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.exercises__new-btn:hover {
-  background: var(--color-primary-dark);
+.exercises__subtitle {
+  margin: 12px 0 0;
+  color: var(--color-subtext);
+  max-width: 760px;
 }
 
 .exercises__list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  gap: 16px;
 }
 
 .exercises__card {
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 22px;
+  display: grid;
+  gap: 18px;
 }
 
 .exercises__card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
 }
 
 .exercises__card-title {
-  font-size: 16px;
+  margin: 0;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--color-heading);
 }
 
 .exercises__card-meta {
-  font-size: 13px;
+  margin: 8px 0 0;
   color: var(--color-subtext);
-  margin-top: 4px;
 }
 
-.exercises__delete-btn {
-  background: none;
-  border: none;
-  font-size: 16px;
+.exercises__delete-btn,
+.exercises__modal-close {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  background: rgba(198, 85, 73, 0.1);
+  color: #8b2f26;
   cursor: pointer;
-  opacity: 0.5;
-  transition: opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.exercises__delete-btn:hover {
-  opacity: 1;
-}
-
 .exercises__completion {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.exercises__completion-bar-wrap {
-  flex: 1;
-  height: 6px;
-  background: var(--color-border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.exercises__completion-bar {
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: 3px;
-  transition: width 0.4s ease;
+  display: grid;
+  gap: 10px;
 }
 
 .exercises__completion-label {
-  font-size: 12px;
   color: var(--color-subtext);
-  white-space: nowrap;
+  font-size: 13px;
 }
 
-.exercises__empty {
-  padding: 60px 0;
-  text-align: center;
-  color: var(--color-subtext);
-  font-size: 14px;
-}
-
-/* Modal */
 .exercises__modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
+  background: rgba(23, 35, 29, 0.34);
+  display: grid;
+  place-items: center;
+  z-index: 120;
   padding: 24px;
 }
 
 .exercises__modal {
-  background: #ffffff;
-  border-radius: var(--radius);
-  width: 100%;
-  max-width: 600px;
-  max-height: 85vh;
-  overflow-y: auto;
+  width: min(100%, 760px);
+  max-height: 90dvh;
+  overflow: auto;
 }
 
 .exercises__modal-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  background: #ffffff;
-}
-
-.exercises__modal-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.exercises__modal-close {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: var(--color-subtext);
+  gap: 16px;
+  padding: 24px 24px 0;
 }
 
 .exercises__form {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 20px;
+  padding: 24px;
+}
+
+.exercises__form-field {
+  display: grid;
+  gap: 8px;
 }
 
 .exercises__form-label {
-  display: block;
   font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--color-heading);
 }
 
 .exercises__form-input {
   width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius);
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.15s;
+  min-height: 54px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(189, 203, 194, 0.95);
+  background: rgba(255, 253, 249, 0.98);
+  color: var(--color-heading);
 }
 
-.exercises__form-input:focus {
-  border-color: var(--color-primary);
-}
-
-.exercises__phrase-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 12px;
-}
-
-.exercises__phrase-group-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-subtext);
-  margin-bottom: 6px;
-}
-
-.exercises__phrase-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--color-text);
-  padding: 4px 0;
-  cursor: pointer;
-}
-
-.exercises__phrase-item input {
-  accent-color: var(--color-primary);
-}
-
-.exercises__student-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 160px;
-  overflow-y: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 12px;
-}
-
-.exercises__student-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--color-text);
-  cursor: pointer;
-}
-
-.exercises__student-item input {
-  accent-color: var(--color-primary);
-}
-
-.exercises__form-submit {
-  width: 100%;
+.exercises__picker {
+  display: grid;
+  gap: 14px;
+  max-height: 240px;
+  overflow: auto;
   padding: 16px;
-  background: var(--color-primary);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
+  border-radius: 20px;
+  background: rgba(240, 244, 238, 0.72);
+}
+
+.exercises__picker-group {
+  display: grid;
+  gap: 10px;
+}
+
+.exercises__picker-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.exercises__picker-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background 0.15s;
+  gap: 10px;
+  padding: 10px 0;
+  color: var(--color-text);
 }
 
-.exercises__form-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.exercises__picker-item input {
+  accent-color: var(--color-primary);
 }
 
-.exercises__form-submit:not(:disabled):hover {
-  background: var(--color-primary-dark);
+.exercises__submit {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .exercises__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>

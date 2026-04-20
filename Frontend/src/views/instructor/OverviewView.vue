@@ -1,141 +1,145 @@
-<!-- src/views/instructor/OverviewView.vue -->
 <template>
   <InstructorLayout>
-
-    <div class="overview">
-
-      <div class="overview__header">
-        <h1 class="overview__title">Class Overview</h1>
+    <div class="overview page-shell">
+      <section class="overview__header">
+        <p class="eyebrow">Instructor overview</p>
+        <h1 class="display-title">Class progress at a glance</h1>
         <p class="overview__subtitle">
-          {{ authStore.profile?.display_name }} ·
+          {{ authStore.profile?.display_name }} -
           {{ new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) }}
         </p>
-      </div>
+      </section>
 
       <LoadingSpinner v-if="loading" full-screen message="Loading analytics..." />
 
       <ErrorMessage v-else-if="error" :message="error" />
 
       <template v-else-if="overview">
+        <section class="metric-grid">
+          <article class="surface-card metric-card">
+            <p class="metric-card__label">Class average</p>
+            <p class="metric-card__value">{{ overview.class_average.toFixed(1) }}%</p>
+            <p class="metric-card__hint">Overall pronunciation accuracy.</p>
+          </article>
+          <article class="surface-card metric-card">
+            <p class="metric-card__label">Total students</p>
+            <p class="metric-card__value">{{ overview.total_students }}</p>
+            <p class="metric-card__hint">Students assigned to this class.</p>
+          </article>
+          <article class="surface-card metric-card">
+            <p class="metric-card__label">Active this week</p>
+            <p class="metric-card__value">{{ overview.active_students }}</p>
+            <p class="metric-card__hint">Students who practiced recently.</p>
+          </article>
+          <article class="surface-card metric-card">
+            <p class="metric-card__label">Flagged students</p>
+            <p class="metric-card__value">{{ overview.flagged_students.length }}</p>
+            <p class="metric-card__hint">Below {{ flagThreshold }}% accuracy.</p>
+          </article>
+        </section>
 
-        <!-- Stat cards -->
-        <div class="overview__stat-cards">
-          <div class="overview__stat-card">
-            <p class="overview__stat-label">Class Average</p>
-            <p class="overview__stat-value">{{ overview.class_average.toFixed(1) }}%</p>
-            <p class="overview__stat-sub">overall accuracy</p>
-          </div>
-          <div class="overview__stat-card">
-            <p class="overview__stat-label">Total Students</p>
-            <p class="overview__stat-value">{{ overview.total_students }}</p>
-            <p class="overview__stat-sub">enrolled</p>
-          </div>
-          <div class="overview__stat-card">
-            <p class="overview__stat-label">Active This Week</p>
-            <p class="overview__stat-value">{{ overview.active_students }}</p>
-            <p class="overview__stat-sub">students practiced</p>
-          </div>
-          <div class="overview__stat-card overview__stat-card--warning">
-            <p class="overview__stat-label">Flagged</p>
-            <p class="overview__stat-value">{{ overview.flagged_students.length }}</p>
-            <p class="overview__stat-sub">below {{ flagThreshold }}%</p>
-          </div>
-        </div>
-
-        <!-- Weekly trend chart -->
-        <div class="overview__card">
-          <h3 class="overview__card-title">Weekly Accuracy Trend</h3>
-          <div class="overview__trend-chart">
-            <div
-              v-for="week in overview.weekly_trend"
-              :key="week.week_start"
-              class="overview__trend-col"
-            >
-              <p class="overview__trend-value">
-                {{ week.average_accuracy > 0 ? week.average_accuracy.toFixed(0) + '%' : '' }}
-              </p>
-              <div class="overview__trend-bar-wrap">
-                <div
-                  class="overview__trend-bar"
-                  :style="{ height: barHeight(week.average_accuracy) + 'px' }"
-                  :class="{ 'overview__trend-bar--empty': week.average_accuracy === 0 }"
-                />
-              </div>
-              <p class="overview__trend-label">
-                {{ formatWeekLabel(week.week_start) }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Phoneme error breakdown -->
-        <div class="overview__card">
-          <h3 class="overview__card-title">Class Phoneme Averages</h3>
-          <div class="overview__phoneme-grid">
-
-            <div class="overview__phoneme-item">
-              <div class="overview__phoneme-bar-wrap">
-                <div
-                  class="overview__phoneme-bar"
-                  :style="{ width: overview.phoneme_breakdown.mora_timing_avg + '%' }"
-                  :class="phonemeBarClass(overview.phoneme_breakdown.mora_timing_avg)"
-                />
-              </div>
-              <div class="overview__phoneme-info">
-                <span class="overview__phoneme-label">Mora Timing</span>
-                <span class="overview__phoneme-value">
-                  {{ overview.phoneme_breakdown.mora_timing_avg.toFixed(1) }}%
-                </span>
+        <section class="overview__grid">
+          <article class="surface-card overview__panel">
+            <div class="section-heading">
+              <div class="section-heading__text">
+                <p class="eyebrow">Weekly trend</p>
+                <h2 class="section-title">Accuracy movement</h2>
               </div>
             </div>
 
-            <div class="overview__phoneme-item">
-              <div class="overview__phoneme-bar-wrap">
-                <div
-                  class="overview__phoneme-bar"
-                  :style="{ width: overview.phoneme_breakdown.consonant_avg + '%' }"
-                  :class="phonemeBarClass(overview.phoneme_breakdown.consonant_avg)"
-                />
+            <div class="overview__trend-chart">
+              <div
+                v-for="week in overview.weekly_trend"
+                :key="week.week_start"
+                class="overview__trend-col"
+              >
+                <p class="overview__trend-value">
+                  {{ week.average_accuracy > 0 ? week.average_accuracy.toFixed(0) + '%' : '' }}
+                </p>
+                <div class="overview__trend-bar-wrap">
+                  <div
+                    class="overview__trend-bar"
+                    :style="{ height: barHeight(week.average_accuracy) + 'px' }"
+                    :class="{ 'overview__trend-bar--empty': week.average_accuracy === 0 }"
+                  />
+                </div>
+                <p class="overview__trend-label">{{ formatWeekLabel(week.week_start) }}</p>
               </div>
-              <div class="overview__phoneme-info">
-                <span class="overview__phoneme-label">Consonants / R-sound</span>
-                <span class="overview__phoneme-value">
-                  {{ overview.phoneme_breakdown.consonant_avg.toFixed(1) }}%
-                </span>
+            </div>
+          </article>
+
+          <article class="surface-card overview__panel">
+            <div class="section-heading">
+              <div class="section-heading__text">
+                <p class="eyebrow">Phoneme averages</p>
+                <h2 class="section-title">Class pronunciation profile</h2>
               </div>
             </div>
 
-            <div class="overview__phoneme-item">
-              <div class="overview__phoneme-bar-wrap">
-                <div
-                  class="overview__phoneme-bar"
-                  :style="{ width: overview.phoneme_breakdown.vowel_avg + '%' }"
-                  :class="phonemeBarClass(overview.phoneme_breakdown.vowel_avg)"
-                />
+            <div class="overview__phoneme-list">
+              <div class="overview__phoneme-item">
+                <div class="overview__phoneme-head">
+                  <span>Mora timing</span>
+                  <span>{{ overview.phoneme_breakdown.mora_timing_avg.toFixed(1) }}%</span>
+                </div>
+                <div class="progress-track">
+                  <div
+                    class="overview__phoneme-fill"
+                    :style="{ width: overview.phoneme_breakdown.mora_timing_avg + '%' }"
+                    :class="phonemeBarClass(overview.phoneme_breakdown.mora_timing_avg)"
+                  />
+                </div>
               </div>
-              <div class="overview__phoneme-info">
-                <span class="overview__phoneme-label">Vowel Purity</span>
-                <span class="overview__phoneme-value">
-                  {{ overview.phoneme_breakdown.vowel_avg.toFixed(1) }}%
-                </span>
+
+              <div class="overview__phoneme-item">
+                <div class="overview__phoneme-head">
+                  <span>Consonants</span>
+                  <span>{{ overview.phoneme_breakdown.consonant_avg.toFixed(1) }}%</span>
+                </div>
+                <div class="progress-track">
+                  <div
+                    class="overview__phoneme-fill"
+                    :style="{ width: overview.phoneme_breakdown.consonant_avg + '%' }"
+                    :class="phonemeBarClass(overview.phoneme_breakdown.consonant_avg)"
+                  />
+                </div>
+              </div>
+
+              <div class="overview__phoneme-item">
+                <div class="overview__phoneme-head">
+                  <span>Vowel purity</span>
+                  <span>{{ overview.phoneme_breakdown.vowel_avg.toFixed(1) }}%</span>
+                </div>
+                <div class="progress-track">
+                  <div
+                    class="overview__phoneme-fill"
+                    :style="{ width: overview.phoneme_breakdown.vowel_avg + '%' }"
+                    :class="phonemeBarClass(overview.phoneme_breakdown.vowel_avg)"
+                  />
+                </div>
               </div>
             </div>
+          </article>
+        </section>
 
+        <section v-if="overview.flagged_students.length" class="surface-card overview__panel">
+          <div class="section-heading">
+            <div class="section-heading__text">
+              <p class="eyebrow">Needs attention</p>
+              <h2 class="section-title">Flagged students</h2>
+            </div>
+            <span class="pill-badge pill-badge--warning">
+              Below {{ flagThreshold }}%
+            </span>
           </div>
-        </div>
 
-        <!-- Flagged students -->
-        <div v-if="overview.flagged_students.length" class="overview__card">
-          <h3 class="overview__card-title">
-            ⚠️ Flagged Students
-            <span class="overview__card-subtitle">below {{ flagThreshold }}% accuracy</span>
-          </h3>
           <div class="overview__flagged-list">
-            <div
+            <button
               v-for="student in overview.flagged_students"
               :key="student.uid"
+              type="button"
               class="overview__flagged-row"
-              @click="router.push(`/instructor/students`)"
+              @click="router.push('/instructor/students')"
             >
               <div class="overview__flagged-avatar">
                 {{ student.display_name[0].toUpperCase() }}
@@ -144,20 +148,19 @@
                 <p class="overview__flagged-name">{{ student.display_name }}</p>
                 <p class="overview__flagged-email">{{ student.email }}</p>
               </div>
-              <span class="overview__flagged-score">
+              <span class="pill-badge pill-badge--danger">
                 {{ student.overall_average.toFixed(0) }}%
               </span>
-            </div>
+            </button>
           </div>
-        </div>
-
+        </section>
       </template>
     </div>
   </InstructorLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
@@ -175,7 +178,7 @@ const error = ref<string | null>(null)
 const flagThreshold = 60
 
 function barHeight(accuracy: number) {
-  return Math.max(4, (accuracy / 100) * 100)
+  return Math.max(8, (accuracy / 100) * 140)
 }
 
 function formatWeekLabel(dateStr: string) {
@@ -185,10 +188,10 @@ function formatWeekLabel(dateStr: string) {
 }
 
 function phonemeBarClass(score: number) {
-  if (score >= 85) return 'overview__phoneme-bar--excellent'
-  if (score >= 70) return 'overview__phoneme-bar--good'
-  if (score >= 55) return 'overview__phoneme-bar--fair'
-  return 'overview__phoneme-bar--poor'
+  if (score >= 85) return 'overview__phoneme-fill--excellent'
+  if (score >= 70) return 'overview__phoneme-fill--good'
+  if (score >= 55) return 'overview__phoneme-fill--fair'
+  return 'overview__phoneme-fill--poor'
 }
 
 onMounted(async () => {
@@ -200,7 +203,7 @@ onMounted(async () => {
   loading.value = true
   try {
     overview.value = await getClassOverview(classId, flagThreshold)
-  } catch (e) {
+  } catch {
     error.value = 'Failed to load class analytics.'
   } finally {
     loading.value = false
@@ -210,234 +213,147 @@ onMounted(async () => {
 
 <style scoped>
 .overview {
-  display: flex;
-  flex-direction: column;
   gap: 24px;
 }
 
-.overview__title {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--color-text);
-}
-
 .overview__subtitle {
-  font-size: 14px;
+  margin: 12px 0 0;
   color: var(--color-subtext);
-  margin-top: 4px;
+  font-size: 16px;
 }
 
-.overview__stat-cards {
+.overview__grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 18px;
 }
 
-.overview__stat-card {
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 20px;
-}
-
-.overview__stat-card--warning {
-  border-color: #F59E0B;
-  background: #fffbeb;
-}
-
-.overview__stat-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-subtext);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.overview__stat-value {
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--color-text);
-  margin-top: 8px;
-  line-height: 1;
-}
-
-.overview__stat-sub {
-  font-size: 12px;
-  color: var(--color-subtext);
-  margin-top: 4px;
-}
-
-.overview__card {
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+.overview__panel {
   padding: 24px;
 }
 
-.overview__card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-text);
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.overview__card-subtitle {
-  font-size: 13px;
-  color: var(--color-subtext);
-  font-weight: 400;
-}
-
 .overview__trend-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  height: 140px;
-  padding: 0 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+  gap: 10px;
+  align-items: end;
+  margin-top: 20px;
+  min-height: 210px;
 }
 
 .overview__trend-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  height: 100%;
-  justify-content: flex-end;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  align-content: end;
 }
 
-.overview__trend-value {
-  font-size: 10px;
+.overview__trend-value,
+.overview__trend-label {
+  font-size: 11px;
   color: var(--color-subtext);
-  height: 14px;
 }
 
 .overview__trend-bar-wrap {
   width: 100%;
+  min-height: 144px;
   display: flex;
-  align-items: flex-end;
+  align-items: end;
   justify-content: center;
 }
 
 .overview__trend-bar {
   width: 70%;
-  background: var(--color-primary);
-  border-radius: 3px 3px 0 0;
-  min-height: 4px;
-  transition: height 0.4s ease;
+  border-radius: 14px 14px 4px 4px;
+  background: linear-gradient(180deg, var(--color-primary), var(--color-accent));
 }
 
 .overview__trend-bar--empty {
-  background: var(--color-border);
+  background: rgba(215, 225, 218, 0.92);
 }
 
-.overview__trend-label {
-  font-size: 10px;
-  color: var(--color-subtext);
-  text-align: center;
+.overview__phoneme-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 20px;
 }
 
-.overview__phoneme-grid {
+.overview__phoneme-head {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.overview__phoneme-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.overview__phoneme-bar-wrap {
-  height: 10px;
-  background: var(--color-border);
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.overview__phoneme-bar {
-  height: 100%;
-  border-radius: 5px;
-  transition: width 0.5s ease;
-}
-
-.overview__phoneme-bar--excellent,
-.overview__phoneme-bar--good { background: var(--color-primary); }
-.overview__phoneme-bar--fair { background: #F59E0B; }
-.overview__phoneme-bar--poor { background: #EF4444; }
-
-.overview__phoneme-info {
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-}
-
-.overview__phoneme-label {
-  font-size: 13px;
-  color: var(--color-subtext);
-}
-
-.overview__phoneme-value {
-  font-size: 13px;
+  gap: 16px;
+  margin-bottom: 10px;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--color-heading);
+}
+
+.overview__phoneme-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.overview__phoneme-fill--excellent,
+.overview__phoneme-fill--good {
+  background: linear-gradient(90deg, var(--color-primary), #4ca07e);
+}
+
+.overview__phoneme-fill--fair {
+  background: linear-gradient(90deg, #d4a257, #b87b26);
+}
+
+.overview__phoneme-fill--poor {
+  background: linear-gradient(90deg, #d86a5d, #b9473a);
 }
 
 .overview__flagged-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .overview__flagged-row {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(240, 244, 238, 0.72);
   cursor: pointer;
-  transition: background 0.15s;
-}
-
-.overview__flagged-row:hover {
-  background: var(--color-bg);
+  text-align: left;
 }
 
 .overview__flagged-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #fee2e2;
-  color: #991b1b;
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: rgba(198, 85, 73, 0.14);
+  color: #8b2f26;
+  font-weight: 800;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.overview__flagged-info { flex: 1; }
+.overview__flagged-info {
+  flex: 1;
+}
 
 .overview__flagged-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text);
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-heading);
 }
 
 .overview__flagged-email {
-  font-size: 12px;
+  margin: 4px 0 0;
   color: var(--color-subtext);
 }
 
-.overview__flagged-score {
-  font-size: 14px;
-  font-weight: 700;
-  color: #EF4444;
-  background: #fee2e2;
-  padding: 4px 10px;
-  border-radius: 20px;
+@media (min-width: 1024px) {
+  .overview__grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  }
 }
 </style>

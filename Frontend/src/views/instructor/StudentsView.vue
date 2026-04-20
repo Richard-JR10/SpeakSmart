@@ -1,190 +1,184 @@
-<!-- src/views/instructor/StudentsView.vue -->
 <template>
   <InstructorLayout>
-    <div class="students">
+    <div class="students page-shell">
+      <section class="students__header">
+        <div>
+          <p class="eyebrow">Student directory</p>
+          <h1 class="display-title">Monitor individual progress</h1>
+          <p class="students__subtitle">
+            Search students, review scores, and open detailed drilldowns without
+            leaving the instructor workspace.
+          </p>
+        </div>
 
-      <div class="students__header">
-        <h1 class="students__title">Students</h1>
-        <input
-          v-model="search"
-          type="text"
-          class="students__search"
-          placeholder="Search by name or email..."
-        />
-      </div>
+        <label class="students__search">
+          <AppIcon name="search" :size="18" />
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Search by name or email"
+          />
+        </label>
+      </section>
 
       <LoadingSpinner v-if="loading" full-screen message="Loading students..." />
       <ErrorMessage v-else-if="error" :message="error" />
 
       <template v-else>
+        <section class="surface-card students__table-card">
+          <div class="section-heading">
+            <div class="section-heading__text">
+              <p class="eyebrow">Class roster</p>
+              <h2 class="section-title">{{ filteredStudents.length }} learners</h2>
+            </div>
+            <span class="pill-badge">
+              {{ students.filter((student) => student.is_flagged).length }} flagged
+            </span>
+          </div>
 
-        <!-- Student table -->
-        <div class="students__card">
-          <table class="students__table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Accuracy</th>
-                <th>Attempts</th>
-                <th>Streak</th>
-                <th>Weakest Module</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="student in filteredStudents"
-                :key="student.uid"
-                class="students__row"
-                :class="{ 'students__row--flagged': student.is_flagged }"
-                @click="selectStudent(student.uid)"
-              >
-                <td>
-                  <div class="students__student-cell">
-                    <div class="students__avatar">
-                      {{ student.display_name[0].toUpperCase() }}
+          <div class="data-table-wrap students__table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Accuracy</th>
+                  <th>Attempts</th>
+                  <th>Streak</th>
+                  <th>Weakest module</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="student in filteredStudents"
+                  :key="student.uid"
+                  class="students__row"
+                  :class="{ 'students__row--flagged': student.is_flagged }"
+                  @click="selectStudent(student.uid)"
+                >
+                  <td>
+                    <div class="students__student-cell">
+                      <div class="students__avatar">{{ student.display_name[0].toUpperCase() }}</div>
+                      <div>
+                        <p class="students__name">{{ student.display_name }}</p>
+                        <p class="students__email">{{ student.email }}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p class="students__name">{{ student.display_name }}</p>
-                      <p class="students__email">{{ student.email }}</p>
+                  </td>
+                  <td>
+                    <div class="students__accuracy-cell">
+                      <div class="progress-track">
+                        <div
+                          class="students__accuracy-fill"
+                          :style="{ width: student.overall_average + '%' }"
+                          :class="accuracyBarClass(student.overall_average)"
+                        />
+                      </div>
+                      <span class="students__accuracy-value">{{ student.overall_average.toFixed(0) }}%</span>
                     </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="students__accuracy-cell">
-                    <div class="students__accuracy-bar-wrap">
-                      <div
-                        class="students__accuracy-bar"
-                        :style="{ width: student.overall_average + '%' }"
-                        :class="accuracyBarClass(student.overall_average)"
-                      />
-                    </div>
-                    <span class="students__accuracy-value">
-                      {{ student.overall_average.toFixed(0) }}%
+                  </td>
+                  <td>{{ student.total_attempts }}</td>
+                  <td>{{ student.streak_days }} days</td>
+                  <td>{{ formatModuleId(student.weakest_module_id) }}</td>
+                  <td>
+                    <span
+                      class="pill-badge"
+                      :class="student.is_flagged ? 'pill-badge--warning' : ''"
+                    >
+                      {{ student.is_flagged ? 'Needs review' : 'On track' }}
                     </span>
-                  </div>
-                </td>
-                <td class="students__td-center">{{ student.total_attempts }}</td>
-                <td class="students__td-center">🔥 {{ student.streak_days }}</td>
-                <td class="students__td-muted">
-                  {{ student.weakest_module_id?.replace('module_', '') ?? '—' }}
-                </td>
-                <td>
-                  <span
-                    class="students__status"
-                    :class="student.is_flagged
-                      ? 'students__status--flagged'
-                      : 'students__status--ok'"
-                  >
-                    {{ student.is_flagged ? '⚠️ Flagged' : '✓ OK' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <!-- Drill-down panel -->
-        <div v-if="selectedStudent" class="students__drilldown">
+        <section v-if="selectedStudent" class="surface-card students__drilldown">
           <div class="students__drilldown-header">
-            <h3 class="students__drilldown-title">
-              {{ selectedStudent.display_name }}
-            </h3>
+            <div>
+              <p class="eyebrow">Student detail</p>
+              <h2 class="section-title">{{ selectedStudent.display_name }}</h2>
+              <p class="students__drilldown-sub">{{ selectedStudent.email }}</p>
+            </div>
             <button
-              class="students__drilldown-close"
+              type="button"
+              class="students__close"
               @click="selectedStudentUid = null"
-            >✕</button>
+            >
+              <AppIcon name="close" :size="18" />
+            </button>
           </div>
 
           <LoadingSpinner v-if="drilldownLoading" size="sm" />
 
           <template v-else-if="drilldown">
-
-            <!-- Stats row -->
-            <div class="students__drilldown-stats">
-              <div class="students__drilldown-stat">
-                <p class="students__drilldown-stat-value">
-                  {{ drilldown.overall_average.toFixed(1) }}%
-                </p>
-                <p class="students__drilldown-stat-label">Avg Accuracy</p>
-              </div>
-              <div class="students__drilldown-stat">
-                <p class="students__drilldown-stat-value">
-                  {{ drilldown.total_attempts }}
-                </p>
-                <p class="students__drilldown-stat-label">Attempts</p>
-              </div>
-              <div class="students__drilldown-stat">
-                <p class="students__drilldown-stat-value">
-                  🔥 {{ drilldown.streak_days }}
-                </p>
-                <p class="students__drilldown-stat-label">Streak</p>
-              </div>
+            <div class="metric-grid">
+              <article class="surface-card surface-card--muted metric-card">
+                <p class="metric-card__label">Average accuracy</p>
+                <p class="metric-card__value">{{ drilldown.overall_average.toFixed(1) }}%</p>
+              </article>
+              <article class="surface-card surface-card--muted metric-card">
+                <p class="metric-card__label">Attempts</p>
+                <p class="metric-card__value">{{ drilldown.total_attempts }}</p>
+              </article>
+              <article class="surface-card surface-card--muted metric-card">
+                <p class="metric-card__label">Streak</p>
+                <p class="metric-card__value">{{ drilldown.streak_days }}</p>
+              </article>
             </div>
 
-            <!-- Phoneme breakdown -->
-            <div class="students__drilldown-section">
-              <p class="students__drilldown-section-title">Phoneme Scores</p>
-              <div class="students__drilldown-phonemes">
-                <div class="students__drilldown-phoneme">
-                  <span>Mora Timing</span>
-                  <span class="students__drilldown-phoneme-score">
-                    {{ drilldown.phoneme_breakdown.mora_timing_avg.toFixed(0) }}%
-                  </span>
-                </div>
-                <div class="students__drilldown-phoneme">
-                  <span>Consonants</span>
-                  <span class="students__drilldown-phoneme-score">
-                    {{ drilldown.phoneme_breakdown.consonant_avg.toFixed(0) }}%
-                  </span>
-                </div>
-                <div class="students__drilldown-phoneme">
-                  <span>Vowel Purity</span>
-                  <span class="students__drilldown-phoneme-score">
-                    {{ drilldown.phoneme_breakdown.vowel_avg.toFixed(0) }}%
-                  </span>
+            <div class="students__drilldown-grid">
+              <div class="surface-card surface-card--muted students__subpanel">
+                <p class="eyebrow">Phoneme scores</p>
+                <div class="students__phoneme-list">
+                  <div class="students__phoneme-row">
+                    <span>Mora timing</span>
+                    <span>{{ drilldown.phoneme_breakdown.mora_timing_avg.toFixed(0) }}%</span>
+                  </div>
+                  <div class="students__phoneme-row">
+                    <span>Consonants</span>
+                    <span>{{ drilldown.phoneme_breakdown.consonant_avg.toFixed(0) }}%</span>
+                  </div>
+                  <div class="students__phoneme-row">
+                    <span>Vowel purity</span>
+                    <span>{{ drilldown.phoneme_breakdown.vowel_avg.toFixed(0) }}%</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Recent attempts -->
-            <div class="students__drilldown-section">
-              <p class="students__drilldown-section-title">Recent Attempts</p>
-              <div class="students__drilldown-attempts">
-                <div
-                  v-for="attempt in drilldown.recent_attempts"
-                  :key="attempt.attempt_id"
-                  class="students__drilldown-attempt"
-                >
-                  <span class="students__drilldown-attempt-phrase">
-                    {{ attempt.phrase_id }}
-                  </span>
-                  <span
-                    class="students__drilldown-attempt-score"
-                    :class="accuracyBadgeClass(attempt.accuracy_score)"
+              <div class="surface-card surface-card--muted students__subpanel">
+                <p class="eyebrow">Recent attempts</p>
+                <div class="students__attempts">
+                  <div
+                    v-for="attempt in drilldown.recent_attempts"
+                    :key="attempt.attempt_id"
+                    class="students__attempt"
                   >
-                    {{ attempt.accuracy_score.toFixed(0) }}%
-                  </span>
+                    <span>{{ attempt.phrase_id }}</span>
+                    <span class="pill-badge" :class="attemptBadgeClass(attempt.accuracy_score)">
+                      {{ attempt.accuracy_score.toFixed(0) }}%
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-
           </template>
-        </div>
-
+        </section>
       </template>
     </div>
   </InstructorLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import ErrorMessage from '@/components/shared/ErrorMessage.vue'
 import { useAuthStore } from '@/stores/auth'
 import { getAllStudents, getStudentDrillDown } from '@/api/analytics'
-import type { StudentStat, StudentDrillDown } from '@/types'
+import type { StudentDrillDown, StudentStat } from '@/types'
 
 const authStore = useAuthStore()
 
@@ -208,20 +202,25 @@ const filteredStudents = computed(() => {
 })
 
 const selectedStudent = computed(() =>
-  students.value.find((s) => s.uid === selectedStudentUid.value) ?? null
+  students.value.find((s) => s.uid === selectedStudentUid.value) ?? null,
 )
 
 function accuracyBarClass(score: number) {
-  if (score >= 85) return 'students__accuracy-bar--excellent'
-  if (score >= 70) return 'students__accuracy-bar--good'
-  if (score >= 55) return 'students__accuracy-bar--fair'
-  return 'students__accuracy-bar--poor'
+  if (score >= 85) return 'students__accuracy-fill--excellent'
+  if (score >= 70) return 'students__accuracy-fill--good'
+  if (score >= 55) return 'students__accuracy-fill--fair'
+  return 'students__accuracy-fill--poor'
 }
 
-function accuracyBadgeClass(score: number) {
-  if (score >= 70) return 'students__drilldown-attempt-score--good'
-  if (score >= 55) return 'students__drilldown-attempt-score--fair'
-  return 'students__drilldown-attempt-score--poor'
+function attemptBadgeClass(score: number) {
+  if (score >= 70) return ''
+  if (score >= 55) return 'pill-badge--warning'
+  return 'pill-badge--danger'
+}
+
+function formatModuleId(moduleId: string | null | undefined) {
+  if (!moduleId) return 'Not enough data'
+  return moduleId.replace('module_', '').replace(/_/g, ' ')
 }
 
 async function selectStudent(uid: string) {
@@ -256,288 +255,181 @@ onMounted(async () => {
 
 <style scoped>
 .students {
-  display: flex;
-  flex-direction: column;
   gap: 24px;
 }
 
 .students__header {
   display: flex;
-  align-items: center;
+  align-items: end;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
 }
 
-.students__title {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--color-text);
+.students__subtitle {
+  margin: 12px 0 0;
+  color: var(--color-subtext);
+  max-width: 760px;
 }
 
 .students__search {
-  padding: 10px 16px;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius);
-  font-size: 14px;
-  outline: none;
-  width: 280px;
-  transition: border-color 0.15s;
-}
-
-.students__search:focus {
-  border-color: var(--color-primary);
-}
-
-.students__card {
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.students__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.students__table thead tr {
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.students__table th {
-  padding: 12px 16px;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 700;
+  min-width: 280px;
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.92);
+  border: 1px solid rgba(189, 203, 194, 0.95);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: var(--color-subtext);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+}
+
+.students__search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-heading);
+}
+
+.students__table-card,
+.students__drilldown {
+  padding: 24px;
+}
+
+.students__table-wrap {
+  margin-top: 20px;
 }
 
 .students__row {
-  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
-  transition: background 0.1s;
-}
-
-.students__row:last-child {
-  border-bottom: none;
-}
-
-.students__row:hover {
-  background: var(--color-bg);
 }
 
 .students__row--flagged {
-  background: #fffbeb;
-}
-
-.students__table td {
-  padding: 14px 16px;
-  vertical-align: middle;
+  background: rgba(251, 246, 234, 0.7);
 }
 
 .students__student-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .students__avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  font-weight: 700;
-  font-size: 14px;
-  display: flex;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(46, 138, 103, 0.12);
+  color: var(--color-primary-dark);
+  font-weight: 800;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.students__name {
-  font-weight: 600;
-  color: var(--color-text);
+.students__name,
+.students__drilldown-sub {
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-heading);
 }
 
 .students__email {
-  font-size: 12px;
+  margin: 4px 0 0;
+  font-size: 13px;
   color: var(--color-subtext);
 }
 
 .students__accuracy-cell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-width: 180px;
 }
 
-.students__accuracy-bar-wrap {
-  width: 80px;
-  height: 6px;
-  background: var(--color-border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.students__accuracy-bar {
+.students__accuracy-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.4s ease;
+  border-radius: inherit;
 }
 
-.students__accuracy-bar--excellent,
-.students__accuracy-bar--good { background: var(--color-primary); }
-.students__accuracy-bar--fair { background: #F59E0B; }
-.students__accuracy-bar--poor { background: #EF4444; }
+.students__accuracy-fill--excellent,
+.students__accuracy-fill--good {
+  background: linear-gradient(90deg, var(--color-primary), #4ca07e);
+}
+
+.students__accuracy-fill--fair {
+  background: linear-gradient(90deg, #d4a257, #b87b26);
+}
+
+.students__accuracy-fill--poor {
+  background: linear-gradient(90deg, #d86a5d, #b9473a);
+}
 
 .students__accuracy-value {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-text);
-  min-width: 36px;
-}
-
-.students__td-center {
-  text-align: center;
-}
-
-.students__td-muted {
-  color: var(--color-subtext);
-  text-transform: capitalize;
-}
-
-.students__status {
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.students__status--ok {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.students__status--flagged {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-/* Drilldown panel */
-.students__drilldown {
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 24px;
+  font-weight: 800;
+  color: var(--color-heading);
 }
 
 .students__drilldown-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20px;
+  gap: 16px;
 }
 
-.students__drilldown-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.students__drilldown-close {
-  background: none;
-  border: none;
-  font-size: 18px;
+.students__close {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  background: rgba(46, 138, 103, 0.1);
+  color: var(--color-primary-dark);
   cursor: pointer;
-  color: var(--color-subtext);
 }
 
-.students__drilldown-stats {
+.students__drilldown-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.students__subpanel {
+  padding: 18px;
+}
+
+.students__phoneme-list,
+.students__attempts {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.students__phoneme-row,
+.students__attempt {
   display: flex;
-  gap: 24px;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.students__drilldown-stat-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--color-text);
-}
-
-.students__drilldown-stat-label {
-  font-size: 12px;
-  color: var(--color-subtext);
-  margin-top: 2px;
-}
-
-.students__drilldown-section {
-  margin-bottom: 20px;
-}
-
-.students__drilldown-section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-subtext);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 12px;
-}
-
-.students__drilldown-phonemes {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.students__drilldown-phoneme {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  padding: 8px 12px;
-  background: var(--color-bg);
-  border-radius: 8px;
-  color: var(--color-text);
-}
-
-.students__drilldown-phoneme-score {
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.students__drilldown-attempts {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.students__drilldown-attempt {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: var(--color-bg);
-  border-radius: 8px;
-  font-size: 13px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 253, 249, 0.92);
+  color: var(--color-heading);
 }
 
-.students__drilldown-attempt-phrase {
-  color: var(--color-subtext);
+@media (min-width: 1024px) {
+  .students__drilldown-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.students__drilldown-attempt-score {
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-}
+@media (max-width: 900px) {
+  .students__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-.students__drilldown-attempt-score--good { background: #d1fae5; color: #065f46; }
-.students__drilldown-attempt-score--fair { background: #fef3c7; color: #92400e; }
-.students__drilldown-attempt-score--poor { background: #fee2e2; color: #991b1b; }
+  .students__search {
+    min-width: 0;
+  }
+}
 </style>

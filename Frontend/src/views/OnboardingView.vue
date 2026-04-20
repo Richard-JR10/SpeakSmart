@@ -158,7 +158,7 @@
             <Card
               v-for="item in heroCards"
               :key="item.title"
-              class="w-full rounded-[28px] border-border bg-card shadow-[0_14px_34px_rgba(23,35,29,0.06)]"
+              class="w-full rounded-[28px] border-border/80 bg-card/95 shadow-[0_14px_34px_rgba(23,35,29,0.06)]"
             >
               <CardHeader class="gap-4">
                 <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
@@ -169,7 +169,7 @@
                     <CardTitle class="text-xl text-(--color-heading)">
                       {{ item.title }}
                     </CardTitle>
-                    <CardDescription class="text-sm leading-7">
+                    <CardDescription class="text-sm leading-7 text-foreground/80">
                       {{ item.copy }}
                     </CardDescription>
                   </div>
@@ -199,7 +199,7 @@
             <Card
               v-for="(item, index) in steps"
               :key="item.title"
-              class="rounded-[28px] border-border bg-card shadow-[0_14px_34px_rgba(23,35,29,0.06)]"
+              class="rounded-[28px] border-border/80 bg-card/95 shadow-[0_14px_34px_rgba(23,35,29,0.06)]"
             >
               <CardHeader class="gap-6">
                 <div class="flex items-center justify-between gap-4">
@@ -214,7 +214,7 @@
                   <CardTitle class="text-2xl text-(--color-heading)">
                     {{ item.title }}
                   </CardTitle>
-                  <CardDescription class="text-base leading-7">
+                  <CardDescription class="text-base leading-7 text-foreground/80">
                     {{ item.copy }}
                   </CardDescription>
                 </div>
@@ -240,7 +240,7 @@
           </div>
 
           <div class="mt-10 grid gap-5 lg:grid-cols-2">
-            <Card class="rounded-[30px] border-border bg-card shadow-[0_14px_34px_rgba(23,35,29,0.06)]">
+            <Card class="rounded-[30px] border-border/80 bg-card/95 shadow-[0_14px_34px_rgba(23,35,29,0.06)]">
               <CardHeader class="gap-4">
                 <div class="flex items-center gap-3">
                   <span class="flex size-11 items-center justify-center rounded-2xl bg-secondary text-primary">
@@ -261,23 +261,23 @@
                 <Alert
                   v-for="item in studentPoints"
                   :key="item"
-                  class="border-border bg-muted"
+                  class="border-border/80 bg-secondary/60"
                 >
-                  <AlertDescription class="text-sm leading-7 text-(--color-heading)">
+                  <AlertDescription class="text-sm leading-7 text-foreground/85">
                     {{ item }}
                   </AlertDescription>
                 </Alert>
               </CardContent>
             </Card>
 
-            <Card class="rounded-[30px] border-border bg-card shadow-[0_14px_34px_rgba(23,35,29,0.06)]">
+            <Card class="rounded-[30px] border-border/80 bg-card/95 shadow-[0_14px_34px_rgba(23,35,29,0.06)]">
               <CardHeader class="gap-4">
                 <div class="flex items-center gap-3">
-                  <span class="flex size-11 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                  <span class="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
                     <AppIcon name="chart" :size="18" />
                   </span>
                   <div class="flex flex-col gap-2">
-                    <Badge variant="outline" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                    <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                       For instructors
                     </Badge>
                     <CardTitle class="text-2xl text-(--color-heading)">
@@ -291,9 +291,9 @@
                 <Alert
                   v-for="item in instructorPoints"
                   :key="item"
-                  class="border-border bg-accent"
+                  class="border-border/80 bg-secondary/60"
                 >
-                  <AlertDescription class="text-sm leading-7 text-(--color-heading)">
+                  <AlertDescription class="text-sm leading-7 text-foreground/85">
                     {{ item }}
                   </AlertDescription>
                 </Alert>
@@ -319,12 +319,12 @@
           </div>
 
           <div class="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <Card class="rounded-[30px] border-border bg-card shadow-[0_14px_34px_rgba(23,35,29,0.06)]">
+            <Card class="rounded-[30px] border-border/80 bg-card/95 shadow-[0_14px_34px_rgba(23,35,29,0.06)]">
               <CardHeader class="gap-3">
                 <CardTitle class="text-2xl text-(--color-heading)">
                   Simple class overview
                 </CardTitle>
-                <CardDescription class="text-base leading-7">
+                <CardDescription class="text-base leading-7 text-foreground/80">
                   Instructors can check overall performance, active students, and
                   learners who may need follow-up support.
                 </CardDescription>
@@ -334,10 +334,10 @@
                 <Card
                   v-for="item in dashboardStats"
                   :key="item.label"
-                  class="gap-0 rounded-2xl border-border bg-muted shadow-none"
+                  class="gap-0 rounded-2xl border-border/80 bg-secondary shadow-none"
                 >
                   <CardHeader class="gap-2 p-4">
-                    <Badge variant="secondary" class="rounded-full px-3 py-1">
+                    <Badge variant="outline" class="rounded-full bg-card px-3 py-1 text-(--color-heading)">
                       {{ item.label }}
                     </Badge>
                     <CardTitle class="tabular-nums font-(--font-display) text-4xl leading-none text-(--color-heading)">
@@ -352,7 +352,7 @@
               <Card
                 v-for="item in credibilityCards"
                 :key="item.title"
-                class="rounded-[28px] border-border bg-card shadow-[0_14px_34px_rgba(23,35,29,0.06)]"
+                class="rounded-[28px] border-border/80 bg-card/95 shadow-[0_14px_34px_rgba(23,35,29,0.06)]"
               >
                 <CardHeader class="gap-4">
                   <div class="flex items-start gap-4">
@@ -363,7 +363,7 @@
                       <CardTitle class="text-xl text-(--color-heading)">
                         {{ item.title }}
                       </CardTitle>
-                      <CardDescription class="text-sm leading-7">
+                      <CardDescription class="text-sm leading-7 text-foreground/80">
                         {{ item.copy }}
                       </CardDescription>
                     </div>
@@ -377,15 +377,15 @@
 
       <section id="get-started" class="scroll-mt-28">
         <div class="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-          <Card class="rounded-4xl border-border bg-card shadow-[0_18px_44px_rgba(23,35,29,0.08)]">
+          <Card class="rounded-4xl border-primary/20 bg-primary text-primary-foreground shadow-[0_18px_44px_rgba(23,35,29,0.08)]">
             <CardHeader class="gap-4">
-              <Badge variant="secondary" class="rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]">
+              <Badge class="rounded-full border border-primary-foreground/15 bg-primary-foreground/12 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-foreground">
                 Get started
               </Badge>
-              <CardTitle class="text-balance font-(--font-display) text-4xl leading-none text-(--color-heading) sm:text-5xl">
+              <CardTitle class="text-balance font-(--font-display) text-4xl leading-none text-primary-foreground sm:text-5xl">
                 Start using <span translate="no">SpeakSmart</span> today.
               </CardTitle>
-              <CardDescription class="max-w-2xl text-lg leading-8">
+              <CardDescription class="max-w-2xl text-lg leading-8 text-primary-foreground/80">
                 Create an account to begin practicing, or log in to continue
                 reviewing lessons and progress.
               </CardDescription>
@@ -394,7 +394,7 @@
             <CardFooter class="flex-col gap-3 sm:flex-row sm:items-center">
               <RouterLink
                 to="/signup"
-                :class="buttonVariants({ variant: 'default', size: 'lg' })"
+                :class="buttonVariants({ variant: 'secondary', size: 'lg' })"
                 class="w-full sm:w-auto"
               >
                 Create account
@@ -402,7 +402,7 @@
               <RouterLink
                 to="/login"
                 :class="buttonVariants({ variant: 'outline', size: 'lg' })"
-                class="w-full sm:w-auto"
+                class="w-full sm:w-auto border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
               >
                 Login
               </RouterLink>

@@ -1,115 +1,313 @@
-<!-- src/views/student/SettingsView.vue -->
 <template>
   <StudentLayout title="Settings">
+    <div class="mx-auto flex w-full max-w-4xl flex-col gap-4">
+      <Card class="overflow-hidden border-border/80 bg-card/95">
+        <CardContent class="flex flex-col gap-4 py-6 sm:flex-row sm:items-center">
+          <div class="flex size-22 shrink-0 items-center justify-center rounded-3xl bg-primary text-xl font-bold text-primary-foreground shadow-sm">
+            {{ initials }}
+          </div>
 
-    <div class="settings">
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              {{ displayNameValue }}
+            </p>
+            <p class="mt-2 truncate text-sm text-muted-foreground">
+              {{ emailValue }}
+            </p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <Badge variant="secondary" class="rounded-full px-3 py-1">
+                {{ roleLabel }}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <!-- Profile card -->
-      <div class="settings__profile">
-        <div class="settings__avatar">
-          {{ initials }}
-        </div>
-        <div class="settings__profile-info">
-          <p class="settings__profile-name">{{ authStore.profile?.display_name }}</p>
-          <p class="settings__profile-email">{{ authStore.profile?.email }}</p>
-          <span class="settings__profile-role">{{ authStore.profile?.role }}</span>
-        </div>
-      </div>
+      <Card class="border-border/80 bg-card/95">
+        <CardHeader class="gap-3">
+          <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+            Profile
+          </Badge>
+          <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+            Update Display Name
+          </CardTitle>
+          <CardDescription>
+            Change the name shown across your student pages.
+          </CardDescription>
+        </CardHeader>
 
-      <!-- Edit display name -->
-      <div class="settings__section">
-        <h3 class="settings__section-title">Profile</h3>
-        <div class="settings__field">
-          <label class="settings__label">Display Name</label>
-          <div class="settings__input-row">
-            <input
+        <CardContent class="flex flex-col gap-4">
+          <Alert v-if="saveError" variant="destructive">
+            <TriangleAlert />
+            <AlertTitle>Could not save your profile</AlertTitle>
+            <AlertDescription>{{ saveError }}</AlertDescription>
+          </Alert>
+
+          <Alert v-else-if="saveSuccess">
+            <CheckCircle2 />
+            <AlertTitle>Display name updated</AlertTitle>
+            <AlertDescription>
+              Your profile name was saved successfully.
+            </AlertDescription>
+          </Alert>
+
+          <div class="flex flex-col gap-2">
+            <Label for="settings-display-name">Display Name</Label>
+            <Input
+              id="settings-display-name"
               v-model="displayName"
               type="text"
-              class="settings__input"
-              placeholder="Your full name"
+              placeholder="Enter your display name"
+              autocomplete="name"
+              :aria-invalid="Boolean(nameError)"
+              :aria-describedby="nameError ? 'settings-display-name-error' : 'settings-display-name-hint'"
             />
-            <button
-              class="settings__save-btn"
-              :disabled="saving || displayName === authStore.profile?.display_name"
-              @click="saveDisplayName"
+            <p
+              v-if="nameError"
+              id="settings-display-name-error"
+              class="text-sm font-medium text-destructive"
             >
-              {{ saving ? '...' : 'Save' }}
-            </button>
+              {{ nameError }}
+            </p>
+            <p
+              v-else
+              id="settings-display-name-hint"
+              class="text-sm text-muted-foreground"
+            >
+              Use the name you want to appear throughout your student account.
+            </p>
           </div>
-          <p v-if="saveSuccess" class="settings__save-success">✓ Saved</p>
-        </div>
-      </div>
+        </CardContent>
 
-      <!-- Preferences -->
-      <div class="settings__section">
-        <h3 class="settings__section-title">Preferences</h3>
+        <CardFooter class="flex-col items-start gap-3 border-t sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-muted-foreground" aria-live="polite">
+            {{ saveStatusCopy }}
+          </p>
 
-        <div class="settings__toggle-row">
-          <div class="settings__toggle-info">
-            <p class="settings__toggle-label">Auto-play Reference Audio</p>
-            <p class="settings__toggle-desc">Play reference before each practice</p>
-          </div>
-          <button
-            class="settings__toggle"
-            :class="{ 'settings__toggle--on': autoPlay }"
-            @click="autoPlay = !autoPlay"
+          <Button
+            size="lg"
+            class="w-full sm:w-auto"
+            :disabled="saveDisabled"
+            @click="saveDisplayName"
           >
-            <div class="settings__toggle-thumb" />
-          </button>
-        </div>
+            <LoaderCircle v-if="saving" class="animate-spin" data-icon="inline-start" />
+            <Save v-else data-icon="inline-start" />
+            <span>{{ saving ? 'Saving...' : 'Save Changes' }}</span>
+          </Button>
+        </CardFooter>
+      </Card>
 
-        <div class="settings__toggle-row">
-          <div class="settings__toggle-info">
-            <p class="settings__toggle-label">Daily Reminder</p>
-            <p class="settings__toggle-desc">Remind me to practice every day</p>
+      <Card class="border-border/80 bg-card/95">
+        <CardHeader class="gap-3">
+          <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+            Preferences
+          </Badge>
+          <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+            Practice Preferences
+          </CardTitle>
+          <CardDescription>
+            Saved on this device.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent class="grid gap-4">
+          <div class="flex flex-col gap-4 rounded-2xl border border-border/70 bg-muted/25 p-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="font-semibold text-(--color-heading)">Auto-Play Reference Audio</p>
+                <Badge :variant="autoPlay ? 'secondary' : 'outline'" class="rounded-full px-2.5 py-1">
+                  {{ autoPlay ? 'On' : 'Off' }}
+                </Badge>
+              </div>
+              <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                Play the model audio before practice starts.
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              class="w-full sm:w-auto sm:shrink-0"
+              @click="togglePreference('autoPlay')"
+            >
+              <Volume2 data-icon="inline-start" />
+              <span>{{ autoPlay ? 'Turn Off' : 'Turn On' }}</span>
+            </Button>
           </div>
-          <button
-            class="settings__toggle"
-            :class="{ 'settings__toggle--on': dailyReminder }"
-            @click="dailyReminder = !dailyReminder"
+
+          <div class="flex flex-col gap-4 rounded-2xl border border-border/70 bg-muted/25 p-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="font-semibold text-(--color-heading)">Daily Reminder</p>
+                <Badge :variant="dailyReminder ? 'secondary' : 'outline'" class="rounded-full px-2.5 py-1">
+                  {{ dailyReminder ? 'On' : 'Off' }}
+                </Badge>
+              </div>
+              <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                Keep a reminder preference for this browser.
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              class="w-full sm:w-auto sm:shrink-0"
+              @click="togglePreference('dailyReminder')"
+            >
+              <Bell data-icon="inline-start" />
+              <span>{{ dailyReminder ? 'Turn Off' : 'Turn On' }}</span>
+            </Button>
+          </div>
+        </CardContent>
+
+        <CardFooter class="justify-end border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            class="w-full sm:w-auto"
+            :disabled="!autoPlay && !dailyReminder"
+            @click="resetPreferences"
           >
-            <div class="settings__toggle-thumb" />
-          </button>
-        </div>
+            <RotateCcw data-icon="inline-start" />
+            <span>Reset</span>
+          </Button>
+        </CardFooter>
+      </Card>
 
-      </div>
+      <Card class="border-border/80 bg-card/95">
+        <CardHeader class="gap-3">
+          <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+            Session
+          </Badge>
+          <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+            Sign Out
+          </CardTitle>
+          <CardDescription>
+            End the current session on this device.
+          </CardDescription>
+        </CardHeader>
 
-      <!-- App info -->
-      <div class="settings__section">
-        <h3 class="settings__section-title">About</h3>
-        <div class="settings__info-row">
-          <span class="settings__info-label">App</span>
-          <span class="settings__info-value">SpeakSmart v1.0</span>
-        </div>
-        <div class="settings__info-row">
-          <span class="settings__info-label">Institution</span>
-          <span class="settings__info-value">Gordon College</span>
-        </div>
-        <div class="settings__info-row">
-          <span class="settings__info-label">Department</span>
-          <span class="settings__info-value">Tourism</span>
-        </div>
-        <div class="settings__info-row">
-          <span class="settings__info-label">Target Language</span>
-          <span class="settings__info-value">Japanese 🇯🇵</span>
-        </div>
-      </div>
+        <CardContent class="flex flex-col gap-4">
+          <Alert v-if="signOutError" variant="destructive">
+            <TriangleAlert />
+            <AlertTitle>Sign out failed</AlertTitle>
+            <AlertDescription>{{ signOutError }}</AlertDescription>
+          </Alert>
 
-      <!-- Sign out -->
-      <button class="settings__signout" @click="handleSignOut">
-        Sign Out
-      </button>
+          <Button
+            variant="outline"
+            size="lg"
+            class="w-full sm:w-auto"
+            :disabled="signingOut"
+            @click="signOutConfirm = true"
+          >
+            <LogOut data-icon="inline-start" />
+            <span>Sign Out</span>
+          </Button>
+        </CardContent>
+      </Card>
 
+      <DialogRoot v-model:open="signOutConfirm">
+        <DialogPortal>
+          <DialogOverlay class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
+          <DialogContent
+            class="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-border/80 bg-card shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
+          >
+            <div class="flex flex-col gap-5 p-6">
+              <div class="flex items-start gap-3">
+                <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+                  <TriangleAlert />
+                </div>
+
+                <div class="min-w-0">
+                  <DialogTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                    Confirm Sign Out
+                  </DialogTitle>
+                  <DialogDescription class="mt-2 text-sm leading-6 text-muted-foreground">
+                    You will need to sign in again to continue.
+                  </DialogDescription>
+                </div>
+              </div>
+
+              <Alert variant="destructive">
+                <TriangleAlert />
+                <AlertTitle>Leaving this session</AlertTitle>
+                <AlertDescription>
+                  Use sign out when you are done practicing, especially on a shared computer.
+                </AlertDescription>
+              </Alert>
+
+              <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="w-full sm:w-auto"
+                  :disabled="signingOut"
+                  @click="signOutConfirm = false"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  class="w-full sm:w-auto"
+                  :disabled="signingOut"
+                  @click="confirmSignOut"
+                >
+                  <LoaderCircle v-if="signingOut" class="animate-spin" data-icon="inline-start" />
+                  <LogOut v-else data-icon="inline-start" />
+                  <span>{{ signingOut ? 'Signing Out...' : 'Confirm Sign Out' }}</span>
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </DialogPortal>
+      </DialogRoot>
     </div>
   </StudentLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import StudentLayout from '@/layouts/StudentLayout.vue'
-import { useAuthStore } from '@/stores/auth'
+import {
+  Bell,
+  CheckCircle2,
+  LoaderCircle,
+  LogOut,
+  RotateCcw,
+  Save,
+  TriangleAlert,
+  Volume2,
+} from 'lucide-vue-next'
+import {
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
+} from 'reka-ui'
+
 import { updateProfile } from '@/api/auth'
+import StudentLayout from '@/layouts/StudentLayout.vue'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAuthStore } from '@/stores/auth'
+
+const AUTO_PLAY_STORAGE_KEY = 'student-settings:auto-play-reference'
+const DAILY_REMINDER_STORAGE_KEY = 'student-settings:daily-reminder'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -119,246 +317,173 @@ const autoPlay = ref(false)
 const dailyReminder = ref(false)
 const saving = ref(false)
 const saveSuccess = ref(false)
+const saveError = ref<string | null>(null)
+const nameError = ref<string | null>(null)
+const signOutConfirm = ref(false)
+const signingOut = ref(false)
+const signOutError = ref<string | null>(null)
+const preferencesReady = ref(false)
 
+let saveSuccessTimeout: ReturnType<typeof setTimeout> | null = null
+
+const displayNameValue = computed(() =>
+  authStore.profile?.display_name?.trim() || authStore.firebaseUser?.displayName?.trim() || 'Student',
+)
+const emailValue = computed(() =>
+  authStore.profile?.email || authStore.firebaseUser?.email || 'No email available',
+)
+const normalizedCurrentDisplayName = computed(() =>
+  authStore.profile?.display_name?.trim() ?? '',
+)
+const normalizedDisplayName = computed(() => displayName.value.trim())
+const roleLabel = computed(() => {
+  const role = authStore.profile?.role ?? 'student'
+  return `${role.charAt(0).toUpperCase()}${role.slice(1)}`
+})
 const initials = computed(() => {
-  const name = authStore.profile?.display_name ?? ''
+  const name = displayNameValue.value
   return name
     .split(' ')
-    .map((n) => n[0])
+    .filter(Boolean)
+    .map((part) => part[0])
     .join('')
     .toUpperCase()
     .slice(0, 2)
 })
+const saveDisabled = computed(() =>
+  saving.value ||
+  !normalizedDisplayName.value ||
+  normalizedDisplayName.value === normalizedCurrentDisplayName.value,
+)
+const saveStatusCopy = computed(() => {
+  if (saving.value) return 'Saving your updated display name now.'
+  if (saveSuccess.value) return 'Profile changes saved.'
+  if (saveError.value) return 'Review the message above and try again.'
+  return 'Only real profile changes can be saved.'
+})
+
+watch(
+  () => authStore.profile?.display_name,
+  (value) => {
+    displayName.value = value ?? ''
+  },
+)
+
+watch(displayName, () => {
+  if (normalizedDisplayName.value) {
+    nameError.value = null
+  }
+
+  if (saveError.value) {
+    saveError.value = null
+  }
+})
+
+watch(autoPlay, (value) => {
+  if (!preferencesReady.value) return
+  writeStoredPreference(AUTO_PLAY_STORAGE_KEY, value)
+})
+
+watch(dailyReminder, (value) => {
+  if (!preferencesReady.value) return
+  writeStoredPreference(DAILY_REMINDER_STORAGE_KEY, value)
+})
+
+onMounted(() => {
+  autoPlay.value = readStoredPreference(AUTO_PLAY_STORAGE_KEY)
+  dailyReminder.value = readStoredPreference(DAILY_REMINDER_STORAGE_KEY)
+  preferencesReady.value = true
+})
+
+onBeforeUnmount(() => {
+  if (saveSuccessTimeout) {
+    clearTimeout(saveSuccessTimeout)
+  }
+})
+
+function readStoredPreference(key: string) {
+  if (typeof window === 'undefined') return false
+  return window.localStorage.getItem(key) === 'true'
+}
+
+function writeStoredPreference(key: string, value: boolean) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(key, String(value))
+}
+
+function clearSaveSuccess() {
+  if (saveSuccessTimeout) {
+    clearTimeout(saveSuccessTimeout)
+  }
+
+  saveSuccessTimeout = setTimeout(() => {
+    saveSuccess.value = false
+    saveSuccessTimeout = null
+  }, 2200)
+}
+
+function togglePreference(key: 'autoPlay' | 'dailyReminder') {
+  if (key === 'autoPlay') {
+    autoPlay.value = !autoPlay.value
+    return
+  }
+
+  dailyReminder.value = !dailyReminder.value
+}
+
+function resetPreferences() {
+  autoPlay.value = false
+  dailyReminder.value = false
+}
 
 async function saveDisplayName() {
-  saving.value = true
+  saveError.value = null
   saveSuccess.value = false
+  signOutError.value = null
+
+  if (!normalizedDisplayName.value) {
+    nameError.value = 'Enter a display name before saving.'
+    return
+  }
+
+  if (normalizedDisplayName.value === normalizedCurrentDisplayName.value) {
+    return
+  }
+
+  saving.value = true
   try {
-    const updated = await updateProfile({ display_name: displayName.value })
+    const updatedProfile = await updateProfile({
+      display_name: normalizedDisplayName.value,
+    })
+
     if (authStore.profile) {
-      authStore.profile.display_name = updated.display_name
+      authStore.profile.display_name = updatedProfile.display_name
     }
+
+    displayName.value = updatedProfile.display_name
     saveSuccess.value = true
-    setTimeout(() => { saveSuccess.value = false }, 2000)
-  } catch (e) {
-    console.error('Failed to save display name:', e)
+    clearSaveSuccess()
+  } catch (error) {
+    console.error('Failed to save display name:', error)
+    saveError.value = authStore.error ?? 'Your display name could not be updated. Please try again.'
   } finally {
     saving.value = false
   }
 }
 
-async function handleSignOut() {
-  await authStore.signOut()
-  router.push('/')
+async function confirmSignOut() {
+  signOutError.value = null
+  signingOut.value = true
+
+  try {
+    await authStore.signOut()
+    signOutConfirm.value = false
+    await router.push('/')
+  } catch (error) {
+    console.error('Failed to sign out:', error)
+    signOutError.value = 'We could not sign you out right now. Please try again.'
+  } finally {
+    signingOut.value = false
+  }
 }
 </script>
-
-<style scoped>
-.settings {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.settings__profile {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 20px;
-}
-
-.settings__avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: #ffffff;
-  font-size: 20px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.settings__profile-name {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.settings__profile-email {
-  font-size: 13px;
-  color: var(--color-subtext);
-  margin-top: 2px;
-}
-
-.settings__profile-role {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 2px 10px;
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: capitalize;
-}
-
-.settings__section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-subtext);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 12px;
-}
-
-.settings__field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.settings__label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.settings__input-row {
-  display: flex;
-  gap: 8px;
-}
-
-.settings__input {
-  flex: 1;
-  padding: 12px 14px;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius);
-  font-size: 14px;
-  outline: none;
-}
-
-.settings__input:focus {
-  border-color: var(--color-primary);
-}
-
-.settings__save-btn {
-  padding: 12px 18px;
-  background: var(--color-primary);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.settings__save-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.settings__save-success {
-  font-size: 13px;
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.settings__toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.settings__toggle-row:last-child {
-  border-bottom: none;
-}
-
-.settings__toggle-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.settings__toggle-desc {
-  font-size: 12px;
-  color: var(--color-subtext);
-  margin-top: 2px;
-}
-
-.settings__toggle {
-  width: 48px;
-  height: 28px;
-  border-radius: 14px;
-  background: var(--color-border);
-  border: none;
-  cursor: pointer;
-  padding: 3px;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.settings__toggle--on {
-  background: var(--color-primary);
-  justify-content: flex-end;
-}
-
-.settings__toggle-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-  transition: transform 0.2s;
-}
-
-.settings__info-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
-}
-
-.settings__info-row:last-child {
-  border-bottom: none;
-}
-
-.settings__info-label {
-  color: var(--color-subtext);
-}
-
-.settings__info-value {
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.settings__signout {
-  width: 100%;
-  padding: 16px;
-  background: #fee2e2;
-  color: #991b1b;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-  margin-top: 8px;
-}
-
-.settings__signout:hover {
-  background: #fecaca;
-}
-</style>

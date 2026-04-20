@@ -501,7 +501,13 @@ async function submitAttempt() {
 
   try {
     await attemptsStore.submit(phrase.value.phrase_id, recorder.audioBlob.value)
-    await router.push('/results')
+    await router.push({
+      path: '/results',
+      query: {
+        moduleId: moduleId.value,
+        phraseId: phrase.value.phrase_id,
+      },
+    })
   } catch {
     // Submission errors are shown inline.
   }

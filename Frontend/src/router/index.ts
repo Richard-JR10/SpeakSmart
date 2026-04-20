@@ -12,25 +12,25 @@ const router = createRouter({
     {
       path: '/',
       name: 'onboarding',
-      component: () => import('@/views/student/OnboardingView.vue'),
+      component: () => import('@/views/OnboardingView.vue'),
       meta: { requiresAuth: false },
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/views/student/LoginView.vue'),
+      component: () => import('@/views/LoginView.vue'),
       meta: { requiresAuth: false },
     },
     {
       path: '/signup',
       name: 'signup',
-      component: () => import('@/views/student/SignupView.vue'),
+      component: () => import('@/views/SignupView.vue'),
       meta: { requiresAuth: false },
     },
     {
       path: '/complete-profile',
       name: 'complete-profile',
-      component: () => import('@/views/student/CompleteProfileView.vue'),
+      component: () => import('@/views/CompleteProfileView.vue'),
       meta: { requiresAuth: true, allowPendingProfile: true },
     },
     {

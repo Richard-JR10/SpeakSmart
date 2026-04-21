@@ -23,8 +23,11 @@ export const getAllStudents = async (
 
 export const getStudentDrillDown = async (
   studentUid: string,
+  classId: string,
 ): Promise<StudentDrillDown> => {
-  const res = await api.get(`/api/v1/analytics/student/${studentUid}`)
+  const res = await api.get(`/api/v1/analytics/student/${studentUid}`, {
+    params: { class_id: classId },
+  })
   return res.data
 }
 

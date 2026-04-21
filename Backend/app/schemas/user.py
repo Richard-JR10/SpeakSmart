@@ -8,7 +8,6 @@ class UserResponse(BaseModel):
     email: str
     display_name: str
     role: str
-    class_id: str | None
     created_at: datetime
     last_login: datetime | None
     
@@ -18,7 +17,6 @@ class UserResponse(BaseModel):
 
 class UserUpdateRequest(BaseModel):
     display_name: str | None = None
-    class_id: str | None = None
 
 
 class UserRegisterRequest(BaseModel):

@@ -4,6 +4,7 @@ import type { Exercise, StudentExercise } from '@/types'
 
 export const createExercise = async (data: {
   exercise_id: string
+  class_id: string
   title: string
   phrase_ids: string[]
   student_uids: string[]
@@ -20,8 +21,10 @@ export const assignExercise = async (
   await api.post(`/api/v1/exercises/${exerciseId}/assign`, studentUids)
 }
 
-export const getMyExercises = async (): Promise<Exercise[]> => {
-  const res = await api.get('/api/v1/exercises/instructor/mine')
+export const getMyExercises = async (classId: string): Promise<Exercise[]> => {
+  const res = await api.get('/api/v1/exercises/instructor/mine', {
+    params: { class_id: classId },
+  })
   return res.data
 }
 

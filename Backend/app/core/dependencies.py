@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.session import get_db
+from app.db.models.class_ import Class, ClassMembership
 from app.db.models.user import User
 from app.services.firebase_auth import verify_firebase_token
 from app.core.exceptions import (
@@ -60,3 +61,52 @@ async def require_student(
     if current_user.role != "student":
         raise ForbiddenException("Student access required")
     return current_user
+
+
+async def get_owned_class(
+    db: AsyncSession,
+    class_id: str,
+    instructor_uid: str,
+) -> Class:
+    result = await db.execute(
+        select(Class).where(
+            Class.class_id == class_id,
+            Class.instructor_uid == instructor_uid,
+        )
+    )
+    class_ = result.scalar_one_or_none()
+    if not class_:
+        raise NotFoundException(f"Class '{class_id}' not found")
+    return class_
+
+
+async def get_class_membership(
+    db: AsyncSession,
+    class_id: str,
+    user_uid: str,
+) -> ClassMembership:
+    result = await db.execute(
+        select(ClassMembership).where(
+            ClassMembership.class_id == class_id,
+            ClassMembership.user_uid == user_uid,
+        )
+    )
+    membership = result.scalar_one_or_none()
+    if not membership:
+        raise NotFoundException("Class membership not found")
+    return membership
+
+
+async def get_class_student_uids(
+    db: AsyncSession,
+    class_id: str,
+) -> list[str]:
+    result = await db.execute(
+        select(ClassMembership.user_uid)
+        .join(User, User.uid == ClassMembership.user_uid)
+        .where(
+            ClassMembership.class_id == class_id,
+            User.role == "student",
+        )
+    )
+    return [row[0] for row in result.all()]

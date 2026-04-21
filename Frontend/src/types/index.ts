@@ -5,7 +5,6 @@ export interface User {
     email: string
     display_name: string
     role: 'student' | 'instructor'
-    class_id: string | null
     created_at: string
     last_login: string | null
 }
@@ -124,8 +123,26 @@ export interface ClassOverview {
   weekly_trend: WeeklyAccuracy[]
 }
 
+export interface ClassSummary {
+  class_id: string
+  name: string
+  instructor_uid: string
+  instructor_name: string | null
+  join_code: string | null
+  created_at: string
+  joined_at: string | null
+  student_count: number
+  is_owner: boolean
+}
+
+export interface JoinCodeResponse {
+  class_id: string
+  join_code: string
+}
+
 export interface Exercise {
   exercise_id: string
+  class_id: string | null
   title: string
   instructor_uid: string
   created_at: string
@@ -142,12 +159,64 @@ export interface Exercise {
 
 export interface StudentExercise {
   exercise_id: string
+  class_id: string | null
   title: string
   due_date: string | null
   assigned_at: string
   completed_at: string | null
   is_overdue: boolean
   phrase_ids: string[]
+}
+
+export interface AssignmentPhraseStatus {
+  phrase_id: string
+  submitted_at: string | null
+  reviewed_at: string | null
+  released_at: string | null
+  teacher_accuracy_score: number | null
+  teacher_feedback_text: string | null
+}
+
+export interface StudentAssignment {
+  exercise_id: string
+  class_id: string | null
+  title: string
+  due_date: string | null
+  assigned_at: string
+  completed_at: string | null
+  is_overdue: boolean
+  phrase_ids: string[]
+  phrases: AssignmentPhraseStatus[]
+}
+
+export interface AssignmentSubmission {
+  submission_id: string
+  exercise_id: string
+  student_uid: string
+  phrase_id: string
+  audio_file_url: string
+  submitted_at: string
+  reviewed_at: string | null
+  released_at: string | null
+}
+
+export interface InstructorAssignmentSubmission {
+  submission_id: string
+  exercise_id: string
+  student_uid: string
+  student_display_name: string
+  phrase_id: string
+  audio_file_url: string
+  submitted_at: string
+  reviewed_at: string | null
+  released_at: string | null
+  suggested_accuracy_score: number
+  suggested_mora_timing_score: number
+  suggested_consonant_score: number
+  suggested_vowel_score: number
+  suggested_feedback_text: string | null
+  teacher_accuracy_score: number | null
+  teacher_feedback_text: string | null
 }
 
 export interface StudentDrillDown {

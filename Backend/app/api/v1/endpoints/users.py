@@ -15,8 +15,6 @@ async def update_profile(
 ):
     if body.display_name is not None:
         current_user.display_name = body.display_name
-    if body.class_id is not None:
-        current_user.class_id = body.class_id
 
     db.add(current_user)
     await db.commit()

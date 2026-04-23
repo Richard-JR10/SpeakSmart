@@ -13,7 +13,6 @@ export const verifyToken = async (): Promise<{ valid: boolean; uid: string; role
 
 export const updateProfile = async (data: {
     display_name?: string;
-    class_id?: string
 }): Promise<User> => {
     const res = await api.patch('/api/v1/users/me', data);
     return res.data;

@@ -230,10 +230,12 @@ import {
   ChartColumn,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   House,
   LoaderCircle,
   LogOut,
   Menu,
+  School,
   Settings,
   TriangleAlert,
 } from 'lucide-vue-next'
@@ -256,7 +258,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 
-type StudentSection = 'home' | 'lessons' | 'progress' | 'settings'
+type StudentSection = 'home' | 'lessons' | 'assignments' | 'progress' | 'classes' | 'settings'
 
 type NavItem = {
   section: StudentSection
@@ -285,21 +287,27 @@ const signOutError = ref<string | null>(null)
 const navItems: NavItem[] = [
   { section: 'home', label: 'Home', icon: House, to: '/home' },
   { section: 'lessons', label: 'Lessons', icon: BookOpen, to: '/lessons' },
+  { section: 'assignments', label: 'Assignments', icon: ClipboardList, to: '/assignments' },
   { section: 'progress', label: 'Progress', icon: ChartColumn, to: '/progress' },
+  { section: 'classes', label: 'Classes', icon: School, to: '/classes' },
   { section: 'settings', label: 'Settings', icon: Settings, to: '/settings' },
 ]
 
 const sectionRouteNames: Record<StudentSection, string[]> = {
   home: ['home'],
   lessons: ['lessons', 'practice', 'results'],
+  assignments: ['assignments', 'assignment-submission'],
   progress: ['progress'],
+  classes: ['classes'],
   settings: ['settings'],
 }
 
 const sectionCopy: Record<StudentSection, string> = {
   home: 'See your current pace, recent attempts, and next speaking checkpoint at a glance.',
   lessons: 'Move through guided practice modules and keep your topic progress easy to scan.',
+  assignments: 'Open assigned work, record submissions, and review teacher-released feedback in one place.',
   progress: 'Review accuracy trends, streaks, and module performance in one student view.',
+  classes: 'Join classes, review where you are enrolled, and keep classroom access easy to manage.',
   settings: 'Manage your profile, preferences, and account access without leaving the app shell.',
 }
 
@@ -312,6 +320,14 @@ const activeSection = computed<StudentSection>(() => {
 
   if (sectionRouteNames.progress.includes(routeName)) {
     return 'progress'
+  }
+
+  if (sectionRouteNames.assignments.includes(routeName)) {
+    return 'assignments'
+  }
+
+  if (sectionRouteNames.classes.includes(routeName)) {
+    return 'classes'
   }
 
   if (sectionRouteNames.settings.includes(routeName)) {

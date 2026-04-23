@@ -208,6 +208,107 @@
           </Card>
         </div>
 
+        <Card>
+          <CardHeader class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-col gap-3">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                  Teacher assignments
+                </Badge>
+                <div class="flex flex-col gap-2">
+                  <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                    Assignment work stays separate from practice
+                  </CardTitle>
+                  <CardDescription>
+                    Record assigned phrases in the dedicated Assignments tab and wait for teacher review there instead of using the normal practice results flow.
+                  </CardDescription>
+                </div>
+              </div>
+
+              <Badge variant="outline" class="rounded-full px-3 py-1">
+                {{ pendingAssignmentsCount }} pending
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+            <div class="flex flex-col gap-3">
+              <LoadingSpinner v-if="assignmentsLoading" size="sm" />
+
+              <Alert v-else-if="assignmentsError" variant="destructive">
+                <AppIcon name="alert" :size="18" />
+                <AlertTitle>Assignments could not load</AlertTitle>
+                <AlertDescription>
+                  {{ assignmentsError }}
+                </AlertDescription>
+              </Alert>
+
+              <template v-else-if="assignmentPreview.length">
+                <template
+                  v-for="(assignment, index) in assignmentPreview"
+                  :key="assignment.exercise_id"
+                >
+                  <div class="flex items-start justify-between gap-4 rounded-xl p-3">
+                    <div class="flex min-w-0 flex-col gap-2">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <p class="font-semibold text-(--color-heading)">
+                          {{ assignment.title }}
+                        </p>
+                        <Badge
+                          :variant="assignment.completed_at ? 'secondary' : assignment.is_overdue ? 'destructive' : 'outline'"
+                          class="rounded-full px-2.5 py-1"
+                        >
+                          {{ assignment.completed_at ? 'Submitted' : assignment.is_overdue ? 'Overdue' : 'Open' }}
+                        </Badge>
+                      </div>
+
+                      <p class="text-sm leading-7 text-muted-foreground">
+                        {{ submittedPhraseCount(assignment) }}/{{ assignment.phrases.length }} phrases submitted
+                        <span v-if="assignment.due_date">
+                          , due {{ formatDueDate(assignment.due_date) }}
+                        </span>
+                      </p>
+                    </div>
+
+                    <Badge variant="outline" class="rounded-full px-2.5 py-1">
+                      {{ releasedPhraseCount(assignment) }} released
+                    </Badge>
+                  </div>
+                  <Separator v-if="index < assignmentPreview.length - 1" />
+                </template>
+              </template>
+
+              <Alert v-else>
+                <AppIcon name="book" :size="18" />
+                <AlertTitle>No teacher assignments yet</AlertTitle>
+                <AlertDescription>
+                  Assigned work from your teachers will appear here once it is sent to your account.
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <Card class="border-dashed shadow-none">
+              <CardHeader class="gap-2">
+                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Released feedback
+                </p>
+                <CardTitle class="font-(--font-display) text-4xl leading-none text-(--color-heading)">
+                  {{ releasedAssignmentPhrases }}
+                </CardTitle>
+                <CardDescription>
+                  Reviewed assignment phrases already released back to your student view.
+                </CardDescription>
+              </CardHeader>
+              <CardFooter class="border-t">
+                <Button class="w-full" @click="router.push('/assignments')">
+                  <AppIcon name="forward" :size="18" data-icon="inline-start" />
+                  <span>Open Assignments</span>
+                </Button>
+              </CardFooter>
+            </Card>
+          </CardContent>
+        </Card>
+
         <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Card>
             <CardHeader class="flex flex-col gap-3">
@@ -323,7 +424,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppIcon from '@/components/shared/AppIcon.vue'
@@ -341,23 +442,42 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { getStudentAssignments } from '@/api/assignments'
 import { moduleIconName } from '@/constants/modules'
 import { useAttemptsStore } from '@/stores/attempts'
 import { useAuthStore } from '@/stores/auth'
+import { useClassesStore } from '@/stores/classes'
 import { useModulesStore } from '@/stores/modules'
 import { useProgressStore } from '@/stores/progress'
-import type { ProgressSummary } from '@/types'
+import type { ProgressSummary, StudentAssignment } from '@/types'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const classesStore = useClassesStore()
 const progressStore = useProgressStore()
 const modulesStore = useModulesStore()
 const attemptsStore = useAttemptsStore()
+const assignmentsLoading = ref(false)
+const assignmentsError = ref<string | null>(null)
+const studentAssignments = ref<StudentAssignment[]>([])
 
 const dashboard = computed(() => progressStore.dashboard)
 const latestAttempt = computed(() => attemptsStore.attemptHistory[0] ?? null)
 const recentAttempts = computed(() => attemptsStore.attemptHistory.slice(0, 4))
 const weeklyAccuracy = computed(() => dashboard.value?.weekly_accuracy.slice(-6) ?? [])
+const pendingAssignmentsCount = computed(() =>
+  studentAssignments.value.filter((assignment) => !assignment.completed_at).length,
+)
+const assignmentPreview = computed(() =>
+  [
+    ...studentAssignments.value.filter((assignment) => !assignment.completed_at),
+    ...studentAssignments.value.filter((assignment) => assignment.completed_at),
+  ].slice(0, 3),
+)
+const releasedAssignmentPhrases = computed(() =>
+  studentAssignments.value.flatMap((assignment) => assignment.phrases)
+    .filter((phrase) => phrase.released_at).length,
+)
 
 const timeOfDay = computed(() => {
   const hour = new Date().getHours()
@@ -482,6 +602,27 @@ function formatRelativeDate(dateStr: string) {
   })
 }
 
+function formatDueDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function submittedPhraseCount(assignment: StudentAssignment) {
+  return assignment.phrases.filter((phrase) => phrase.submitted_at).length
+}
+
+function releasedPhraseCount(assignment: StudentAssignment) {
+  return assignment.phrases.filter((phrase) => phrase.released_at).length
+}
+
+async function loadStudentAssignments(uid: string) {
+  assignmentsError.value = null
+  studentAssignments.value = await getStudentAssignments(uid)
+}
+
 async function openModule(moduleId?: string | null) {
   if (!moduleId) {
     await router.push('/lessons')
@@ -509,10 +650,21 @@ async function practiceWeakest() {
 
 onMounted(async () => {
   const uid = authStore.uid!
-  await Promise.all([
-    modulesStore.fetchModules(),
-    progressStore.fetchDashboard(uid),
-    attemptsStore.fetchHistory(uid),
-  ])
+  assignmentsLoading.value = true
+
+  try {
+    await Promise.all([
+      modulesStore.fetchModules(),
+      progressStore.fetchDashboard(uid),
+      attemptsStore.fetchHistory(uid),
+      classesStore.ensureLoaded(),
+    ])
+    await loadStudentAssignments(uid)
+  } catch (error) {
+    console.error('Failed to load student dashboard assignments:', error)
+    assignmentsError.value = 'We could not load your teacher assignments right now.'
+  } finally {
+    assignmentsLoading.value = false
+  }
 })
 </script>

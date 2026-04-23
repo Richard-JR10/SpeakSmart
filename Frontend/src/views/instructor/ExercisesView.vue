@@ -1,182 +1,503 @@
 <template>
   <InstructorLayout>
-    <div class="exercises page-shell">
-      <section class="exercises__header">
-        <div>
-          <p class="eyebrow">Practice assignments</p>
-          <h1 class="display-title">Create and track exercises</h1>
-          <p class="exercises__subtitle">
-            Build curated phrase sets, assign them to students, and review
-            completion at a glance.
-          </p>
-        </div>
-        <button type="button" class="button-primary" @click="showForm = true">
-          <AppIcon name="plus" :size="16" />
-          <span>New exercise</span>
-        </button>
-      </section>
+    <div class="flex flex-col gap-5">
+      <Card class="border-border/80 bg-card/95">
+        <CardHeader class="gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                Practice assignments
+              </Badge>
+              <Badge variant="outline" class="rounded-full px-3 py-1">
+                {{ exercises.length }} total
+              </Badge>
+            </div>
 
-      <LoadingSpinner v-if="loading" full-screen message="Loading exercises..." />
-      <ErrorMessage v-else-if="error" :message="error" />
+            <Button size="lg" @click="showForm = true">
+              <Plus data-icon="inline-start" />
+              <span>New exercise</span>
+            </Button>
+          </div>
 
-      <template v-else>
-        <section v-if="exercises.length" class="exercises__list">
-          <article
-            v-for="exercise in exercises"
-            :key="exercise.exercise_id"
-            class="surface-card exercises__card"
-          >
-            <div class="exercises__card-header">
-              <div>
-                <p class="exercises__card-title">{{ exercise.title }}</p>
-                <p class="exercises__card-meta">
-                  {{ exercise.phrases.length }} phrases -
-                  {{ exercise.assignments.length }} students assigned
-                  <span v-if="exercise.due_date">
-                    - Due {{ formatDate(exercise.due_date) }}
-                  </span>
-                </p>
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card
+              v-for="item in summaryCards"
+              :key="item.label"
+              class="gap-0 shadow-none"
+            >
+              <CardHeader class="gap-2">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {{ item.label }}
+                  </p>
+                  <component :is="item.icon" class="text-muted-foreground" />
+                </div>
+                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  {{ item.value }}
+                </CardTitle>
+                <CardDescription>
+                  {{ item.copy }}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </CardHeader>
+      </Card>
+
+      <LoadingSpinner
+        v-if="loading && !exercises.length"
+        full-screen
+        message="Loading exercises..."
+      />
+
+      <Alert v-else-if="error" variant="destructive">
+        <TriangleAlert />
+        <AlertTitle>Exercises unavailable</AlertTitle>
+        <AlertDescription>{{ error }}</AlertDescription>
+      </Alert>
+
+      <Alert v-else-if="!exercises.length">
+        <ClipboardList />
+        <AlertTitle>No exercises yet</AlertTitle>
+        <AlertDescription>
+          Create your first assignment to send phrase work to the active class and review submissions here.
+        </AlertDescription>
+      </Alert>
+
+      <div v-else class="grid gap-4">
+        <Card
+          v-for="exercise in exercises"
+          :key="exercise.exercise_id"
+          class="border-border/80 bg-card/95"
+        >
+          <CardHeader class="gap-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0 flex flex-col gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <CardTitle class="text-2xl text-(--color-heading)">
+                    {{ exercise.title }}
+                  </CardTitle>
+                  <Badge variant="secondary" class="rounded-full px-2.5 py-1">
+                    {{ exercise.phrases.length }} phrases
+                  </Badge>
+                  <Badge variant="outline" class="rounded-full px-2.5 py-1">
+                    {{ exercise.assignments.length }} students
+                  </Badge>
+                  <Badge
+                    v-if="exercise.due_date"
+                    :variant="isOverdue(exercise.due_date) ? 'destructive' : 'outline'"
+                    class="rounded-full px-2.5 py-1"
+                  >
+                    Due {{ formatDate(exercise.due_date) }}
+                  </Badge>
+                </div>
+
+                <CardDescription class="max-w-3xl">
+                  {{ completedCount(exercise) }}/{{ exercise.assignments.length }} assigned students have submitted all phrases in this exercise.
+                </CardDescription>
               </div>
-              <button
-                type="button"
-                class="exercises__delete-btn"
+
+              <Button
+                variant="outline"
+                size="icon"
+                class="rounded-xl"
                 @click="handleDelete(exercise.exercise_id)"
               >
-                <AppIcon name="trash" :size="16" />
-              </button>
+                <Trash2 />
+                <span class="sr-only">Delete exercise</span>
+              </Button>
             </div>
 
-            <div class="exercises__completion">
-              <div class="progress-track">
+            <div class="flex flex-col gap-2">
+              <div class="h-2 overflow-hidden rounded-full bg-border/70">
                 <div
-                  class="progress-fill"
-                  :style="{ width: completionPercent(exercise) + '%' }"
+                  class="h-full rounded-full bg-primary transition-[width] duration-300"
+                  :style="{ width: `${completionPercent(exercise)}%` }"
                 />
               </div>
-              <span class="exercises__completion-label">
-                {{ completedCount(exercise) }}/{{ exercise.assignments.length }} completed
-              </span>
+              <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span>{{ completionPercent(exercise).toFixed(0) }}% completion</span>
+                <span>•</span>
+                <span>{{ submissionsForExercise(exercise.exercise_id).length }} submitted phrases</span>
+                <span>•</span>
+                <span>{{ pendingReviewCount(exercise.exercise_id) }} pending review</span>
+                <span>•</span>
+                <span>{{ releasedCount(exercise.exercise_id) }} released</span>
+              </div>
             </div>
-          </article>
-        </section>
+          </CardHeader>
 
-        <section v-else class="surface-card empty-block">
-          <p>No exercises yet. Create one to assign a guided practice set to students.</p>
-        </section>
-      </template>
-
-      <div v-if="showForm" class="exercises__modal-overlay" @click.self="showForm = false">
-        <div class="exercises__modal surface-card">
-          <div class="exercises__modal-header">
-            <div>
-              <p class="eyebrow">New exercise</p>
-              <h2 class="section-title">Build an assignment</h2>
-            </div>
-            <button type="button" class="exercises__modal-close" @click="showForm = false">
-              <AppIcon name="close" :size="18" />
-            </button>
-          </div>
-
-          <div class="exercises__form">
-            <div class="exercises__form-field">
-              <label class="exercises__form-label" for="exercise-title">Title</label>
-              <input
-                id="exercise-title"
-                v-model="form.title"
-                type="text"
-                class="exercises__form-input"
-                placeholder="Greetings drill set"
-              />
+          <CardContent class="flex flex-col gap-5">
+            <div class="flex flex-wrap gap-2">
+              <Badge
+                v-for="phrase in exercise.phrases"
+                :key="phrase.id"
+                variant="outline"
+                class="rounded-full px-3 py-1"
+              >
+                {{ phraseLabel(phrase.phrase_id) }}
+              </Badge>
             </div>
 
-            <div class="exercises__form-field">
-              <label class="exercises__form-label">Select phrases</label>
-              <div class="exercises__picker">
-                <label
-                  v-for="module in modulesStore.modules"
-                  :key="module.module_id"
-                  class="exercises__picker-group"
-                >
-                  <p class="exercises__picker-title">
-                    <AppIcon :name="moduleIconName(module.module_id)" :size="16" />
-                    <span>{{ module.title }}</span>
+            <Separator />
+
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Submission review
                   </p>
-                  <div
-                    v-for="phrase in modulesStore.getPhrasesForModule(module.module_id)"
-                    :key="phrase.phrase_id"
-                    class="exercises__picker-item"
-                  >
-                    <input
-                      type="checkbox"
-                      :value="phrase.phrase_id"
-                      v-model="form.phrase_ids"
-                    />
-                    <span>{{ phrase.romaji }} - {{ phrase.english_translation }}</span>
-                  </div>
-                </label>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Suggested backend scores stay hidden from the student until you release your review.
+                  </p>
+                </div>
+                <Badge variant="outline" class="rounded-full px-3 py-1">
+                  {{ submissionsForExercise(exercise.exercise_id).length }} submissions
+                </Badge>
               </div>
-            </div>
 
-            <div class="exercises__form-field">
-              <label class="exercises__form-label" for="exercise-due-date">Due date</label>
-              <input
-                id="exercise-due-date"
-                v-model="form.due_date"
-                type="datetime-local"
-                class="exercises__form-input"
-              />
-            </div>
+              <LoadingSpinner v-if="submissionsLoading[exercise.exercise_id]" size="sm" />
 
-            <div class="exercises__form-field">
-              <label class="exercises__form-label">Assign to students</label>
-              <div class="exercises__picker">
-                <label
-                  v-for="student in students"
-                  :key="student.uid"
-                  class="exercises__picker-item"
+              <Alert
+                v-else-if="submissionErrors[exercise.exercise_id]"
+                variant="destructive"
+              >
+                <TriangleAlert />
+                <AlertTitle>Submission review unavailable</AlertTitle>
+                <AlertDescription>{{ submissionErrors[exercise.exercise_id] }}</AlertDescription>
+              </Alert>
+
+              <template v-else-if="submissionsForExercise(exercise.exercise_id).length">
+                <Card
+                  v-for="submission in submissionsForExercise(exercise.exercise_id)"
+                  :key="submission.submission_id"
+                  class="border-border/70 bg-muted/25 shadow-none"
                 >
-                  <input
-                    type="checkbox"
-                    :value="student.uid"
-                    v-model="form.student_uids"
-                  />
-                  <span>{{ student.display_name }}</span>
-                </label>
+                  <CardContent class="flex flex-col gap-4 px-4 py-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="font-semibold text-(--color-heading)">
+                          {{ submission.student_display_name }}
+                        </p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                          {{ phraseLabel(submission.phrase_id) }} • Submitted {{ formatDate(submission.submitted_at) }}
+                        </p>
+                      </div>
+
+                      <div class="flex flex-wrap gap-2">
+                        <Badge variant="outline" class="rounded-full px-2.5 py-1">
+                          Suggested {{ submission.suggested_accuracy_score.toFixed(0) }}%
+                        </Badge>
+                        <Badge
+                          :variant="submission.released_at ? 'default' : submission.reviewed_at ? 'secondary' : 'destructive'"
+                          class="rounded-full px-2.5 py-1"
+                        >
+                          {{ submission.released_at ? 'Released' : submission.reviewed_at ? 'Reviewed' : 'Pending review' }}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <audio
+                      class="w-full"
+                      :src="submission.audio_file_url"
+                      controls
+                      preload="metadata"
+                    />
+
+                    <div class="rounded-2xl border border-border/70 bg-background/80 p-4">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Suggested feedback
+                      </p>
+                      <p class="mt-2 text-sm leading-7 text-foreground/85">
+                        {{ submission.suggested_feedback_text || 'No suggested feedback was generated for this submission.' }}
+                      </p>
+                    </div>
+
+                    <div class="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)]">
+                      <div class="flex flex-col gap-2">
+                        <Label :for="`score-${submission.submission_id}`">Teacher score</Label>
+                        <Input
+                          :id="`score-${submission.submission_id}`"
+                          v-model="reviewForms[submission.submission_id].teacher_accuracy_score"
+                          type="number"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+
+                      <div class="flex flex-col gap-2">
+                        <Label :for="`feedback-${submission.submission_id}`">Teacher feedback</Label>
+                        <textarea
+                          :id="`feedback-${submission.submission_id}`"
+                          v-model="reviewForms[submission.submission_id].teacher_feedback_text"
+                          rows="4"
+                          class="min-h-28 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      <Button
+                        variant="outline"
+                        :disabled="reviewSaving[submission.submission_id]"
+                        @click="saveReview(submission, false)"
+                      >
+                        <LoaderCircle
+                          v-if="reviewSaving[submission.submission_id]"
+                          class="animate-spin"
+                          data-icon="inline-start"
+                        />
+                        <SquarePen v-else data-icon="inline-start" />
+                        <span>Save review</span>
+                      </Button>
+
+                      <Button
+                        :disabled="reviewSaving[submission.submission_id]"
+                        @click="saveReview(submission, true)"
+                      >
+                        <Send data-icon="inline-start" />
+                        <span>Save & Release</span>
+                      </Button>
+
+                      <Button
+                        v-if="submission.reviewed_at && !submission.released_at"
+                        variant="secondary"
+                        :disabled="reviewSaving[submission.submission_id]"
+                        @click="releaseReview(submission)"
+                      >
+                        <CheckCheck data-icon="inline-start" />
+                        <span>Release existing review</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </template>
+
+              <Alert v-else>
+                <AudioLines />
+                <AlertTitle>No student submissions yet</AlertTitle>
+                <AlertDescription>
+                  Assigned phrases will appear here after students record their work.
+                </AlertDescription>
+              </Alert>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <DialogRoot v-model:open="showForm">
+        <DialogPortal>
+          <DialogOverlay class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
+          <DialogContent
+            class="fixed top-1/2 left-1/2 z-50 flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-lg"
+          >
+            <div class="flex items-start justify-between gap-3 border-b border-border/70 px-6 py-5">
+              <div class="min-w-0">
+                <DialogTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  Build an assignment
+                </DialogTitle>
+                <DialogDescription class="mt-2 text-sm leading-6 text-muted-foreground">
+                  Choose the phrases, assign the students, and review their submissions back in this page.
+                </DialogDescription>
+              </div>
+
+              <Button variant="outline" size="icon" class="rounded-xl" @click="showForm = false">
+                <X />
+                <span class="sr-only">Close exercise form</span>
+              </Button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-6 py-5">
+              <div class="flex flex-col gap-5">
+                <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+                  <div class="flex flex-col gap-2">
+                    <Label for="exercise-title">Title</Label>
+                    <Input
+                      id="exercise-title"
+                      v-model="form.title"
+                      placeholder="Greetings drill set"
+                    />
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <Label for="exercise-due-date">Due date</Label>
+                    <Input
+                      id="exercise-due-date"
+                      v-model="form.due_date"
+                      type="datetime-local"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid gap-5 lg:grid-cols-2">
+                  <div class="flex flex-col gap-3">
+                    <div class="flex items-center justify-between gap-3">
+                      <div>
+                        <p class="font-semibold text-(--color-heading)">Select phrases</p>
+                        <p class="text-sm text-muted-foreground">
+                          {{ form.phrase_ids.length }} selected
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="max-h-96 overflow-y-auto rounded-3xl border border-border/70 bg-muted/25 p-4">
+                      <div class="flex flex-col gap-4">
+                        <div
+                          v-for="module in modulesStore.modules"
+                          :key="module.module_id"
+                          class="rounded-2xl border border-border/70 bg-background/80 p-4"
+                        >
+                          <div class="flex items-center gap-2">
+                            <BookMarked class="text-muted-foreground" />
+                            <p class="font-semibold text-(--color-heading)">
+                              {{ module.title }}
+                            </p>
+                          </div>
+
+                          <div class="mt-3 flex flex-col gap-2">
+                            <label
+                              v-for="phrase in modulesStore.getPhrasesForModule(module.module_id)"
+                              :key="phrase.phrase_id"
+                              class="flex cursor-pointer items-start gap-3 rounded-2xl border border-border/70 bg-muted/30 p-3"
+                            >
+                              <input
+                                v-model="form.phrase_ids"
+                                type="checkbox"
+                                :value="phrase.phrase_id"
+                                class="mt-1 accent-[var(--color-primary)]"
+                              >
+                              <div class="min-w-0">
+                                <p class="font-semibold text-(--color-heading)">
+                                  {{ phrase.japanese_text }}
+                                </p>
+                                <p class="text-sm text-muted-foreground">
+                                  {{ phrase.romaji }} • {{ phrase.english_translation }}
+                                </p>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-3">
+                    <div>
+                      <p class="font-semibold text-(--color-heading)">Assign to students</p>
+                      <p class="text-sm text-muted-foreground">
+                        {{ form.student_uids.length }} selected
+                      </p>
+                    </div>
+
+                    <div class="max-h-96 overflow-y-auto rounded-3xl border border-border/70 bg-muted/25 p-4">
+                      <div class="flex flex-col gap-2">
+                        <label
+                          v-for="student in students"
+                          :key="student.uid"
+                          class="flex cursor-pointer items-start gap-3 rounded-2xl border border-border/70 bg-background/80 p-3"
+                        >
+                          <input
+                            v-model="form.student_uids"
+                            type="checkbox"
+                            :value="student.uid"
+                            class="mt-1 accent-[var(--color-primary)]"
+                          >
+                          <div class="min-w-0">
+                            <p class="font-semibold text-(--color-heading)">
+                              {{ student.display_name }}
+                            </p>
+                            <p class="truncate text-sm text-muted-foreground">
+                              {{ student.email }}
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Alert v-if="formError" variant="destructive">
+                  <TriangleAlert />
+                  <AlertTitle>Could not create assignment</AlertTitle>
+                  <AlertDescription>{{ formError }}</AlertDescription>
+                </Alert>
               </div>
             </div>
 
-            <ErrorMessage :message="formError" />
-
-            <button
-              type="button"
-              class="button-primary exercises__submit"
-              :disabled="submitting || !form.title || !form.phrase_ids.length || !form.student_uids.length"
-              @click="handleCreate"
-            >
-              <LoadingSpinner v-if="submitting" size="sm" />
-              <span v-else>Create and assign</span>
-            </button>
-          </div>
-        </div>
-      </div>
+            <div class="border-t border-border/70 px-6 py-4">
+              <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button variant="outline" :disabled="submitting" @click="showForm = false">
+                  Cancel
+                </Button>
+                <Button
+                  :disabled="submitting || !form.title || !form.phrase_ids.length || !form.student_uids.length"
+                  @click="handleCreate"
+                >
+                  <LoaderCircle v-if="submitting" class="animate-spin" data-icon="inline-start" />
+                  <Plus v-else data-icon="inline-start" />
+                  <span>{{ submitting ? 'Creating...' : 'Create and assign' }}</span>
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </DialogPortal>
+      </DialogRoot>
     </div>
   </InstructorLayout>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import InstructorLayout from '@/layouts/InstructorLayout.vue'
-import AppIcon from '@/components/shared/AppIcon.vue'
-import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
-import ErrorMessage from '@/components/shared/ErrorMessage.vue'
-import { useAuthStore } from '@/stores/auth'
-import { useModulesStore } from '@/stores/modules'
-import { getMyExercises, createExercise, deleteExercise } from '@/api/exercises'
-import { getAllStudents } from '@/api/analytics'
-import { moduleIconName } from '@/constants/modules'
-import type { Exercise, StudentStat } from '@/types'
+import { computed, onMounted, ref, watch } from 'vue'
+import {
+  AudioLines,
+  BookMarked,
+  CheckCheck,
+  ClipboardList,
+  LoaderCircle,
+  Plus,
+  Send,
+  SquarePen,
+  TriangleAlert,
+  Trash2,
+  Users,
+  X,
+} from 'lucide-vue-next'
+import {
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
+} from 'reka-ui'
 
-const authStore = useAuthStore()
+import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
+import {
+  getExerciseSubmissions,
+  releaseAssignmentSubmission,
+  reviewAssignmentSubmission,
+} from '@/api/assignments'
+import { getAllStudents } from '@/api/analytics'
+import { createExercise, deleteExercise, getMyExercises } from '@/api/exercises'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+import InstructorLayout from '@/layouts/InstructorLayout.vue'
+import { useClassesStore } from '@/stores/classes'
+import { useModulesStore } from '@/stores/modules'
+import type { Exercise, InstructorAssignmentSubmission, StudentStat } from '@/types'
+
+const classesStore = useClassesStore()
 const modulesStore = useModulesStore()
 
 const exercises = ref<Exercise[]>([])
@@ -186,6 +507,14 @@ const error = ref<string | null>(null)
 const showForm = ref(false)
 const submitting = ref(false)
 const formError = ref<string | null>(null)
+const exerciseSubmissions = ref<Record<string, InstructorAssignmentSubmission[]>>({})
+const submissionsLoading = ref<Record<string, boolean>>({})
+const submissionErrors = ref<Record<string, string | null>>({})
+const reviewSaving = ref<Record<string, boolean>>({})
+const reviewForms = ref<Record<string, {
+  teacher_accuracy_score: string
+  teacher_feedback_text: string
+}>>({})
 
 const form = ref({
   title: '',
@@ -194,14 +523,47 @@ const form = ref({
   due_date: '',
 })
 
+const summaryCards = computed(() => [
+  {
+    label: 'Exercises',
+    value: `${exercises.value.length}`,
+    copy: 'assignment sets currently active in this class',
+    icon: ClipboardList,
+  },
+  {
+    label: 'Students',
+    value: `${students.value.length}`,
+    copy: 'learners available for the current assignment form',
+    icon: Users,
+  },
+  {
+    label: 'Pending review',
+    value: `${Object.values(exerciseSubmissions.value).flat().filter((submission) => !submission.reviewed_at).length}`,
+    copy: 'submitted phrases still waiting for teacher review',
+    icon: TriangleAlert,
+  },
+  {
+    label: 'Released',
+    value: `${Object.values(exerciseSubmissions.value).flat().filter((submission) => submission.released_at).length}`,
+    copy: 'reviews already visible to students',
+    icon: CheckCheck,
+  },
+])
+
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   })
 }
 
+function isOverdue(dateStr: string) {
+  return new Date(dateStr).getTime() < Date.now()
+}
+
 function completedCount(exercise: Exercise) {
-  return exercise.assignments.filter((a) => a.completed_at).length
+  return exercise.assignments.filter((assignment) => assignment.completed_at).length
 }
 
 function completionPercent(exercise: Exercise) {
@@ -209,221 +571,218 @@ function completionPercent(exercise: Exercise) {
   return (completedCount(exercise) / exercise.assignments.length) * 100
 }
 
+function submissionsForExercise(exerciseId: string) {
+  return exerciseSubmissions.value[exerciseId] ?? []
+}
+
+function pendingReviewCount(exerciseId: string) {
+  return submissionsForExercise(exerciseId).filter((submission) => !submission.reviewed_at).length
+}
+
+function releasedCount(exerciseId: string) {
+  return submissionsForExercise(exerciseId).filter((submission) => submission.released_at).length
+}
+
+function phraseLabel(phraseId: string) {
+  for (const module of modulesStore.modules) {
+    const phrase = modulesStore.getPhrasesForModule(module.module_id).find((item) => item.phrase_id === phraseId)
+    if (phrase) {
+      return `${phrase.japanese_text} • ${phrase.romaji}`
+    }
+  }
+  return phraseId
+}
+
+function ensureReviewForm(submission: InstructorAssignmentSubmission) {
+  if (reviewForms.value[submission.submission_id]) return
+
+  reviewForms.value[submission.submission_id] = {
+    teacher_accuracy_score: String(
+      Math.round(submission.teacher_accuracy_score ?? submission.suggested_accuracy_score),
+    ),
+    teacher_feedback_text: submission.teacher_feedback_text ?? submission.suggested_feedback_text ?? '',
+  }
+}
+
+async function loadExerciseSubmissions(exerciseId: string) {
+  submissionsLoading.value = {
+    ...submissionsLoading.value,
+    [exerciseId]: true,
+  }
+  submissionErrors.value = {
+    ...submissionErrors.value,
+    [exerciseId]: null,
+  }
+
+  try {
+    const submissions = await getExerciseSubmissions(exerciseId)
+    exerciseSubmissions.value = {
+      ...exerciseSubmissions.value,
+      [exerciseId]: submissions,
+    }
+    for (const submission of submissions) {
+      ensureReviewForm(submission)
+    }
+  } catch (errorValue: any) {
+    submissionErrors.value = {
+      ...submissionErrors.value,
+      [exerciseId]: errorValue.response?.data?.detail ?? 'Failed to load submissions.',
+    }
+  } finally {
+    submissionsLoading.value = {
+      ...submissionsLoading.value,
+      [exerciseId]: false,
+    }
+  }
+}
+
+async function saveReview(
+  submission: InstructorAssignmentSubmission,
+  releaseToStudent: boolean,
+) {
+  ensureReviewForm(submission)
+
+  const reviewForm = reviewForms.value[submission.submission_id]
+  reviewSaving.value = {
+    ...reviewSaving.value,
+    [submission.submission_id]: true,
+  }
+
+  try {
+    await reviewAssignmentSubmission(submission.submission_id, {
+      teacher_accuracy_score: Number(reviewForm.teacher_accuracy_score),
+      teacher_feedback_text: reviewForm.teacher_feedback_text.trim(),
+      release_to_student: releaseToStudent,
+    })
+    await loadExerciseSubmissions(submission.exercise_id)
+  } catch (errorValue: any) {
+    submissionErrors.value = {
+      ...submissionErrors.value,
+      [submission.exercise_id]: errorValue.response?.data?.detail ?? 'Failed to save review.',
+    }
+  } finally {
+    reviewSaving.value = {
+      ...reviewSaving.value,
+      [submission.submission_id]: false,
+    }
+  }
+}
+
+async function releaseReview(submission: InstructorAssignmentSubmission) {
+  reviewSaving.value = {
+    ...reviewSaving.value,
+    [submission.submission_id]: true,
+  }
+
+  try {
+    await releaseAssignmentSubmission(submission.submission_id)
+    await loadExerciseSubmissions(submission.exercise_id)
+  } catch (errorValue: any) {
+    submissionErrors.value = {
+      ...submissionErrors.value,
+      [submission.exercise_id]: errorValue.response?.data?.detail ?? 'Failed to release review.',
+    }
+  } finally {
+    reviewSaving.value = {
+      ...reviewSaving.value,
+      [submission.submission_id]: false,
+    }
+  }
+}
+
 async function handleCreate() {
+  const classId = classesStore.activeClassId
+  if (!classId) {
+    formError.value = 'Select a class before creating an exercise.'
+    return
+  }
+
   formError.value = null
   submitting.value = true
+
   try {
     const exerciseId = `ex_${Date.now()}`
     const created = await createExercise({
       exercise_id: exerciseId,
+      class_id: classId,
       title: form.value.title,
       phrase_ids: form.value.phrase_ids,
       student_uids: form.value.student_uids,
       due_date: form.value.due_date || undefined,
     })
+
     exercises.value.unshift(created)
     showForm.value = false
     form.value = { title: '', phrase_ids: [], student_uids: [], due_date: '' }
-  } catch (e: any) {
-    formError.value = e.response?.data?.detail ?? 'Failed to create exercise.'
+    await loadExerciseSubmissions(created.exercise_id)
+  } catch (errorValue: any) {
+    formError.value = errorValue.response?.data?.detail ?? 'Failed to create exercise.'
   } finally {
     submitting.value = false
   }
 }
 
 async function handleDelete(exerciseId: string) {
-  if (!confirm('Delete this exercise and all assignments?')) return
+  if (!window.confirm('Delete this exercise and all assignments?')) return
+
   try {
     await deleteExercise(exerciseId)
-    exercises.value = exercises.value.filter((e) => e.exercise_id !== exerciseId)
+    exercises.value = exercises.value.filter((exercise) => exercise.exercise_id !== exerciseId)
   } catch {
     error.value = 'Failed to delete exercise.'
   }
 }
 
-onMounted(async () => {
-  const classId = authStore.profile?.class_id
+async function loadExercises(classId: string | null) {
+  exercises.value = []
+  students.value = []
+  error.value = null
+  form.value = { title: '', phrase_ids: [], student_uids: [], due_date: '' }
+  exerciseSubmissions.value = {}
+  submissionsLoading.value = {}
+  submissionErrors.value = {}
+  reviewForms.value = {}
+
+  if (!classId) {
+    error.value = 'Create or select a class from Classes to manage exercises.'
+    return
+  }
+
   loading.value = true
   try {
-    await modulesStore.fetchModules()
-    for (const module of modulesStore.modules) {
-      await modulesStore.fetchPhrases(module.module_id)
-    }
-    exercises.value = await getMyExercises()
-    if (classId) {
-      students.value = await getAllStudents(classId)
-    }
+    exercises.value = await getMyExercises(classId)
+    students.value = await getAllStudents(classId)
+    await Promise.all(exercises.value.map((exercise) => loadExerciseSubmissions(exercise.exercise_id)))
   } catch {
     error.value = 'Failed to load exercises.'
   } finally {
     loading.value = false
   }
+}
+
+onMounted(async () => {
+  try {
+    await classesStore.ensureLoaded()
+    await modulesStore.fetchModules()
+    await Promise.all(modulesStore.modules.map((module) => modulesStore.fetchPhrases(module.module_id)))
+  } catch {
+    error.value = 'Failed to load your classes.'
+  }
+
+  await loadExercises(classesStore.activeClassId)
+})
+
+watch(
+  () => classesStore.activeClassId,
+  (classId, previousClassId) => {
+    if (classId === previousClassId) return
+    void loadExercises(classId)
+  },
+)
+
+watch(showForm, (open) => {
+  if (open) return
+  if (submitting.value) return
+  formError.value = null
 })
 </script>
-
-<style scoped>
-.exercises__header {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.exercises__subtitle {
-  margin: 12px 0 0;
-  color: var(--color-subtext);
-  max-width: 760px;
-}
-
-.exercises__list {
-  display: grid;
-  gap: 16px;
-}
-
-.exercises__card {
-  padding: 22px;
-  display: grid;
-  gap: 18px;
-}
-
-.exercises__card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.exercises__card-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-heading);
-}
-
-.exercises__card-meta {
-  margin: 8px 0 0;
-  color: var(--color-subtext);
-}
-
-.exercises__delete-btn,
-.exercises__modal-close {
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 999px;
-  background: rgba(198, 85, 73, 0.1);
-  color: #8b2f26;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.exercises__completion {
-  display: grid;
-  gap: 10px;
-}
-
-.exercises__completion-label {
-  color: var(--color-subtext);
-  font-size: 13px;
-}
-
-.exercises__modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(23, 35, 29, 0.34);
-  display: grid;
-  place-items: center;
-  z-index: 120;
-  padding: 24px;
-}
-
-.exercises__modal {
-  width: min(100%, 760px);
-  max-height: 90dvh;
-  overflow: auto;
-}
-
-.exercises__modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 24px 24px 0;
-}
-
-.exercises__form {
-  display: grid;
-  gap: 20px;
-  padding: 24px;
-}
-
-.exercises__form-field {
-  display: grid;
-  gap: 8px;
-}
-
-.exercises__form-label {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-heading);
-}
-
-.exercises__form-input {
-  width: 100%;
-  min-height: 54px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(189, 203, 194, 0.95);
-  background: rgba(255, 253, 249, 0.98);
-  color: var(--color-heading);
-}
-
-.exercises__picker {
-  display: grid;
-  gap: 14px;
-  max-height: 240px;
-  overflow: auto;
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(240, 244, 238, 0.72);
-}
-
-.exercises__picker-group {
-  display: grid;
-  gap: 10px;
-}
-
-.exercises__picker-title {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  color: var(--color-heading);
-}
-
-.exercises__picker-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  color: var(--color-text);
-}
-
-.exercises__picker-item input {
-  accent-color: var(--color-primary);
-}
-
-.exercises__submit {
-  width: 100%;
-}
-
-@media (max-width: 900px) {
-  .exercises__header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-</style>

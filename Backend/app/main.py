@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
+from app.config import settings
 from app.db.base import init_db
 from app.api.v1.router import router
 
@@ -21,10 +22,10 @@ app = FastAPI(
     },
 )
 
-# Allow your React frontend (Vite runs on port 5173) to connect
+# Allow local frontend origins in development and configurable origins elsewhere.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

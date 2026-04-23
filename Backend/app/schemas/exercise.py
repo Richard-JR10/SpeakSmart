@@ -5,6 +5,7 @@ from datetime import datetime
 
 class ExerciseCreateRequest(BaseModel):
     exercise_id: str
+    class_id: str
     title: str
     phrase_ids: list[str]
     student_uids: list[str]
@@ -33,6 +34,7 @@ class ExerciseResponse(BaseModel):
     exercise_id: str
     title: str
     instructor_uid: str
+    class_id: str | None
     created_at: datetime
     due_date: datetime | None
     phrases: list[ExercisePhraseResponse]
@@ -43,6 +45,7 @@ class ExerciseResponse(BaseModel):
 
 class StudentExerciseResponse(BaseModel):
     exercise_id: str
+    class_id: str | None
     title: str
     due_date: datetime | None
     assigned_at: datetime

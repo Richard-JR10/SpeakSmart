@@ -1,12 +1,13 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
-    auth, users, modules, phrases, attempts, progress, analytics, exercises
+    analytics, auth, classes, exercises, modules, phrases, progress, attempts, users
 )
 
 router = APIRouter(prefix="/api/v1")
 
 router.include_router(auth.router)
 router.include_router(users.router)
+router.include_router(classes.router)
 router.include_router(modules.router)
 router.include_router(phrases.router)
 router.include_router(attempts.router)

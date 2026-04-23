@@ -81,3 +81,6 @@ dist-ssr
 *.swp
 *.swo
 *~
+
+.agents
+skills-lock.json

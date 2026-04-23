@@ -34,6 +34,16 @@ class Settings(BaseSettings):
     GOOGLE_APPLICATION_CREDENTIALS: str
 
     MAX_AUDIO_SIZE_MB: int = 10
+    ASR_PROVIDER: str = "openai_whisper"
+    OPENAI_WHISPER_MODEL: str = "small"
+    OPENAI_WHISPER_DEVICE: str = "cpu"
+    OPENAI_WHISPER_LANGUAGE: str = "ja"
+    OPENAI_WHISPER_CACHE_DIR: str = ".cache/openai-whisper"
+    VERIFICATION_MAX_CANDIDATES: int = 8
+    VERIFICATION_MIN_VOICED_RATIO: float = 0.2
+    VERIFICATION_ACCEPTANCE_CONFIDENCE: float = 0.78
+    VERIFICATION_WRONG_PHRASE_CONFIDENCE: float = 0.82
+    VERIFICATION_MIN_MARGIN: float = 0.12
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

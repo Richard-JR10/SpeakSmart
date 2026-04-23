@@ -1,5 +1,5 @@
 # app/db/models/phrase.py
-from sqlalchemy import String, Integer, ForeignKey, DateTime, func
+from sqlalchemy import String, Integer, ForeignKey, DateTime, JSON, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
@@ -14,6 +14,9 @@ class Phrase(Base):
     english_translation: Mapped[str] = mapped_column(String, nullable=False)
     reference_audio_url: Mapped[str | None] = mapped_column(String, nullable=True)
     difficulty_level: Mapped[int] = mapped_column(Integer, default=1)
+    pronunciation_reading_override: Mapped[str | None] = mapped_column(String, nullable=True)
+    pronunciation_chunk_override: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    pronunciation_rule_override: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     module: Mapped["Module"] = relationship("Module", back_populates="phrases")

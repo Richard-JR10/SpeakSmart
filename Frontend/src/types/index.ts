@@ -45,6 +45,32 @@ export interface PhonemeErrorMap {
   overall_acoustic: PhonemeError
 }
 
+export interface PronunciationChunk {
+  index: number
+  display_text: string
+  kana: string
+  romaji: string
+}
+
+export interface TargetPronunciation {
+  kana: string
+  romaji: string
+  chunks: PronunciationChunk[]
+}
+
+export interface PronunciationFeedbackItem {
+  chunk_index: number
+  display_text: string
+  kana: string
+  romaji: string
+  issue_type: string
+  severity: 'low' | 'medium' | 'high'
+  score: number
+  expected_note: string
+  heard_note: string
+  fix_tip: string
+}
+
 export interface Attempt {
   attempt_id: string
   student_uid: string
@@ -56,6 +82,15 @@ export interface Attempt {
   vowel_score: number
   phoneme_error_map: PhonemeErrorMap | null
   feedback_text: string | null
+  verification_status: 'accepted' | 'wrong_phrase_detected' | 'no_clear_speech' | 'retry_needed'
+  recognized_phrase_id: string | null
+  recognized_text: string | null
+  recognized_text_romaji: string | null
+  target_pronunciation: TargetPronunciation | null
+  pronunciation_feedback: PronunciationFeedbackItem[] | null
+  verification_confidence: number | null
+  verification_margin: number | null
+  counts_for_progress: boolean
   attempted_at: string
 }
 
@@ -64,6 +99,13 @@ export interface AttemptSummary {
   phrase_id: string
   accuracy_score: number
   feedback_text: string | null
+  verification_status: 'accepted' | 'wrong_phrase_detected' | 'no_clear_speech' | 'retry_needed'
+  recognized_phrase_id: string | null
+  recognized_text: string | null
+  recognized_text_romaji: string | null
+  target_pronunciation: TargetPronunciation | null
+  pronunciation_feedback: PronunciationFeedbackItem[] | null
+  counts_for_progress: boolean
   attempted_at: string
 }
 
@@ -198,6 +240,15 @@ export interface AssignmentSubmission {
   submitted_at: string
   reviewed_at: string | null
   released_at: string | null
+  verification_status: 'accepted' | 'wrong_phrase_detected' | 'no_clear_speech' | 'retry_needed'
+  recognized_phrase_id: string | null
+  recognized_text: string | null
+  recognized_text_romaji: string | null
+  target_pronunciation: TargetPronunciation | null
+  pronunciation_feedback: PronunciationFeedbackItem[] | null
+  verification_confidence: number | null
+  verification_margin: number | null
+  counts_for_progress: boolean
 }
 
 export interface InstructorAssignmentSubmission {
@@ -215,6 +266,15 @@ export interface InstructorAssignmentSubmission {
   suggested_consonant_score: number
   suggested_vowel_score: number
   suggested_feedback_text: string | null
+  verification_status: 'accepted' | 'wrong_phrase_detected' | 'no_clear_speech' | 'retry_needed'
+  recognized_phrase_id: string | null
+  recognized_text: string | null
+  recognized_text_romaji: string | null
+  target_pronunciation: TargetPronunciation | null
+  pronunciation_feedback: PronunciationFeedbackItem[] | null
+  verification_confidence: number | null
+  verification_margin: number | null
+  counts_for_progress: boolean
   teacher_accuracy_score: number | null
   teacher_feedback_text: string | null
 }
@@ -237,6 +297,13 @@ export interface StudentDrillDown {
     consonant_score: number
     vowel_score: number
     feedback_text: string | null
+    verification_status: 'accepted' | 'wrong_phrase_detected' | 'no_clear_speech' | 'retry_needed'
+    recognized_phrase_id: string | null
+    recognized_text: string | null
+    recognized_text_romaji: string | null
+    target_pronunciation: TargetPronunciation | null
+    pronunciation_feedback: PronunciationFeedbackItem[] | null
+    counts_for_progress: boolean
     attempted_at: string
   }[]
 }

@@ -23,12 +23,17 @@ async def update_progress_summary(
         .join(Attempt.phrase)
         .where(
             Attempt.student_uid == student_uid,
+            Attempt.counts_for_progress.is_(True),
             Attempt.phrase.has(module_id=module_id),
         )
         .order_by(Attempt.attempted_at.desc())
     )
     attempts = result.scalars().all()
 
+    if not attempts:
+        return None
+
+    attempts = filter_progress_attempts(attempts)
     if not attempts:
         return None
 
@@ -71,6 +76,13 @@ async def update_progress_summary(
     await db.commit()
     await db.refresh(summary)
     return summary
+
+
+def filter_progress_attempts(attempts: list[Attempt]) -> list[Attempt]:
+    """
+    Returns only attempts that are allowed to affect progress metrics.
+    """
+    return [attempt for attempt in attempts if getattr(attempt, "counts_for_progress", True)]
 
 
 def _compute_streak(attempts: list[Attempt]) -> int:

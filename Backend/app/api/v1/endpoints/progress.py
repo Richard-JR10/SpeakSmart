@@ -142,6 +142,7 @@ async def _get_weekly_accuracy(
                 func.count(Attempt.attempt_id).label("attempt_count"),
             ).where(
                 Attempt.student_uid == student_uid,
+                Attempt.counts_for_progress.is_(True),
                 Attempt.attempted_at >= week_start,
                 Attempt.attempted_at < week_end,
             )

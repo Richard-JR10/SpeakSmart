@@ -1,0 +1,8 @@
+{
+  "name": "speaksmart",
+  "private": true,
+  "scripts": {
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\dev.ps1",
+    "setup:whisper": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\setup-whisper.ps1"
+  }
+}

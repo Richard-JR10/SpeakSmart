@@ -42,6 +42,9 @@ async def create_phrase(
         english_translation=body.english_translation,
         reference_audio_url=body.reference_audio_url,
         difficulty_level=body.difficulty_level,
+        pronunciation_reading_override=body.pronunciation_reading_override,
+        pronunciation_chunk_override=body.pronunciation_chunk_override,
+        pronunciation_rule_override=body.pronunciation_rule_override,
     )
     db.add(phrase)
     await db.commit()

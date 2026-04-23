@@ -150,6 +150,11 @@ async def get_student_drilldown(
             "consonant_score": attempt.consonant_score,
             "vowel_score": attempt.vowel_score,
             "feedback_text": attempt.feedback_text,
+            "verification_status": attempt.verification_status,
+            "recognized_phrase_id": attempt.recognized_phrase_id,
+            "recognized_text": attempt.recognized_text,
+            "recognized_text_romaji": attempt.recognized_text_romaji,
+            "counts_for_progress": attempt.counts_for_progress,
             "attempted_at": attempt.attempted_at.isoformat(),
         }
         for attempt in attempts_result.scalars().all()
@@ -189,7 +194,10 @@ async def get_phoneme_heatmap(
             func.avg(Attempt.accuracy_score).label("overall_avg"),
         )
         .join(Phrase, Phrase.phrase_id == Attempt.phrase_id)
-        .where(Attempt.student_uid.in_(student_uids))
+        .where(
+            Attempt.student_uid.in_(student_uids),
+            Attempt.counts_for_progress.is_(True),
+        )
         .group_by(Phrase.module_id)
     )
 
@@ -297,7 +305,10 @@ async def _get_phoneme_breakdown(
             func.avg(Attempt.consonant_score).label("consonant_avg"),
             func.avg(Attempt.vowel_score).label("vowel_avg"),
             func.avg(Attempt.accuracy_score).label("overall_avg"),
-        ).where(Attempt.student_uid.in_(student_uids))
+        ).where(
+            Attempt.student_uid.in_(student_uids),
+            Attempt.counts_for_progress.is_(True),
+        )
     )
     row = result.one()
 
@@ -337,6 +348,7 @@ async def _get_class_weekly_trend(
                     func.count(func.distinct(Attempt.student_uid)).label("active_students"),
                 ).where(
                     Attempt.student_uid.in_(student_uids),
+                    Attempt.counts_for_progress.is_(True),
                     Attempt.attempted_at >= week_start,
                     Attempt.attempted_at < week_end,
                 )

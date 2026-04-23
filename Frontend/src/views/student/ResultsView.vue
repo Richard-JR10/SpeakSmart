@@ -142,6 +142,203 @@
           </CardContent>
         </Card>
 
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+          <Card class="border-border/80 bg-card/95">
+            <CardHeader class="gap-3">
+              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                How to Say It
+              </Badge>
+              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                Correct Pronunciation Target
+              </CardTitle>
+              <CardDescription>
+                Use this kana and romaji guide as the model for your next try. Highlighted chunks are the ones that need the most attention.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent class="grid gap-4">
+              <div class="rounded-3xl border border-border/70 bg-muted/30 p-5">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Full reading
+                </p>
+                <p class="mt-3 font-(--font-display) text-4xl leading-none text-(--color-heading) text-pretty sm:text-5xl">
+                  {{ targetPronunciation?.kana ?? currentPhrase?.japanese_text ?? 'Pronunciation unavailable' }}
+                </p>
+                <p class="mt-3 text-base font-semibold text-primary sm:text-lg">
+                  {{ targetPronunciation?.romaji ?? currentPhrase?.romaji ?? 'Romaji unavailable' }}
+                </p>
+              </div>
+
+              <div class="grid gap-3">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-sm font-semibold text-(--color-heading)">
+                    Chunk guide
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    Read one chunk at a time, then blend them together smoothly.
+                  </p>
+                </div>
+
+                <Alert v-if="!pronunciationChunks.length">
+                  <CircleAlert aria-hidden="true" />
+                  <AlertTitle>No chunk guide yet</AlertTitle>
+                  <AlertDescription>
+                    This attempt has the overall pronunciation target, but chunk-level guidance was not returned.
+                  </AlertDescription>
+                </Alert>
+
+                <div v-else class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  <div
+                    v-for="(chunk, index) in pronunciationChunks"
+                    :key="`${chunk.kana}-${index}`"
+                    class="rounded-2xl border p-3 transition-colors"
+                    :class="highlightedChunkIndexes.has(chunk.index) ? 'border-destructive/40 bg-destructive/5' : 'border-border/70 bg-muted/25'"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Chunk {{ index + 1 }}
+                      </p>
+                      <Badge
+                        :variant="highlightedChunkIndexes.has(chunk.index) ? 'destructive' : 'outline'"
+                        class="rounded-full px-2 py-0.5"
+                      >
+                        {{ highlightedChunkIndexes.has(chunk.index) ? 'Focus' : 'Stable' }}
+                      </Badge>
+                    </div>
+                    <p class="mt-3 text-2xl font-semibold leading-none text-(--color-heading)">
+                      {{ chunk.kana }}
+                    </p>
+                    <p class="mt-2 text-sm font-medium text-primary">
+                      {{ chunk.romaji }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card class="border-border/80 bg-card/95">
+            <CardHeader class="gap-3">
+              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                What to Fix
+              </Badge>
+              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                Next-Try Coaching
+              </CardTitle>
+              <CardDescription>
+                Focus on one or two chunks first. Fixing the highest-priority issue is more useful than trying to change everything at once.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent class="grid gap-4">
+              <Alert
+                v-if="attempt.verification_status !== 'accepted'"
+                :variant="attempt.verification_status === 'wrong_phrase_detected' ? 'destructive' : 'default'"
+              >
+                <CircleAlert aria-hidden="true" />
+                <AlertTitle>{{ verificationGuidanceTitle }}</AlertTitle>
+                <AlertDescription>
+                  {{ verificationGuidanceCopy }}
+                </AlertDescription>
+              </Alert>
+
+              <template v-if="attempt.verification_status !== 'accepted'">
+                <div
+                  v-if="recognizedTextDisplay"
+                  class="rounded-2xl border border-border/70 bg-muted/25 p-4"
+                >
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Whisper heard
+                  </p>
+                  <p class="mt-2 text-base font-semibold text-(--color-heading)">
+                    {{ recognizedTextDisplay }}
+                  </p>
+                </div>
+
+                <div class="rounded-2xl border border-border/70 bg-muted/25 p-4">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Say this target
+                  </p>
+                  <p class="mt-2 text-lg font-semibold text-(--color-heading)">
+                    {{ targetPronunciation?.kana ?? currentPhrase?.japanese_text ?? 'Target unavailable' }}
+                  </p>
+                  <p class="mt-1 text-sm text-primary">
+                    {{ targetPronunciation?.romaji ?? currentPhrase?.romaji ?? 'Romaji unavailable' }}
+                  </p>
+                </div>
+              </template>
+
+              <template v-else-if="topPronunciationIssues.length">
+                <div
+                  v-for="item in topPronunciationIssues"
+                  :key="`${item.chunk_index}-${item.issue_type}`"
+                  class="rounded-3xl border border-border/70 bg-muted/25 p-4"
+                >
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Focus chunk {{ item.chunk_index + 1 }}
+                      </p>
+                      <p class="mt-2 text-xl font-semibold leading-none text-(--color-heading)">
+                        {{ item.kana }}
+                      </p>
+                      <p class="mt-1 text-sm font-medium text-primary">
+                        {{ item.romaji }}
+                      </p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                      <Badge :variant="issueBadgeVariant(item.severity)" class="rounded-full px-2.5 py-1">
+                        {{ issueSeverityLabel(item.severity) }}
+                      </Badge>
+                      <Badge variant="outline" class="rounded-full px-2.5 py-1">
+                        {{ item.score.toFixed(0) }}%
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div class="mt-4 grid gap-3">
+                    <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Correct target
+                      </p>
+                      <p class="mt-2 text-sm leading-7 text-foreground/85">
+                        {{ item.expected_note }}
+                      </p>
+                    </div>
+
+                    <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        What we heard
+                      </p>
+                      <p class="mt-2 text-sm leading-7 text-foreground/85">
+                        {{ item.heard_note }}
+                      </p>
+                    </div>
+
+                    <div class="rounded-2xl border border-primary/20 bg-primary/5 p-3">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                        Fix on the next try
+                      </p>
+                      <p class="mt-2 text-sm leading-7 text-foreground/85">
+                        {{ item.fix_tip }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <Alert v-else>
+                <BookOpen aria-hidden="true" />
+                <AlertTitle>Pronunciation stayed stable</AlertTitle>
+                <AlertDescription>
+                  This accepted take did not surface a strong chunk-level correction. Keep the same rhythm, light vowels, and smooth blending on the next phrase.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </div>
+
         <div class="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
           <Card class="border-border/80 bg-card/95">
             <CardHeader class="gap-3">
@@ -152,7 +349,7 @@
                 Acoustic Breakdown
               </CardTitle>
               <CardDescription>
-                Three scoring areas contribute to the overall pronunciation result.
+                These supporting scores explain the rhythm and sound quality behind the teaching feedback above.
               </CardDescription>
             </CardHeader>
 
@@ -200,7 +397,7 @@
                 Breakdown By Sound
               </CardTitle>
               <CardDescription>
-                Use these signals to see which speech areas stayed stable and which ones need another take.
+                These signal-level checks are still useful, but the chunk coaching above should guide your next retake first.
               </CardDescription>
             </CardHeader>
 
@@ -428,6 +625,7 @@ import {
 } from '@/components/ui/card'
 import { useAttemptsStore } from '@/stores/attempts'
 import { useModulesStore } from '@/stores/modules'
+import { formatRecognizedTextForDisplay } from '@/utils/japanese'
 
 type BreakdownItem = {
   label: string
@@ -523,10 +721,93 @@ const accuracyScoreText = computed(() =>
   attempt.value ? `${attempt.value.accuracy_score.toFixed(0)}%` : '--',
 )
 
-const feedbackCopy = computed(() =>
-  attempt.value?.feedback_text ??
-  'Listen to the model audio, focus on the weaker sounds below, and record another clear take.',
+const targetPronunciation = computed(() => {
+  if (attempt.value?.target_pronunciation) {
+    return attempt.value.target_pronunciation
+  }
+
+  if (!currentPhrase.value) {
+    return null
+  }
+
+  return {
+    kana: currentPhrase.value.japanese_text,
+    romaji: currentPhrase.value.romaji,
+    chunks: [],
+  }
+})
+
+const pronunciationChunks = computed(() =>
+  targetPronunciation.value?.chunks ?? [],
 )
+
+const topPronunciationIssues = computed(() =>
+  (attempt.value?.pronunciation_feedback ?? []).slice(0, 2),
+)
+
+const highlightedChunkIndexes = computed(
+  () => new Set(topPronunciationIssues.value.map((item) => item.chunk_index)),
+)
+
+const recognizedTextDisplay = computed(() => {
+  if (attempt.value?.recognized_text_romaji) {
+    return attempt.value.recognized_text_romaji
+  }
+
+  return formatRecognizedTextForDisplay(attempt.value?.recognized_text ?? null)
+})
+
+const verificationGuidanceTitle = computed(() => {
+  if (attempt.value?.verification_status === 'wrong_phrase_detected') {
+    return 'Match the target phrase first'
+  }
+
+  if (attempt.value?.verification_status === 'no_clear_speech') {
+    return 'Record a clearer take'
+  }
+
+  return 'Verification was not confident enough'
+})
+
+const verificationGuidanceCopy = computed(() => {
+  if (attempt.value?.verification_status === 'wrong_phrase_detected') {
+    return 'The system detected a different phrase, so pronunciation coaching is paused until the spoken phrase matches the target.'
+  }
+
+  if (attempt.value?.verification_status === 'no_clear_speech') {
+    return 'There was not enough clear speech to teach pronunciation reliably. Try again in a quieter space and keep the phrase in one steady take.'
+  }
+
+  return 'The transcript was too uncertain to trust as a teaching signal, so this attempt does not count toward progress. Use the target guide and try one more clear retake.'
+})
+
+const feedbackCopy = computed(() => {
+  if (!attempt.value) {
+    return 'Listen to the model audio, focus on the weaker sounds below, and record another clear take.'
+  }
+
+  if (attempt.value.verification_status === 'wrong_phrase_detected') {
+    if (recognizedTextDisplay.value) {
+      return `The phrase verification matched a different phrase: ${recognizedTextDisplay.value}. Try the target phrase again before focusing on pronunciation scoring.`
+    }
+    return 'The phrase verification matched a different phrase. Try the target phrase again before focusing on pronunciation scoring.'
+  }
+
+  if (attempt.value.verification_status === 'no_clear_speech') {
+    return 'The recording did not contain enough clear speech to verify the target phrase. Try again in a quieter space and speak a little closer to the microphone.'
+  }
+
+  if (attempt.value.verification_status === 'retry_needed') {
+    if (recognizedTextDisplay.value) {
+      return `Phrase verification was uncertain for this recording. Whisper heard: ${recognizedTextDisplay.value}. Please try the target phrase again.`
+    }
+    return attempt.value.feedback_text ??
+      'Phrase verification was uncertain, so this score is provisional and will not count toward progress.'
+  }
+
+  return attempt.value.feedback_text ??
+    'Listen to the model audio, focus on the weaker sounds below, and record another clear take.'
+})
 
 const formattedAttemptDate = computed(() => {
   if (!attempt.value) return 'Attempt Date Unavailable'
@@ -547,6 +828,10 @@ const phrasePositionCopy = computed(() => {
 })
 
 const scoreSummaryLabel = computed(() => {
+  if (attempt.value?.verification_status === 'wrong_phrase_detected') return 'Phrase Mismatch'
+  if (attempt.value?.verification_status === 'no_clear_speech') return 'Retry Needed'
+  if (attempt.value?.verification_status === 'retry_needed') return 'Provisional'
+
   const score = attempt.value?.accuracy_score ?? 0
 
   if (score >= 90) return 'Excellent'
@@ -556,6 +841,18 @@ const scoreSummaryLabel = computed(() => {
 })
 
 const scoreSummaryCopy = computed(() => {
+  if (attempt.value?.verification_status === 'wrong_phrase_detected') {
+    return 'Pronunciation scoring was blocked because the spoken phrase did not confidently match the target.'
+  }
+
+  if (attempt.value?.verification_status === 'no_clear_speech') {
+    return 'No clear phrase was detected. Re-record the phrase in one steady take.'
+  }
+
+  if (attempt.value?.verification_status === 'retry_needed') {
+    return 'This score is shown for reference only because phrase verification was uncertain.'
+  }
+
   const score = attempt.value?.accuracy_score ?? 0
 
   if (score >= 90) {
@@ -664,6 +961,20 @@ function scoreBarClass(score: number) {
   if (score >= 75) return 'bg-primary/80'
   if (score >= 60) return 'bg-primary/60'
   return 'bg-destructive'
+}
+
+function issueBadgeVariant(
+  severity: 'low' | 'medium' | 'high',
+): 'default' | 'secondary' | 'outline' | 'destructive' {
+  if (severity === 'high') return 'destructive'
+  if (severity === 'medium') return 'outline'
+  return 'secondary'
+}
+
+function issueSeverityLabel(severity: 'low' | 'medium' | 'high') {
+  if (severity === 'high') return 'Priority Fix'
+  if (severity === 'medium') return 'Watch Closely'
+  return 'Light Adjustment'
 }
 
 async function ensureResultContext() {

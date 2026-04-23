@@ -1,22 +1,33 @@
 # app/api/v1/endpoints/attempts.py
+import logging
 import uuid
 from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.core.dependencies import get_current_user, require_instructor, get_db
+from app.core.dependencies import get_current_user, get_db
 from app.core.exceptions import NotFoundException, BadRequestException, ForbiddenException
 from app.db.models.user import User
 from app.db.models.phrase import Phrase
 from app.db.models.attempt import Attempt
 from app.schemas.attempt import AttemptResponse, AttemptSummary
+from app.services.pronunciation import build_reference_target_from_phrase, get_pronunciation_overrides
 from app.services.r2_storage import upload_audio, download_audio, get_object_key_from_url
-from app.services.scoring import score_attempt
+from app.services.scoring import empty_score_payload, score_attempt
 from app.services.speech import validate_audio
+from app.services.verification import (
+    VERIFICATION_ACCEPTED,
+    VERIFICATION_NO_CLEAR_SPEECH,
+    VERIFICATION_RETRY,
+    VERIFICATION_WRONG_PHRASE,
+    verify_phrase_audio,
+)
 from app.config import settings
 from app.services.progress import update_progress_summary
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
+logger = logging.getLogger("speaksmart.attempts")
+logger.setLevel(logging.INFO)
 
 
 @router.post("", response_model=AttemptResponse, status_code=201)
@@ -67,11 +78,75 @@ async def submit_attempt(
     except RuntimeError as e:
         raise BadRequestException(f"Could not fetch reference audio: {e}")
 
-    # 4. Run scoring pipeline
+    module_phrase_rows = await db.execute(
+        select(Phrase.phrase_id, Phrase.japanese_text).where(
+            Phrase.module_id == phrase.module_id
+        )
+    )
+    verification_candidate_rows = list(module_phrase_rows.all())
+    verification_candidates = [
+        (row.phrase_id, row.japanese_text)
+        for row in verification_candidate_rows
+    ]
+
     try:
-        scores = score_attempt(audio_bytes, reference_audio)
+        verification = verify_phrase_audio(
+            audio_bytes=audio_bytes,
+            target_phrase_id=phrase.phrase_id,
+            target_text=phrase.japanese_text,
+            candidate_pairs=verification_candidates,
+        )
+    except Exception as e:
+        raise BadRequestException(f"Verification failed: {e}")
+
+    logger.info(
+        "attempt verification student=%s phrase=%s status=%s recognized_phrase=%s confidence=%s margin=%s recognized_text=%s",
+        current_user.uid,
+        phrase.phrase_id,
+        verification.status,
+        verification.recognized_phrase_id,
+        verification.verification_confidence,
+        verification.verification_margin,
+        verification.recognized_text,
+    )
+
+    pronunciation_target = build_reference_target_from_phrase(phrase)
+    pronunciation_overrides = get_pronunciation_overrides(phrase)
+
+    # 4. Run scoring pipeline for accepted phrases only
+    try:
+        if verification.status == VERIFICATION_ACCEPTED:
+            scores = score_attempt(
+                audio_bytes,
+                reference_audio,
+                target_text=phrase.japanese_text,
+                target_romaji=phrase.romaji,
+                pronunciation_overrides=pronunciation_overrides,
+                target_pronunciation=pronunciation_target,
+            )
+        else:
+            scores = empty_score_payload(
+                _build_verification_feedback(
+                    verification.status,
+                    verification.recognized_text_romaji,
+                ),
+                target_pronunciation=pronunciation_target,
+                pronunciation_feedback=[],
+            )
     except Exception as e:
         raise BadRequestException(f"Scoring failed: {e}")
+
+    logger.info(
+        "attempt scoring student=%s phrase=%s verification_status=%s score=%.2f mora=%.2f consonant=%.2f vowel=%.2f counts_for_progress=%s",
+        current_user.uid,
+        phrase.phrase_id,
+        verification.status,
+        scores["accuracy_score"],
+        scores["mora_timing_score"],
+        scores["consonant_score"],
+        scores["vowel_score"],
+        verification.status == VERIFICATION_ACCEPTED,
+    )
 
     # 5. Upload student audio to R2
     attempt_id = str(uuid.uuid4())
@@ -94,15 +169,25 @@ async def submit_attempt(
         vowel_score=scores["vowel_score"],
         phoneme_error_map=scores["phoneme_error_map"],
         feedback_text=scores["feedback_text"],
+        verification_status=verification.status,
+        recognized_phrase_id=verification.recognized_phrase_id,
+        recognized_text=verification.recognized_text,
+        recognized_text_romaji=verification.recognized_text_romaji,
+        target_pronunciation=scores["target_pronunciation"],
+        pronunciation_feedback=scores["pronunciation_feedback"],
+        verification_confidence=verification.verification_confidence,
+        verification_margin=verification.verification_margin,
+        counts_for_progress=verification.status == VERIFICATION_ACCEPTED,
     )
     db.add(attempt)
     await db.commit()
     await db.refresh(attempt)
-    await update_progress_summary(
-        db=db,
-        student_uid=current_user.uid,
-        module_id=phrase.module_id,
-    )
+    if attempt.counts_for_progress:
+        await update_progress_summary(
+            db=db,
+            student_uid=current_user.uid,
+            module_id=phrase.module_id,
+        )
     
     return attempt
 
@@ -166,3 +251,22 @@ async def get_attempt_detail(
         raise NotFoundException("Attempt not found")
 
     return attempt
+
+
+def _build_verification_feedback(
+    status: str,
+    recognized_text_romaji: str | None,
+) -> str:
+    if status == VERIFICATION_NO_CLEAR_SPEECH:
+        return "We could not detect enough clear speech in this recording. Please try again in a quieter spot."
+    if status == VERIFICATION_RETRY:
+        if recognized_text_romaji:
+            return f"Phrase verification was uncertain for this recording. Whisper heard: {recognized_text_romaji}. Please try the target phrase again."
+        return "Phrase verification was uncertain for this recording. Please try the target phrase again."
+    if status == VERIFICATION_WRONG_PHRASE:
+        if recognized_text_romaji:
+            return f"We detected a different phrase than the target. Recognized text: {recognized_text_romaji}"
+        return "We detected a different phrase than the target. Please try the assigned phrase again."
+    if recognized_text_romaji:
+        return f"We detected a different phrase than the target. Recognized text: {recognized_text_romaji}"
+    return "We detected a different phrase than the target. Please try the assigned phrase again."

@@ -15,14 +15,14 @@
           class="group relative flex items-center transition-all hover:opacity-80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg" 
           @click.prevent="scrollToSection('#overview')"
         >
-          <img src="/logo.png" alt="SpeakSmart Logo" class="relative z-10 -ml-2 -mr-10 mt-2 h-24 w-auto scale-110 object-contain drop-shadow-xl transition-transform duration-300 group-hover:scale-125" style="mix-blend-mode: multiply;" />
+          <img src="/logo.png" alt="SpeakSmart logo" class="relative z-10 h-12 w-auto object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105 sm:h-14" />
           <span translate="no" class="relative z-0 font-display text-2xl font-black tracking-tight text-foreground">
             SpeakSmart
           </span>
         </a>
 
         <!-- Desktop Nav -->
-        <nav class="hidden md:flex items-center gap-1 rounded-full border border-border/80 bg-muted/60 px-2 py-1 shadow-sm">
+        <nav class="hidden lg:flex items-center gap-1 rounded-full border border-border/80 bg-muted/60 px-2 py-1 shadow-sm">
           <Button
             v-for="item in navItems"
             :key="item.href"
@@ -39,7 +39,7 @@
         </nav>
 
         <!-- Auth Actions -->
-        <div class="hidden md:flex items-center gap-4">
+        <div class="hidden lg:flex items-center gap-4">
           <Button variant="ghost" class="font-bold transition-transform active:scale-95" as-child>
             <RouterLink to="/login">Login</RouterLink>
           </Button>
@@ -50,7 +50,7 @@
 
         <!-- Mobile Menu Trigger -->
         <Sheet>
-          <SheetTrigger as-child class="md:hidden">
+          <SheetTrigger as-child class="lg:hidden">
             <Button variant="ghost" size="icon" class="rounded-full active:scale-95">
               <Menu class="size-5" aria-hidden="true" />
               <span class="sr-only">Toggle menu</span>

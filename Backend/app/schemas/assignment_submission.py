@@ -1,6 +1,14 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
+
+VerificationStatus = Literal[
+    "accepted",
+    "wrong_phrase_detected",
+    "no_clear_speech",
+    "retry_needed",
+]
 
 
 class AssignmentPhraseStatus(BaseModel):
@@ -33,6 +41,15 @@ class AssignmentSubmissionResponse(BaseModel):
     submitted_at: datetime
     reviewed_at: datetime | None
     released_at: datetime | None
+    verification_status: VerificationStatus
+    recognized_phrase_id: str | None
+    recognized_text: str | None
+    recognized_text_romaji: str | None
+    target_pronunciation: dict | None
+    pronunciation_feedback: list[dict] | None
+    verification_confidence: float | None
+    verification_margin: float | None
+    counts_for_progress: bool
 
     model_config = {"from_attributes": True}
 
@@ -52,6 +69,15 @@ class InstructorAssignmentSubmissionResponse(BaseModel):
     suggested_consonant_score: float
     suggested_vowel_score: float
     suggested_feedback_text: str | None
+    verification_status: VerificationStatus
+    recognized_phrase_id: str | None
+    recognized_text: str | None
+    recognized_text_romaji: str | None
+    target_pronunciation: dict | None
+    pronunciation_feedback: list[dict] | None
+    verification_confidence: float | None
+    verification_margin: float | None
+    counts_for_progress: bool
     teacher_accuracy_score: float | None
     teacher_feedback_text: str | None
 

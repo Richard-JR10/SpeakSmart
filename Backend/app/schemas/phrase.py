@@ -9,6 +9,9 @@ class PhraseResponse(BaseModel):
     english_translation: str
     reference_audio_url: str | None
     difficulty_level: int
+    pronunciation_reading_override: str | None = None
+    pronunciation_chunk_override: list[dict] | None = None
+    pronunciation_rule_override: dict | None = None
     created_at: datetime
 
     model_config = {
@@ -23,3 +26,6 @@ class PhraseCreateRequest(BaseModel):
     english_translation: str
     reference_audio_url: str | None = None
     difficulty_level: int = 1
+    pronunciation_reading_override: str | None = None
+    pronunciation_chunk_override: list[dict] | None = None
+    pronunciation_rule_override: dict | None = None

@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -31,12 +32,22 @@ from app.schemas.exercise import (
     ExerciseResponse,
     StudentExerciseResponse,
 )
+from app.services.pronunciation import build_reference_target_from_phrase, get_pronunciation_overrides
 from app.services.r2_storage import download_audio, get_object_key_from_url, upload_audio
-from app.services.scoring import score_attempt
+from app.services.scoring import empty_score_payload, score_attempt
 from app.services.speech import validate_audio
+from app.services.verification import (
+    VERIFICATION_ACCEPTED,
+    VERIFICATION_NO_CLEAR_SPEECH,
+    VERIFICATION_RETRY,
+    VERIFICATION_WRONG_PHRASE,
+    verify_phrase_audio,
+)
 from app.config import settings
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
+logger = logging.getLogger("speaksmart.exercises")
+logger.setLevel(logging.INFO)
 
 
 @router.post("", response_model=ExerciseResponse, status_code=201)
@@ -299,7 +310,6 @@ async def submit_assignment_phrase(
     db: AsyncSession = Depends(get_db),
 ):
     assignment = await _get_student_assignment(db, exercise_id, current_user.uid)
-    exercise = await _get_exercise(db, exercise_id)
     phrase_ids = await _get_exercise_phrase_ids(db, exercise_id)
 
     if phrase_id not in phrase_ids:
@@ -326,10 +336,76 @@ async def submit_assignment_phrase(
     except RuntimeError as error:
         raise BadRequestException(f"Could not fetch reference audio: {error}")
 
+    phrase_candidates_result = await db.execute(
+        select(Phrase.phrase_id, Phrase.japanese_text).where(
+            Phrase.phrase_id.in_(phrase_ids)
+        )
+    )
+    verification_candidate_rows = list(phrase_candidates_result.all())
+    verification_candidates = [
+        (row.phrase_id, row.japanese_text)
+        for row in verification_candidate_rows
+    ]
+
     try:
-        scores = score_attempt(audio_bytes, reference_audio)
+        verification = verify_phrase_audio(
+            audio_bytes=audio_bytes,
+            target_phrase_id=phrase.phrase_id,
+            target_text=phrase.japanese_text,
+            candidate_pairs=verification_candidates,
+        )
+    except Exception as error:
+        raise BadRequestException(f"Verification failed: {error}")
+
+    logger.info(
+        "exercise submission verification student=%s exercise=%s phrase=%s status=%s recognized_phrase=%s confidence=%s margin=%s recognized_text=%s",
+        current_user.uid,
+        exercise_id,
+        phrase.phrase_id,
+        verification.status,
+        verification.recognized_phrase_id,
+        verification.verification_confidence,
+        verification.verification_margin,
+        verification.recognized_text,
+    )
+
+    pronunciation_target = build_reference_target_from_phrase(phrase)
+    pronunciation_overrides = get_pronunciation_overrides(phrase)
+
+    try:
+        if verification.status == VERIFICATION_ACCEPTED:
+            scores = score_attempt(
+                audio_bytes,
+                reference_audio,
+                target_text=phrase.japanese_text,
+                target_romaji=phrase.romaji,
+                pronunciation_overrides=pronunciation_overrides,
+                target_pronunciation=pronunciation_target,
+            )
+        else:
+            scores = empty_score_payload(
+                _build_verification_feedback(
+                    verification.status,
+                    verification.recognized_text_romaji,
+                ),
+                target_pronunciation=pronunciation_target,
+                pronunciation_feedback=[],
+            )
     except Exception as error:
         raise BadRequestException(f"Scoring failed: {error}")
+
+    logger.info(
+        "exercise submission scoring student=%s exercise=%s phrase=%s verification_status=%s score=%.2f mora=%.2f consonant=%.2f vowel=%.2f counts_for_progress=%s",
+        current_user.uid,
+        exercise_id,
+        phrase.phrase_id,
+        verification.status,
+        scores["accuracy_score"],
+        scores["mora_timing_score"],
+        scores["consonant_score"],
+        scores["vowel_score"],
+        verification.status == VERIFICATION_ACCEPTED,
+    )
 
     existing_submission_result = await db.execute(
         select(ExerciseSubmission).where(
@@ -361,6 +437,15 @@ async def submit_assignment_phrase(
             suggested_vowel_score=scores["vowel_score"],
             suggested_phoneme_error_map=scores["phoneme_error_map"],
             suggested_feedback_text=scores["feedback_text"],
+            verification_status=verification.status,
+            recognized_phrase_id=verification.recognized_phrase_id,
+            recognized_text=verification.recognized_text,
+            recognized_text_romaji=verification.recognized_text_romaji,
+            target_pronunciation=scores["target_pronunciation"],
+            pronunciation_feedback=scores["pronunciation_feedback"],
+            verification_confidence=verification.verification_confidence,
+            verification_margin=verification.verification_margin,
+            counts_for_progress=verification.status == VERIFICATION_ACCEPTED,
             submitted_at=now,
         )
         db.add(submission)
@@ -372,6 +457,15 @@ async def submit_assignment_phrase(
         submission.suggested_vowel_score = scores["vowel_score"]
         submission.suggested_phoneme_error_map = scores["phoneme_error_map"]
         submission.suggested_feedback_text = scores["feedback_text"]
+        submission.verification_status = verification.status
+        submission.recognized_phrase_id = verification.recognized_phrase_id
+        submission.recognized_text = verification.recognized_text
+        submission.recognized_text_romaji = verification.recognized_text_romaji
+        submission.target_pronunciation = scores["target_pronunciation"]
+        submission.pronunciation_feedback = scores["pronunciation_feedback"]
+        submission.verification_confidence = verification.verification_confidence
+        submission.verification_margin = verification.verification_margin
+        submission.counts_for_progress = verification.status == VERIFICATION_ACCEPTED
         submission.teacher_accuracy_score = None
         submission.teacher_feedback_text = None
         submission.reviewed_at = None
@@ -418,6 +512,15 @@ async def get_exercise_submissions(
             suggested_consonant_score=submission.suggested_consonant_score,
             suggested_vowel_score=submission.suggested_vowel_score,
             suggested_feedback_text=submission.suggested_feedback_text,
+            verification_status=submission.verification_status,
+            recognized_phrase_id=submission.recognized_phrase_id,
+            recognized_text=submission.recognized_text,
+            recognized_text_romaji=submission.recognized_text_romaji,
+            target_pronunciation=submission.target_pronunciation,
+            pronunciation_feedback=submission.pronunciation_feedback,
+            verification_confidence=submission.verification_confidence,
+            verification_margin=submission.verification_margin,
+            counts_for_progress=submission.counts_for_progress,
             teacher_accuracy_score=submission.teacher_accuracy_score,
             teacher_feedback_text=submission.teacher_feedback_text,
         )
@@ -459,6 +562,15 @@ async def review_assignment_submission(
         suggested_consonant_score=submission.suggested_consonant_score,
         suggested_vowel_score=submission.suggested_vowel_score,
         suggested_feedback_text=submission.suggested_feedback_text,
+        verification_status=submission.verification_status,
+        recognized_phrase_id=submission.recognized_phrase_id,
+        recognized_text=submission.recognized_text,
+        recognized_text_romaji=submission.recognized_text_romaji,
+        target_pronunciation=submission.target_pronunciation,
+        pronunciation_feedback=submission.pronunciation_feedback,
+        verification_confidence=submission.verification_confidence,
+        verification_margin=submission.verification_margin,
+        counts_for_progress=submission.counts_for_progress,
         teacher_accuracy_score=submission.teacher_accuracy_score,
         teacher_feedback_text=submission.teacher_feedback_text,
     )
@@ -497,6 +609,15 @@ async def release_assignment_submission(
         suggested_consonant_score=submission.suggested_consonant_score,
         suggested_vowel_score=submission.suggested_vowel_score,
         suggested_feedback_text=submission.suggested_feedback_text,
+        verification_status=submission.verification_status,
+        recognized_phrase_id=submission.recognized_phrase_id,
+        recognized_text=submission.recognized_text,
+        recognized_text_romaji=submission.recognized_text_romaji,
+        target_pronunciation=submission.target_pronunciation,
+        pronunciation_feedback=submission.pronunciation_feedback,
+        verification_confidence=submission.verification_confidence,
+        verification_margin=submission.verification_margin,
+        counts_for_progress=submission.counts_for_progress,
         teacher_accuracy_score=submission.teacher_accuracy_score,
         teacher_feedback_text=submission.teacher_feedback_text,
     )
@@ -684,3 +805,22 @@ async def _get_owned_exercise(
         raise ForbiddenException("You can only manage your own exercises")
 
     return exercise
+
+
+def _build_verification_feedback(
+    status: str,
+    recognized_text_romaji: str | None,
+) -> str:
+    if status == VERIFICATION_NO_CLEAR_SPEECH:
+        return "We could not detect enough clear speech in this recording. Please try again in a quieter spot."
+    if status == VERIFICATION_RETRY:
+        if recognized_text_romaji:
+            return f"Phrase verification was uncertain for this recording. Whisper heard: {recognized_text_romaji}. Please try the target phrase again."
+        return "Phrase verification was uncertain for this recording. Please try the target phrase again."
+    if status == VERIFICATION_WRONG_PHRASE:
+        if recognized_text_romaji:
+            return f"We detected a different phrase than the target. Recognized text: {recognized_text_romaji}"
+        return "We detected a different phrase than the target. Please try the assigned phrase again."
+    if recognized_text_romaji:
+        return f"We detected a different phrase than the target. Recognized text: {recognized_text_romaji}"
+    return "We detected a different phrase than the target. Please try the assigned phrase again."

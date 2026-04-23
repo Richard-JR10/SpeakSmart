@@ -1,5 +1,5 @@
 # app/db/models/exercise.py
-from sqlalchemy import String, Integer, Float, JSON, ForeignKey, DateTime, func
+from sqlalchemy import Boolean, String, Integer, Float, JSON, ForeignKey, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
@@ -68,6 +68,15 @@ class ExerciseSubmission(Base):
     suggested_vowel_score: Mapped[float] = mapped_column(Float, nullable=False)
     suggested_phoneme_error_map: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     suggested_feedback_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    verification_status: Mapped[str] = mapped_column(String, nullable=False, default="accepted")
+    recognized_phrase_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    recognized_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    recognized_text_romaji: Mapped[str | None] = mapped_column(String, nullable=True)
+    target_pronunciation: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    pronunciation_feedback: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    verification_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    verification_margin: Mapped[float | None] = mapped_column(Float, nullable=True)
+    counts_for_progress: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     teacher_accuracy_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     teacher_feedback_text: Mapped[str | None] = mapped_column(String, nullable=True)
     reviewed_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)

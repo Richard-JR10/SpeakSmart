@@ -53,6 +53,18 @@ def get_audio_duration(y: np.ndarray, sr: int = 16000) -> float:
     return librosa.get_duration(y=y, sr=sr)
 
 
+def get_voiced_ratio(y: np.ndarray, sr: int = 16000) -> float:
+    """
+    Estimates how much of the processed waveform contains speech-like energy.
+    """
+    if y.size == 0:
+        return 0.0
+
+    intervals = librosa.effects.split(y, top_db=25)
+    voiced_samples = int(sum(int(end - start) for start, end in intervals))
+    return float(voiced_samples / max(len(y), 1))
+
+
 def extract_features(audio_bytes: bytes) -> dict:
     """
     Full feature extraction pipeline for a single audio file.
@@ -61,6 +73,7 @@ def extract_features(audio_bytes: bytes) -> dict:
         mfcc      - normalized MFCC matrix (13 x T)
         duration  - audio length in seconds
         rms       - root mean square energy (used for silence detection)
+        voiced_ratio - fraction of frames that contain speech-like energy
     """
     y, sr = load_audio_from_bytes(audio_bytes)
     processed = prepare_waveform(y)
@@ -68,11 +81,15 @@ def extract_features(audio_bytes: bytes) -> dict:
     mfcc = extract_mfcc(processed, sr)
     duration = get_audio_duration(processed, sr)
     rms = float(np.sqrt(np.mean(processed**2)))
+    voiced_ratio = get_voiced_ratio(processed, sr)
 
     return {
         "mfcc": mfcc,
         "duration": duration,
         "rms": rms,
+        "voiced_ratio": voiced_ratio,
+        "waveform": processed,
+        "sample_rate": sr,
     }
 
 
@@ -104,3 +121,7 @@ def validate_audio(audio_bytes: bytes, max_size_mb: int = 10) -> None:
     rms = float(np.sqrt(np.mean(processed**2)))
     if rms < 0.001:
         raise ValueError("Audio appears to be silent - please check your microphone")
+
+    voiced_ratio = get_voiced_ratio(processed, sr)
+    if voiced_ratio < 0.05:
+        raise ValueError("Audio does not contain enough clear speech to score.")

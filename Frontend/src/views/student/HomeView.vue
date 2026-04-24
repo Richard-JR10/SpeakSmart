@@ -1,6 +1,6 @@
 <template>
   <StudentLayout title="Dashboard" wide>
-    <div class="flex flex-col gap-6">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-5">
       <LoadingSpinner
         v-if="progressStore.loading && !dashboard"
         full-screen
@@ -16,116 +16,147 @@
           </AlertDescription>
         </Alert>
 
-        <Card class="overflow-hidden border-border/80 bg-card/95 shadow-(--shadow-soft)">
-          <CardContent class="grid gap-6 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.35fr)_360px] xl:items-stretch">
-            <section class="flex min-w-0 flex-col justify-between gap-6">
-              <div class="flex flex-col gap-5">
-                <div class="flex flex-wrap items-center gap-3">
-                  <LogoMark size="lg" class="border-primary/20 bg-background" />
-                  <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                    Practice console
-                  </Badge>
-                  <Badge v-if="weeklyDeltaText" :variant="weeklyDeltaVariant" class="rounded-full px-3 py-1">
-                    {{ weeklyDeltaText }}
-                  </Badge>
+        <section
+          class="overflow-hidden rounded-3xl border border-border/80 bg-[radial-gradient(circle_at_15%_20%,rgba(184,141,70,0.16),transparent_28%),linear-gradient(135deg,#fffdf9_0%,#edf4ef_54%,#fbf6ea_100%)] shadow-(--shadow-soft)"
+          aria-labelledby="student-home-title"
+        >
+          <div class="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_25rem]">
+            <div class="flex min-w-0 flex-col justify-between gap-8">
+              <div class="flex flex-col gap-6">
+                <div class="flex items-center gap-3">
+                  <LogoMark size="lg" class="border-primary/20 bg-card/90" />
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-(--color-heading)" translate="no">
+                      SpeakSmart
+                    </p>
+                    <p class="text-sm text-muted-foreground">
+                      Learning studio
+                    </p>
+                  </div>
                 </div>
 
-                <div class="flex flex-col gap-3">
-                  <h2 class="text-balance font-(--font-display) text-4xl leading-none text-(--color-heading) sm:text-5xl">
-                    Good {{ timeOfDay }}, {{ studentName }}
+                <div class="max-w-3xl">
+                  <h2
+                    id="student-home-title"
+                    class="text-balance font-(--font-display) text-4xl leading-none text-(--color-heading) sm:text-5xl lg:text-6xl"
+                  >
+                    Good {{ timeOfDay }}, {{ studentName }}.
                   </h2>
-                  <p class="max-w-3xl text-base leading-8 text-muted-foreground">
-                    Pick up the next short speaking set, keep teacher work separate, and watch the patterns in your pronunciation practice sharpen over time.
+                  <p class="mt-4 text-pretty text-base leading-8 text-muted-foreground sm:text-lg">
+                    Start the next speaking set, clear teacher-assigned work, and use your score patterns to practice with purpose.
                   </p>
                 </div>
               </div>
 
               <div class="flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" class="min-h-11 rounded-xl" @click="continueSession">
+                <Button size="lg" class="min-h-12 rounded-2xl px-5" @click="continueSession">
                   <component :is="continueModule ? RefreshCcw : Mic" data-icon="inline-start" />
                   <span>{{ continueModule ? 'Resume practice' : 'Start practicing' }}</span>
                 </Button>
-                <Button variant="outline" size="lg" class="min-h-11 rounded-xl" @click="router.push('/progress')">
-                  <ChartColumn data-icon="inline-start" />
-                  <span>Open progress</span>
+                <Button variant="outline" size="lg" class="min-h-12 rounded-2xl bg-card/80 px-5" @click="router.push('/assignments')">
+                  <ClipboardList data-icon="inline-start" />
+                  <span>View assignments</span>
                 </Button>
               </div>
-            </section>
+            </div>
 
-            <aside class="grid gap-4 rounded-xl border border-border/70 bg-background/70 p-4 sm:grid-cols-2 xl:grid-cols-1">
+            <aside class="rounded-3xl border border-border/70 bg-card/80 p-4 shadow-xs">
               <div class="flex items-start justify-between gap-4">
-                <div class="flex flex-col gap-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-muted-foreground">
                     Overall average
                   </p>
-                  <p class="font-(--font-display) text-5xl leading-none text-(--color-heading)">
+                  <p class="mt-2 font-(--font-display) text-6xl leading-none text-(--color-heading)">
                     {{ dashboard?.overall_average?.toFixed(0) ?? '--' }}%
                   </p>
-                  <p class="text-sm leading-6 text-muted-foreground">
+                  <p class="mt-3 text-sm leading-6 text-muted-foreground">
                     {{ latestAttempt ? `Last submission ${formatRelativeDate(latestAttempt.attempted_at)}` : 'Your first score will appear here.' }}
                   </p>
                 </div>
-                <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                  <CircleGauge class="size-5" />
+                <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                  <CircleGauge class="size-5" aria-hidden="true" />
                 </span>
               </div>
 
-              <Separator class="hidden xl:block" />
+              <div class="mt-5 grid gap-3">
+                <div class="h-2 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    class="h-full rounded-full bg-primary"
+                    :style="{ width: overallAverageWidth }"
+                  />
+                </div>
 
-              <div class="grid gap-3">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-muted-foreground">Active modules</span>
-                  <span class="font-semibold text-(--color-heading)">{{ activeModulesCount }}</span>
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="rounded-2xl bg-secondary/60 p-3">
+                    <p class="text-2xl font-semibold tabular-nums text-(--color-heading)">
+                      {{ activeModulesCount }}
+                    </p>
+                    <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                      Active modules
+                    </p>
+                  </div>
+                  <div class="rounded-2xl bg-secondary/60 p-3">
+                    <p class="text-2xl font-semibold tabular-nums text-(--color-heading)">
+                      {{ pendingAssignmentsCount }}
+                    </p>
+                    <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                      Pending
+                    </p>
+                  </div>
+                  <div class="rounded-2xl bg-secondary/60 p-3">
+                    <p class="text-2xl font-semibold tabular-nums text-(--color-heading)">
+                      {{ releasedAssignmentPhrases }}
+                    </p>
+                    <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                      Released
+                    </p>
+                  </div>
                 </div>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-muted-foreground">Pending assignments</span>
-                  <span class="font-semibold text-(--color-heading)">{{ pendingAssignmentsCount }}</span>
-                </div>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-muted-foreground">Released feedback</span>
-                  <span class="font-semibold text-(--color-heading)">{{ releasedAssignmentPhrases }}</span>
-                </div>
+
+                <Badge v-if="weeklyDeltaText" :variant="weeklyDeltaVariant" class="mt-1 w-fit rounded-full px-3 py-1">
+                  {{ weeklyDeltaText }}
+                </Badge>
               </div>
             </aside>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Student practice metrics">
           <div
             v-for="item in metricCards"
             :key="item.label"
-            class="rounded-xl border border-border/70 bg-card/85 p-4 shadow-xs"
+            class="rounded-2xl border border-border/70 bg-card/90 p-4 shadow-xs transition-transform duration-200 ease-out hover:-translate-y-0.5"
           >
             <div class="flex items-start justify-between gap-4">
               <div class="flex min-w-0 flex-col gap-2">
-                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <p class="text-sm font-semibold text-muted-foreground">
                   {{ item.label }}
                 </p>
                 <p class="truncate font-(--font-display) text-3xl leading-none text-(--color-heading)">
                   {{ item.value }}
                 </p>
-                <p class="text-sm leading-6 text-muted-foreground">
+                <p class="text-pretty text-sm leading-6 text-muted-foreground">
                   {{ item.copy }}
                 </p>
               </div>
-              <span :class="['flex size-10 shrink-0 items-center justify-center rounded-xl', item.iconClass]">
-                <component :is="item.icon" class="size-5" />
+              <span :class="['flex size-10 shrink-0 items-center justify-center rounded-2xl', item.iconClass]">
+                <component :is="item.icon" class="size-5" aria-hidden="true" />
               </span>
             </div>
           </div>
         </section>
 
-        <div class="grid items-stretch gap-5 xl:grid-cols-2">
-          <Card class="order-1 flex h-full border-border/80 bg-card/95">
+        <div class="grid items-stretch gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]">
+          <Card class="order-1 flex h-full border-border/80 bg-card/95 shadow-(--shadow-soft)">
             <CardHeader class="flex flex-col gap-3">
               <div class="flex items-center justify-between gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1">
                   Next session
                 </Badge>
                 <Clock3 class="size-5 text-muted-foreground" aria-hidden="true" />
               </div>
               <div class="flex flex-col gap-2">
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                <CardTitle class="text-balance font-(--font-display) text-3xl leading-none text-(--color-heading)">
                   {{ continueModule ? continueModule.title : 'Choose your first module' }}
                 </CardTitle>
                 <CardDescription>
@@ -135,32 +166,32 @@
             </CardHeader>
 
             <CardContent class="flex flex-1 flex-col">
-              <div v-if="continueModule" class="flex flex-1 flex-col justify-between gap-5 rounded-xl border border-border/70 bg-muted/40 p-4">
+              <div v-if="continueModule" class="flex flex-1 flex-col justify-between gap-5 rounded-2xl border border-border/70 bg-muted/40 p-4">
                 <div class="flex min-w-0 items-start gap-4">
-                  <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
-                    <component :is="moduleIcon(continueModule.module_id)" class="size-5" />
+                  <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary">
+                    <component :is="moduleIcon(continueModule.module_id)" class="size-5" aria-hidden="true" />
                   </span>
                   <div class="flex min-w-0 flex-col gap-2">
-                    <p class="text-sm leading-6 text-muted-foreground">
+                    <p class="text-pretty text-sm leading-6 text-muted-foreground">
                       {{ continueSessionCopy }}
                     </p>
-                    <p class="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    <p class="text-xs font-medium text-muted-foreground">
                       {{ continueSessionSource }}
                     </p>
                   </div>
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-lg border border-border/60 bg-background/70 p-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  <div class="rounded-2xl border border-border/60 bg-background/70 p-3">
+                    <p class="text-xs font-semibold text-muted-foreground">
                       Session type
                     </p>
                     <p class="mt-1 text-sm font-semibold text-(--color-heading)">
                       Short speaking set
                     </p>
                   </div>
-                  <div class="rounded-lg border border-border/60 bg-background/70 p-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  <div class="rounded-2xl border border-border/60 bg-background/70 p-3">
+                    <p class="text-xs font-semibold text-muted-foreground">
                       Next action
                     </p>
                     <p class="mt-1 text-sm font-semibold text-(--color-heading)">
@@ -180,25 +211,25 @@
             </CardContent>
 
             <CardFooter class="border-t">
-              <Button class="w-full rounded-xl md:w-auto" @click="continueSession">
+              <Button class="w-full rounded-2xl md:w-auto" @click="continueSession">
                 <ArrowRight data-icon="inline-start" />
                 <span>{{ continueModule ? 'Open module' : 'Browse lessons' }}</span>
               </Button>
             </CardFooter>
           </Card>
 
-            <Card class="order-3 border-border/80 bg-card/95 xl:col-span-2">
+            <Card class="order-3 border-border/80 bg-card/95 shadow-(--shadow-soft) xl:col-span-2">
               <CardHeader class="gap-3">
                 <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
                   <div class="flex min-w-0 flex-col gap-3">
                     <div class="flex flex-wrap items-center gap-3">
-                      <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                      <Badge variant="secondary" class="w-fit rounded-full px-3 py-1">
                         Teacher assignments
                       </Badge>
                       <ClipboardList class="size-5 text-muted-foreground" aria-hidden="true" />
                     </div>
                     <div class="flex flex-col gap-2">
-                      <CardTitle class="font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
+                      <CardTitle class="text-balance font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
                         Assigned practice queue
                       </CardTitle>
                       <CardDescription>
@@ -208,16 +239,16 @@
                   </div>
 
                   <div class="grid grid-cols-2 gap-2 sm:w-64">
-                    <div :class="['rounded-xl border p-3', pendingSummaryCardClass]">
-                      <p :class="['text-xs font-semibold uppercase tracking-[0.14em]', pendingSummaryLabelClass]">
+                    <div :class="['rounded-2xl border p-3', pendingSummaryCardClass]">
+                      <p :class="['text-xs font-semibold', pendingSummaryLabelClass]">
                         Pending
                       </p>
                       <p class="mt-2 font-(--font-display) text-3xl leading-none">
                         {{ pendingAssignmentsCount }}
                       </p>
                     </div>
-                    <div :class="['rounded-xl border p-3', releasedSummaryCardClass]">
-                      <p :class="['text-xs font-semibold uppercase tracking-[0.14em]', releasedSummaryLabelClass]">
+                    <div :class="['rounded-2xl border p-3', releasedSummaryCardClass]">
+                      <p :class="['text-xs font-semibold', releasedSummaryLabelClass]">
                         Released
                       </p>
                       <p class="mt-2 font-(--font-display) text-3xl leading-none">
@@ -244,7 +275,7 @@
                     <div
                       v-for="assignment in assignmentPreview"
                       :key="assignment.exercise_id"
-                      class="grid gap-3 rounded-xl border border-border/70 bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+                      class="grid gap-3 rounded-2xl border border-border/70 bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
                     >
                       <div class="flex min-w-0 flex-col gap-2">
                         <div class="flex flex-wrap items-center gap-2">
@@ -285,15 +316,15 @@
                   </Alert>
                 </div>
 
-                <div class="rounded-xl border border-dashed border-border/80 bg-background/70 p-4">
+                <div class="rounded-2xl border border-dashed border-border/80 bg-background/70 p-4">
                   <div class="flex flex-col gap-3">
-                    <span class="flex size-10 items-center justify-center rounded-xl bg-secondary text-primary">
+                    <span class="flex size-10 items-center justify-center rounded-2xl bg-secondary text-primary">
                       <FileCheck2 class="size-5" aria-hidden="true" />
                     </span>
                     <p class="text-sm leading-6 text-muted-foreground">
                       Record pending phrases or review released feedback.
                     </p>
-                    <Button class="w-full rounded-xl lg:px-3" @click="router.push('/assignments')">
+                    <Button class="w-full rounded-2xl lg:px-3" @click="router.push('/assignments')">
                       <span>Open</span>
                       <ArrowRight data-icon="inline-end" />
                       <span class="sr-only">Assignments</span>
@@ -303,16 +334,16 @@
               </CardContent>
             </Card>
 
-          <Card class="order-2 h-full border-border/80 bg-card/95">
+          <Card class="order-2 h-full border-border/80 bg-card/95 shadow-(--shadow-soft)">
             <CardHeader class="flex flex-col gap-3">
               <div class="flex items-center justify-between gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1">
                   Focus area
                 </Badge>
                 <Target class="size-5 text-muted-foreground" aria-hidden="true" />
               </div>
               <div class="flex flex-col gap-2">
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                <CardTitle class="text-balance font-(--font-display) text-3xl leading-none text-(--color-heading)">
                   What deserves your next repetition
                 </CardTitle>
                 <CardDescription>
@@ -342,9 +373,9 @@
                 </AlertDescription>
               </Alert>
 
-              <div :class="['rounded-xl border p-4', focusPlanClass]">
+              <div :class="['rounded-2xl border p-4', focusPlanClass]">
                 <div class="flex flex-col gap-2">
-                  <p :class="['text-xs font-semibold uppercase tracking-[0.14em]', focusPlanLabelClass]">
+                  <p :class="['text-xs font-semibold', focusPlanLabelClass]">
                     Repetition plan
                   </p>
                   <p class="text-lg font-semibold">
@@ -363,7 +394,7 @@
               <Button
                 variant="outline"
                 :disabled="!dashboard?.weakest_module_id"
-                class="rounded-xl"
+                class="w-full rounded-2xl sm:w-auto"
                 @click="practiceWeakest"
               >
                 <Mic data-icon="inline-start" />
@@ -374,15 +405,15 @@
         </div>
 
         <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <Card class="border-border/80 bg-card/95">
+          <Card class="border-border/80 bg-card/95 shadow-(--shadow-soft)">
             <CardHeader class="flex flex-col gap-3">
               <div class="flex items-center justify-between gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1">
                   Module atlas
                 </Badge>
                 <BookOpen class="size-5 text-muted-foreground" aria-hidden="true" />
               </div>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              <CardTitle class="text-balance font-(--font-display) text-3xl leading-none text-(--color-heading)">
                 Where you sound strongest
               </CardTitle>
               <CardDescription>
@@ -393,10 +424,10 @@
             <CardContent class="flex flex-col gap-1">
               <template v-if="rankedModules.length">
                 <template v-for="(summary, index) in rankedModules" :key="summary.module_id">
-                  <div class="flex flex-col gap-3 rounded-xl p-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div class="flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:items-start sm:justify-between">
                     <div class="flex min-w-0 items-start gap-3">
                       <span class="flex size-10 items-center justify-center rounded-2xl bg-secondary text-primary">
-                        <component :is="moduleIcon(summary.module_id)" class="size-5" />
+                        <component :is="moduleIcon(summary.module_id)" class="size-5" aria-hidden="true" />
                       </span>
                       <div class="flex min-w-0 flex-col gap-2">
                         <p class="font-semibold text-(--color-heading)">
@@ -429,22 +460,22 @@
             </CardContent>
 
             <CardFooter class="border-t">
-              <Button variant="outline" class="rounded-xl" @click="router.push('/lessons')">
+              <Button variant="outline" class="w-full rounded-2xl sm:w-auto" @click="router.push('/lessons')">
                 <BookOpen data-icon="inline-start" />
                 <span>Explore all modules</span>
               </Button>
             </CardFooter>
           </Card>
 
-          <Card class="border-border/80 bg-card/95">
+          <Card class="border-border/80 bg-card/95 shadow-(--shadow-soft)">
             <CardHeader class="flex flex-col gap-3">
               <div class="flex items-center justify-between gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1">
                   Recent work
                 </Badge>
                 <MessageSquareText class="size-5 text-muted-foreground" aria-hidden="true" />
               </div>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              <CardTitle class="text-balance font-(--font-display) text-3xl leading-none text-(--color-heading)">
                 Latest speaking checks
               </CardTitle>
               <CardDescription>
@@ -457,7 +488,7 @@
 
               <template v-else-if="recentAttempts.length">
                 <template v-for="(attempt, index) in recentAttempts" :key="attempt.attempt_id">
-                  <div class="flex flex-col gap-3 rounded-xl p-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div class="flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:items-start sm:justify-between">
                     <div class="flex min-w-0 flex-col gap-2">
                       <p class="font-semibold text-(--color-heading)">{{ attempt.phrase_id }}</p>
                       <p class="text-sm text-muted-foreground">
@@ -485,7 +516,7 @@
             </CardContent>
 
             <CardFooter class="border-t">
-              <Button class="rounded-xl" @click="router.push('/lessons')">
+              <Button class="w-full rounded-2xl sm:w-auto" @click="router.push('/lessons')">
                 <Mic data-icon="inline-start" />
                 <span>Start a new session</span>
               </Button>
@@ -499,7 +530,7 @@
 
 <script setup lang="ts">
 import type { Component } from 'vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   AlertTriangle,
@@ -568,12 +599,16 @@ const classesStore = useClassesStore()
 const progressStore = useProgressStore()
 const modulesStore = useModulesStore()
 const attemptsStore = useAttemptsStore()
-const assignmentsLoading = ref(false)
-const assignmentsError = ref<string | null>(null)
+const assignmentsLoading = shallowRef(false)
+const assignmentsError = shallowRef<string | null>(null)
 const studentAssignments = ref<StudentAssignment[]>([])
 const lastPracticeSession = ref<LastPracticeSession | null>(null)
 
 const dashboard = computed(() => progressStore.dashboard)
+const overallAverageWidth = computed(() => {
+  const average = Math.min(Math.max(dashboard.value?.overall_average ?? 0, 0), 100)
+  return `${average}%`
+})
 const latestAttempt = computed(() => attemptsStore.attemptHistory[0] ?? null)
 const recentAttempts = computed(() => attemptsStore.attemptHistory.slice(0, 4))
 const weeklyAccuracy = computed(() => dashboard.value?.weekly_accuracy.slice(-6) ?? [])

@@ -44,7 +44,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     initPromise = (async () => {
       try {
-        await getRedirectResult(auth)
+        const credential = await getRedirectResult(auth)
+        if (credential?.user) {
+          firebaseUser.value = credential.user
+        }
       } catch (e) {
         error.value = parseError(e)
       }
@@ -153,12 +156,22 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      if (shouldUseGoogleRedirect()) {
+      if (shouldUseGoogleRedirectOnly()) {
         await signInWithRedirect(auth, googleProvider)
         return 'redirect'
       }
 
-      const credential = await signInWithPopup(auth, googleProvider)
+      const credential = await signInWithPopup(auth, googleProvider).catch(async (e) => {
+        if (shouldFallbackToGoogleRedirect(e)) {
+          await signInWithRedirect(auth, googleProvider)
+          return null
+        }
+
+        throw e
+      })
+
+      if (!credential) return 'redirect'
+
       firebaseUser.value = credential.user
       await fetchProfile()
       return needsProfileSetup.value ? 'profile-setup' : 'signed-in'
@@ -217,7 +230,7 @@ export const useAuthStore = defineStore('auth', () => {
     )
   }
 
-  function shouldUseGoogleRedirect() {
+  function shouldUseGoogleRedirectOnly() {
     if (typeof window === 'undefined') return false
 
     const navigatorWithStandalone = window.navigator as Navigator & {
@@ -226,9 +239,13 @@ export const useAuthStore = defineStore('auth', () => {
     const isStandalone =
       window.matchMedia?.('(display-mode: standalone)').matches ||
       navigatorWithStandalone.standalone === true
-    const isSmallScreen = window.matchMedia?.('(max-width: 767px)').matches
 
-    return Boolean(isStandalone || isSmallScreen)
+    return Boolean(isStandalone)
+  }
+
+  function shouldFallbackToGoogleRedirect(errorValue: unknown) {
+    const code = (errorValue as { code?: string } | null)?.code
+    return code === 'auth/popup-blocked'
   }
 
   function parseError(errorValue: unknown): string {

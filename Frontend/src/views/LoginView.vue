@@ -179,7 +179,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import {
   ArrowLeft,
   Building2,
@@ -198,10 +198,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { useAuthRedirect } from '@/composables/useAuthRedirect'
 import { useAuthStore } from '@/stores/auth'
-import type { AuthFlowResult } from '@/types'
 
-const router = useRouter()
 const authStore = useAuthStore()
 
 const emailInput = ref<ComponentPublicInstance | null>(null)
@@ -210,6 +209,11 @@ const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
+const { redirectAfterAuth } = useAuthRedirect({
+  onPageRestore: () => {
+    loading.value = false
+  },
+})
 const formError = ref<string | null>(null)
 const fieldErrors = ref({
   email: null as string | null,
@@ -305,14 +309,4 @@ async function handleGoogleLogin() {
   }
 }
 
-async function redirectAfterAuth(result: AuthFlowResult) {
-  if (result === 'redirect') return
-
-  if (result === 'profile-setup' || authStore.needsProfileSetup) {
-    await router.push('/complete-profile')
-    return
-  }
-
-  await router.push(authStore.isInstructor ? '/instructor' : '/home')
-}
 </script>

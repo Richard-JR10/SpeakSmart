@@ -1,5 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosHeaders, type InternalAxiosRequestConfig } from 'axios';
 import { auth } from '@/firebase';
+
+type AuthRetryConfig = InternalAxiosRequestConfig & {
+    _retryAuth?: boolean;
+}
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -24,12 +28,27 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         const status = error.response?.status;
+        const retryConfig = error.config as AuthRetryConfig | undefined;
 
-        if (status === 401) {
-            auth.signOut();
-            window.location.href = '/login';
+        if (status === 401 && auth.currentUser && retryConfig && !retryConfig._retryAuth) {
+            retryConfig._retryAuth = true;
+
+            try {
+                const token = await auth.currentUser.getIdToken(true);
+                retryConfig.headers = AxiosHeaders.from(retryConfig.headers);
+                retryConfig.headers.set('Authorization', `Bearer ${token}`);
+                return api(retryConfig);
+            } catch {
+                await auth.signOut();
+            }
+        } else if (status === 401) {
+            await auth.signOut();
+        }
+
+        if (status === 401 && window.location.pathname !== '/login') {
+            window.location.assign('/login');
         }
 
         if (status === 403) {

@@ -140,6 +140,13 @@ router.beforeEach(async (to) => {
     return { name: 'complete-profile' }
   }
 
+  if (!role) {
+    if (to.meta.requiresAuth) {
+      return { name: 'login' }
+    }
+    return true
+  }
+
   if (to.meta.allowPendingProfile && !authStore.needsProfileSetup) {
     return { name: getHomeRouteName(role) }
   }

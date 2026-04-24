@@ -22,6 +22,7 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
     }
 
     if (!authStore.isAuthenticated && result !== 'profile-setup') return
+    if (result !== 'profile-setup' && !authStore.needsProfileSetup && !authStore.profile) return
 
     redirecting = true
     try {

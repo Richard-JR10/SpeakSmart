@@ -230,8 +230,8 @@
                 </div>
 
                 <Button variant="default" size="lg" type="submit" class="w-full" :disabled="submitDisabled">
-                  <LoaderCircle v-if="loading" class="animate-spin" data-icon="inline-start" />
-                  <span>{{ loading ? 'Creating account...' : 'Create account' }}</span>
+                  <LoaderCircle v-if="isEmailLoading" class="animate-spin" data-icon="inline-start" />
+                  <span>{{ isEmailLoading ? 'Creating account...' : 'Create account' }}</span>
                 </Button>
               </form>
 
@@ -248,7 +248,8 @@
                 :disabled="loading"
                 @click="handleGoogleSignup"
               >
-                Continue with Google
+                <LoaderCircle v-if="isGoogleLoading" class="animate-spin" data-icon="inline-start" />
+                <span>{{ isGoogleLoading ? 'Continuing with Google...' : 'Continue with Google' }}</span>
               </Button>
             </CardContent>
 
@@ -308,9 +309,11 @@ const password = ref('')
 const role = ref<UserRole | undefined>(undefined)
 const showPassword = ref(false)
 const loading = ref(false)
+const activeAuthMethod = ref<'email' | 'google' | null>(null)
 const { redirectAfterAuth } = useAuthRedirect({
   onPageRestore: () => {
     loading.value = false
+    activeAuthMethod.value = null
   },
 })
 const formError = ref<string | null>(null)
@@ -373,6 +376,8 @@ const passwordChecklist = computed(() => [
 
 const visibleError = computed(() => formError.value ?? authStore.error)
 const submitDisabled = computed(() => loading.value || !role.value)
+const isEmailLoading = computed(() => loading.value && activeAuthMethod.value === 'email')
+const isGoogleLoading = computed(() => loading.value && activeAuthMethod.value === 'google')
 
 function dismissError() {
   formError.value = null
@@ -455,6 +460,7 @@ async function handleSignup() {
   }
 
   loading.value = true
+  activeAuthMethod.value = 'email'
   try {
     const result = await authStore.signUpWithEmail({
       displayName: displayName.value,
@@ -467,6 +473,7 @@ async function handleSignup() {
     // The auth store owns the user-facing error message.
   } finally {
     loading.value = false
+    activeAuthMethod.value = null
   }
 }
 
@@ -474,6 +481,7 @@ async function handleGoogleSignup() {
   dismissError()
 
   loading.value = true
+  activeAuthMethod.value = 'google'
   try {
     const result = await authStore.signInWithGoogle()
     await redirectAfterAuth(result)
@@ -481,6 +489,7 @@ async function handleGoogleSignup() {
     // The auth store owns the user-facing error message.
   } finally {
     loading.value = false
+    activeAuthMethod.value = null
   }
 }
 

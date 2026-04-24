@@ -136,7 +136,11 @@ router.beforeEach(async (to) => {
     return true
   }
 
-  if (authStore.needsProfileSetup && !to.meta.allowPendingProfile) {
+  if (authStore.needsProfileSetup) {
+    if (to.meta.allowPendingProfile) {
+      return true
+    }
+
     return { name: 'complete-profile' }
   }
 

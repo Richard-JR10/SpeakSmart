@@ -17,16 +17,26 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
   async function redirectAfterAuth(result: AuthFlowResult = 'signed-in') {
     if (result === 'redirect' || redirecting) return
 
+    if (result === 'profile-setup') {
+      redirecting = true
+      try {
+        await router.replace('/complete-profile')
+      } finally {
+        redirecting = false
+      }
+      return
+    }
+
     if (authStore.loading) {
       await authStore.initAuth()
     }
 
-    if (!authStore.isAuthenticated && result !== 'profile-setup') return
-    if (result !== 'profile-setup' && !authStore.needsProfileSetup && !authStore.profile) return
+    if (!authStore.isAuthenticated) return
+    if (!authStore.needsProfileSetup && !authStore.profile) return
 
     redirecting = true
     try {
-      if (result === 'profile-setup' || authStore.needsProfileSetup) {
+      if (authStore.needsProfileSetup) {
         await router.replace('/complete-profile')
         return
       }

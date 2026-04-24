@@ -311,6 +311,8 @@ async function handleCompleteProfile() {
       role: role.value,
     })
     await router.push(authStore.isInstructor ? '/instructor' : '/home')
+  } catch {
+    // The auth store owns the user-facing error message.
   } finally {
     loading.value = false
   }

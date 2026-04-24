@@ -4,8 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
-from app.core.dependencies import get_current_user, get_db
-from app.core.exceptions import ForbiddenException
+from app.core.dependencies import authorize_student_access, get_current_user, get_db
 from app.db.models.user import User
 from app.db.models.attempt import Attempt
 from app.db.models.progress import ProgressSummary
@@ -35,10 +34,9 @@ async def get_student_progress(
       - Weekly accuracy chart data (last 8 weeks)
 
     Students can only view their own progress.
-    Instructors can view any student.
+    Instructors can view students in their classes.
     """
-    if current_user.role == "student" and current_user.uid != student_uid:
-        raise ForbiddenException("Students can only view their own progress")
+    await authorize_student_access(db, current_user, student_uid)
 
     # 1. Fetch all progress summaries for this student
     summaries_result = await db.execute(
@@ -89,8 +87,7 @@ async def get_module_progress(
     db: AsyncSession = Depends(get_db),
 ):
     """Returns progress summary for a specific student + module pair."""
-    if current_user.role == "student" and current_user.uid != student_uid:
-        raise ForbiddenException("Students can only view their own progress")
+    await authorize_student_access(db, current_user, student_uid)
 
     result = await db.execute(
         select(ProgressSummary).where(

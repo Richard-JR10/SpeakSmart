@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.core.dependencies import get_current_user, get_db
-from app.core.exceptions import NotFoundException, BadRequestException, ForbiddenException
+from app.core.dependencies import authorize_student_access, get_current_user, get_db
+from app.core.exceptions import NotFoundException, BadRequestException
 from app.db.models.user import User
 from app.db.models.phrase import Phrase
 from app.db.models.attempt import Attempt
@@ -204,13 +204,11 @@ async def get_attempts(
     Returns attempt history for a student.
 
     - Students can only fetch their own attempts.
-    - Instructors can fetch any student's attempts.
+    - Instructors can fetch attempts for students in their classes.
     - Optionally filter by phrase_id.
     - Limited to last 20 by default.
     """
-    # Access control
-    if current_user.role == "student" and current_user.uid != student_uid:
-        raise ForbiddenException("Students can only view their own attempts")
+    await authorize_student_access(db, current_user, student_uid)
 
     query = (
         select(Attempt)
@@ -235,10 +233,9 @@ async def get_attempt_detail(
 ):
     """
     Returns full detail for a single attempt including phoneme error map.
-    Students can only view their own. Instructors can view any.
+    Students can only view their own. Instructors can view students in their classes.
     """
-    if current_user.role == "student" and current_user.uid != student_uid:
-        raise ForbiddenException("Students can only view their own attempts")
+    await authorize_student_access(db, current_user, student_uid)
 
     result = await db.execute(
         select(Attempt).where(

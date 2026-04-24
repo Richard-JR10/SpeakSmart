@@ -292,6 +292,8 @@ async function handleEmailLogin() {
   try {
     const result = await authStore.signInWithEmail(email.value, password.value)
     await redirectAfterAuth(result)
+  } catch {
+    // The auth store owns the user-facing error message.
   } finally {
     loading.value = false
   }
@@ -304,6 +306,8 @@ async function handleGoogleLogin() {
   try {
     const result = await authStore.signInWithGoogle()
     await redirectAfterAuth(result)
+  } catch {
+    // The auth store owns the user-facing error message.
   } finally {
     loading.value = false
   }

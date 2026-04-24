@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.dependencies import (
+    authorize_student_access,
     get_class_student_uids,
     get_current_user,
     get_db,
@@ -174,8 +175,7 @@ async def get_student_exercises(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.role == "student" and current_user.uid != student_uid:
-        raise ForbiddenException("Students can only view their own exercises")
+    await authorize_student_access(db, current_user, student_uid)
 
     assignments_result = await db.execute(
         select(ExerciseAssignment)
@@ -228,8 +228,7 @@ async def get_student_assignments(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.role == "student" and current_user.uid != student_uid:
-        raise ForbiddenException("Students can only view their own assignments")
+    await authorize_student_access(db, current_user, student_uid)
 
     assignments_result = await db.execute(
         select(ExerciseAssignment)

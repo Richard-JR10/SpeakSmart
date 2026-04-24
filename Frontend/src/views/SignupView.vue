@@ -463,6 +463,8 @@ async function handleSignup() {
       role: role.value!,
     })
     await redirectAfterAuth(result)
+  } catch {
+    // The auth store owns the user-facing error message.
   } finally {
     loading.value = false
   }
@@ -475,6 +477,8 @@ async function handleGoogleSignup() {
   try {
     const result = await authStore.signInWithGoogle()
     await redirectAfterAuth(result)
+  } catch {
+    // The auth store owns the user-facing error message.
   } finally {
     loading.value = false
   }

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   getRedirectResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -38,6 +39,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   let authInitialized = false
   let initPromise: Promise<void> | null = null
+  let profileRegistrationInProgress = false
 
   function initAuth(): Promise<void> {
     if (initPromise) return initPromise
@@ -58,7 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
 
           try {
             if (user) {
-              await fetchProfile()
+              await fetchProfile(user.uid)
             } else {
               profile.value = null
               needsProfileSetup.value = false
@@ -79,20 +81,36 @@ export const useAuthStore = defineStore('auth', () => {
     return initPromise
   }
 
-  async function fetchProfile(): Promise<User | null> {
-    if (!auth.currentUser) {
+  async function fetchProfile(expectedUid?: string): Promise<User | null> {
+    const targetUid = expectedUid ?? auth.currentUser?.uid ?? null
+
+    if (!targetUid || !auth.currentUser) {
       profile.value = null
       needsProfileSetup.value = false
       return null
     }
 
+    const suppressMissingProfile = profileRegistrationInProgress
+
     try {
       const currentProfile = await getMe()
+      if (!isCurrentAuthUser(targetUid)) {
+        return profile.value
+      }
+
       profile.value = currentProfile
       needsProfileSetup.value = false
       return currentProfile
     } catch (e) {
+      if (!isCurrentAuthUser(targetUid)) {
+        return profile.value
+      }
+
       if (isProfileSetupRequired(e)) {
+        if (suppressMissingProfile) {
+          return profile.value
+        }
+
         profile.value = null
         needsProfileSetup.value = true
         return null
@@ -111,28 +129,42 @@ export const useAuthStore = defineStore('auth', () => {
     role: UserRole
   }): Promise<AuthFlowResult> {
     error.value = null
+    profileRegistrationInProgress = true
+    let createdUser: FirebaseUser | null = null
+    let registeredProfile = false
 
     try {
       const credential = await createUserWithEmailAndPassword(
         auth,
-        payload.email,
+        payload.email.trim(),
         payload.password,
       )
+      createdUser = credential.user
+      firebaseUser.value = credential.user
 
       await updateFirebaseProfile(credential.user, {
         displayName: payload.displayName.trim(),
       })
 
+      const idToken = await credential.user.getIdToken(true)
       profile.value = await registerProfile({
         display_name: payload.displayName.trim(),
         role: payload.role,
+      }, {
+        idToken,
       })
+      registeredProfile = true
       needsProfileSetup.value = false
 
       return 'signed-in'
     } catch (e) {
+      if (createdUser && !registeredProfile) {
+        await deleteCreatedFirebaseUser(createdUser)
+      }
       error.value = parseError(e)
       throw e
+    } finally {
+      profileRegistrationInProgress = false
     }
   }
 
@@ -143,8 +175,9 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      await fetchProfile()
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password)
+      firebaseUser.value = credential.user
+      await fetchProfile(credential.user.uid)
       return needsProfileSetup.value ? 'profile-setup' : 'signed-in'
     } catch (e) {
       error.value = parseError(e)
@@ -173,11 +206,29 @@ export const useAuthStore = defineStore('auth', () => {
       if (!credential) return 'redirect'
 
       firebaseUser.value = credential.user
-      await fetchProfile()
+      await fetchProfile(credential.user.uid)
       return needsProfileSetup.value ? 'profile-setup' : 'signed-in'
     } catch (e) {
       error.value = parseError(e)
       throw e
+    }
+  }
+
+  function isCurrentAuthUser(expectedUid: string) {
+    return auth.currentUser?.uid === expectedUid
+  }
+
+  async function deleteCreatedFirebaseUser(user: FirebaseUser) {
+    try {
+      await deleteUser(user)
+    } catch {
+      await firebaseSignOut(auth).catch(() => undefined)
+    } finally {
+      if (!auth.currentUser || auth.currentUser.uid === user.uid) {
+        profile.value = null
+        firebaseUser.value = auth.currentUser
+        needsProfileSetup.value = false
+      }
     }
   }
 
@@ -198,9 +249,12 @@ export const useAuthStore = defineStore('auth', () => {
         displayName: payload.displayName.trim(),
       })
 
+      const idToken = await currentUser.getIdToken(true)
       profile.value = await registerProfile({
         display_name: payload.displayName.trim(),
         role: payload.role,
+      }, {
+        idToken,
       })
       needsProfileSetup.value = false
       return 'signed-in'

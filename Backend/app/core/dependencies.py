@@ -63,6 +63,33 @@ async def require_student(
     return current_user
 
 
+async def authorize_student_access(
+    db: AsyncSession,
+    current_user: User,
+    student_uid: str,
+) -> None:
+    if current_user.role == "student":
+        if current_user.uid != student_uid:
+            raise ForbiddenException("Students can only view their own data")
+        return
+
+    if current_user.role == "instructor":
+        result = await db.execute(
+            select(ClassMembership.user_uid)
+            .join(Class, Class.class_id == ClassMembership.class_id)
+            .join(User, User.uid == ClassMembership.user_uid)
+            .where(
+                Class.instructor_uid == current_user.uid,
+                ClassMembership.user_uid == student_uid,
+                User.role == "student",
+            )
+        )
+        if result.scalar_one_or_none():
+            return
+
+    raise ForbiddenException("You can only view students in your classes")
+
+
 async def get_owned_class(
     db: AsyncSession,
     class_id: str,

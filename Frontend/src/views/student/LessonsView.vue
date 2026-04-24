@@ -258,6 +258,7 @@ import { useModulesStore } from '@/stores/modules'
 import { useProgressStore } from '@/stores/progress'
 import { useAuthStore } from '@/stores/auth'
 import { useAttemptsStore } from '@/stores/attempts'
+import { setLastPracticeSession } from '@/utils/studentSession'
 
 const MODULE_ICONS: Record<string, Component> = {
   module_greetings: Hand,
@@ -370,6 +371,10 @@ async function startModule(moduleId: string) {
   await modulesStore.fetchPhrases(moduleId)
   const phrases = modulesStore.getPhrasesForModule(moduleId)
   if (phrases.length > 0) {
+    setLastPracticeSession(authStore.uid, {
+      moduleId,
+      phraseId: phrases[0].phrase_id,
+    })
     await router.push(`/practice/${moduleId}/${phrases[0].phrase_id}`)
   }
 }
@@ -379,6 +384,10 @@ async function continueModule(moduleId: string) {
   const latestAttempt = latestAttemptForModule(moduleId)
 
   if (latestAttempt) {
+    setLastPracticeSession(authStore.uid, {
+      moduleId,
+      phraseId: latestAttempt.phrase_id,
+    })
     await router.push(`/practice/${moduleId}/${latestAttempt.phrase_id}`)
     return
   }

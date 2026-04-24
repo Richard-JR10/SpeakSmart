@@ -3,7 +3,7 @@
     <div class="flex min-h-screen">
       <aside
         :class="desktopSidebarClass"
-        class="relative hidden h-screen overflow-visible border-r border-border/70 bg-card/90 transition-[width] duration-300 ease-in-out lg:sticky lg:top-0 lg:z-50 lg:flex lg:flex-col"
+        class="relative hidden h-screen overflow-visible border-r border-border/70 bg-background/85 transition-[width] duration-300 ease-in-out lg:sticky lg:top-0 lg:z-50 lg:flex lg:flex-col"
       >
         <Button
           variant="outline"
@@ -18,12 +18,10 @@
 
         <div class="flex h-full flex-col overflow-hidden">
           <div :class="desktopBrandClass" class="border-b border-border/70">
-            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-              S
-            </div>
+            <LogoMark size="sm" />
 
             <div :class="desktopBrandTextClass">
-              <p class="w-fit truncate text-sm font-semibold text-(--color-heading)">
+              <p class="w-fit truncate text-sm font-semibold text-(--color-heading)" translate="no">
                 SpeakSmart
               </p>
               <p class="w-fit truncate text-xs text-muted-foreground">
@@ -38,9 +36,16 @@
               :key="item.section"
               as-child
               :variant="navButtonVariant(item.section)"
-              :class="desktopNavButtonClass"
+              :class="[
+                desktopNavButtonClass,
+                activeSection === item.section ? 'text-primary-foreground' : 'text-muted-foreground',
+              ]"
             >
-              <RouterLink :to="item.to" :aria-label="item.label">
+              <RouterLink
+                :to="item.to"
+                :aria-label="item.label"
+                :aria-current="activeSection === item.section ? 'page' : undefined"
+              >
                 <span class="flex size-10 shrink-0 items-center justify-center">
                   <component :is="item.icon" />
                 </span>
@@ -50,6 +55,18 @@
           </nav>
 
           <div class="border-t border-border/70 p-3">
+            <div
+              v-if="!sidebarCollapsed"
+              class="mb-3 rounded-xl border border-border/70 bg-card/75 px-3 py-3"
+            >
+              <p class="truncate text-sm font-semibold text-(--color-heading)">
+                {{ studentName }}
+              </p>
+              <p class="truncate text-xs text-muted-foreground">
+                {{ studentEmail }}
+              </p>
+            </div>
+
             <Button
               variant="outline"
               :class="desktopNavButtonClass"
@@ -83,11 +100,9 @@
               <SheetContent side="left" class="w-[18rem] border-r border-border/70 bg-card p-0">
                 <SheetHeader class="border-b border-border/70 px-4 py-4 text-left">
                   <SheetTitle class="flex items-center gap-3 text-lg">
-                    <span class="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-                      SS
-                    </span>
+                    <LogoMark size="sm" />
                     <span class="flex flex-col">
-                      <span class="font-semibold text-(--color-heading)">SpeakSmart</span>
+                      <span class="font-semibold text-(--color-heading)" translate="no">SpeakSmart</span>
                       <span class="text-xs font-normal text-muted-foreground">Student Portal</span>
                     </span>
                   </SheetTitle>
@@ -104,8 +119,13 @@
                       as-child
                       :variant="navButtonVariant(item.section)"
                       class="h-11 w-full justify-start rounded-xl px-3"
+                      :class="activeSection === item.section ? 'text-primary-foreground' : 'text-muted-foreground'"
                     >
-                      <RouterLink :to="item.to" @click="mobileNavOpen = false">
+                      <RouterLink
+                        :to="item.to"
+                        :aria-current="activeSection === item.section ? 'page' : undefined"
+                        @click="mobileNavOpen = false"
+                      >
                         <span class="flex size-10 shrink-0 items-center justify-center">
                           <component :is="item.icon" />
                         </span>
@@ -136,6 +156,8 @@
               <ChevronLeft />
               <span class="sr-only">Go back</span>
             </Button>
+
+            <LogoMark size="sm" class="lg:hidden" />
 
             <div class="min-w-0">
               <h1 class="truncate font-(--font-display) text-3xl leading-none text-(--color-heading)">
@@ -257,6 +279,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import LogoMark from '@/components/shared/LogoMark.vue'
 
 type StudentSection = 'home' | 'lessons' | 'assignments' | 'progress' | 'classes' | 'settings'
 
@@ -338,6 +361,12 @@ const activeSection = computed<StudentSection>(() => {
 })
 
 const currentSectionCopy = computed(() => sectionCopy[activeSection.value])
+const studentName = computed(
+  () => authStore.profile?.display_name?.trim() || authStore.firebaseUser?.displayName?.trim() || 'Student',
+)
+const studentEmail = computed(
+  () => authStore.profile?.email || authStore.firebaseUser?.email || 'Signed in',
+)
 
 const contentClass = computed(() => [
   'mx-auto flex w-full min-w-0 flex-col gap-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8',

@@ -301,13 +301,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator'
 import { useModulesStore } from '@/stores/modules'
 import { useAttemptsStore } from '@/stores/attempts'
+import { useAuthStore } from '@/stores/auth'
 import { useAudioRecorder } from '@/composables/useAudioRecorder'
+import { setLastPracticeSession } from '@/utils/studentSession'
 import type { Module, Phrase } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const modulesStore = useModulesStore()
 const attemptsStore = useAttemptsStore()
+const authStore = useAuthStore()
 const recorder = useAudioRecorder()
 
 const loading = ref(false)
@@ -415,6 +418,18 @@ watch(
       waveformInterval = null
     }
   },
+)
+
+watch(
+  [moduleId, phraseId],
+  ([currentModuleId, currentPhraseId]) => {
+    if (!currentModuleId) return
+    setLastPracticeSession(authStore.uid, {
+      moduleId: currentModuleId,
+      phraseId: currentPhraseId || undefined,
+    })
+  },
+  { immediate: true },
 )
 
 watch(moduleId, async () => {

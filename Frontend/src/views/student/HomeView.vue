@@ -1,6 +1,6 @@
 <template>
   <StudentLayout title="Dashboard" wide>
-    <div class="flex flex-col gap-5">
+    <div class="flex flex-col gap-6">
       <LoadingSpinner
         v-if="progressStore.loading && !dashboard"
         full-screen
@@ -9,115 +9,169 @@
 
       <template v-else>
         <Alert v-if="progressStore.error || attemptsStore.error" variant="destructive">
-          <AppIcon name="alert" :size="18" />
+          <AlertTriangle />
           <AlertTitle>Dashboard data could not fully load</AlertTitle>
           <AlertDescription>
             {{ progressStore.error ?? attemptsStore.error }}
           </AlertDescription>
         </Alert>
 
-        <Card>
-          <CardHeader class="flex flex-col gap-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                Student dashboard
-              </Badge>
-              <Badge v-if="weeklyDeltaText" :variant="weeklyDeltaVariant" class="rounded-full px-3 py-1">
-                {{ weeklyDeltaText }}
-              </Badge>
-            </div>
-
-            <div class="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_260px] lg:items-start">
-              <div class="flex min-w-0 flex-col gap-4">
-                <div class="flex flex-col gap-3">
-                  <CardTitle class="text-balance font-(--font-display) text-4xl leading-none text-(--color-heading) sm:text-5xl">
-                    Good {{ timeOfDay }}, {{ authStore.profile?.display_name ?? 'Student' }}
-                  </CardTitle>
-                  <CardDescription class="max-w-3xl text-base leading-8">
-                    Practice with short, repeatable speaking checks and keep your
-                    progress visible across modules, attempts, and weekly rhythm.
-                  </CardDescription>
+        <Card class="overflow-hidden border-border/80 bg-card/95 shadow-(--shadow-soft)">
+          <CardContent class="grid gap-6 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.35fr)_360px] xl:items-stretch">
+            <section class="flex min-w-0 flex-col justify-between gap-6">
+              <div class="flex flex-col gap-5">
+                <div class="flex flex-wrap items-center gap-3">
+                  <LogoMark size="lg" class="border-primary/20 bg-background" />
+                  <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                    Practice console
+                  </Badge>
+                  <Badge v-if="weeklyDeltaText" :variant="weeklyDeltaVariant" class="rounded-full px-3 py-1">
+                    {{ weeklyDeltaText }}
+                  </Badge>
                 </div>
 
-                <div class="flex flex-col gap-3 sm:flex-row">
-                  <Button size="lg" @click="continueSession">
-                    <AppIcon :name="continueModule ? 'refresh' : 'mic'" :size="18" data-icon="inline-start" />
-                    <span>{{ continueModule ? 'Resume practice' : 'Start practicing' }}</span>
-                  </Button>
-                  <Button variant="outline" size="lg" @click="router.push('/progress')">
-                    <AppIcon name="chart" :size="18" data-icon="inline-start" />
-                    <span>Open progress</span>
-                  </Button>
+                <div class="flex flex-col gap-3">
+                  <h2 class="text-balance font-(--font-display) text-4xl leading-none text-(--color-heading) sm:text-5xl">
+                    Good {{ timeOfDay }}, {{ studentName }}
+                  </h2>
+                  <p class="max-w-3xl text-base leading-8 text-muted-foreground">
+                    Pick up the next short speaking set, keep teacher work separate, and watch the patterns in your pronunciation practice sharpen over time.
+                  </p>
                 </div>
               </div>
 
-              <Card class="border-dashed">
-                <CardHeader class="gap-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              <div class="flex flex-col gap-3 sm:flex-row">
+                <Button size="lg" class="min-h-11 rounded-xl" @click="continueSession">
+                  <component :is="continueModule ? RefreshCcw : Mic" data-icon="inline-start" />
+                  <span>{{ continueModule ? 'Resume practice' : 'Start practicing' }}</span>
+                </Button>
+                <Button variant="outline" size="lg" class="min-h-11 rounded-xl" @click="router.push('/progress')">
+                  <ChartColumn data-icon="inline-start" />
+                  <span>Open progress</span>
+                </Button>
+              </div>
+            </section>
+
+            <aside class="grid gap-4 rounded-xl border border-border/70 bg-background/70 p-4 sm:grid-cols-2 xl:grid-cols-1">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex flex-col gap-2">
+                  <p class="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Overall average
                   </p>
-                  <CardTitle class="font-(--font-display) text-5xl leading-none text-(--color-heading)">
+                  <p class="font-(--font-display) text-5xl leading-none text-(--color-heading)">
                     {{ dashboard?.overall_average?.toFixed(0) ?? '--' }}%
-                  </CardTitle>
-                  <CardDescription>
-                    {{ latestAttempt ? `Last submission ${formatRelativeDate(latestAttempt.attempted_at)}` : 'Your latest speaking check will appear here.' }}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </div>
-          </CardHeader>
+                  </p>
+                  <p class="text-sm leading-6 text-muted-foreground">
+                    {{ latestAttempt ? `Last submission ${formatRelativeDate(latestAttempt.attempted_at)}` : 'Your first score will appear here.' }}
+                  </p>
+                </div>
+                <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                  <CircleGauge class="size-5" />
+                </span>
+              </div>
 
-          <CardContent class="grid gap-4 lg:grid-cols-4">
-            <Card v-for="item in metricCards" :key="item.label" class="gap-0 shadow-none">
-              <CardHeader class="gap-2">
-                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  {{ item.label }}
-                </p>
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                  {{ item.value }}
-                </CardTitle>
-                <CardDescription>
-                  {{ item.copy }}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+              <Separator class="hidden xl:block" />
+
+              <div class="grid gap-3">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-muted-foreground">Active modules</span>
+                  <span class="font-semibold text-(--color-heading)">{{ activeModulesCount }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-muted-foreground">Pending assignments</span>
+                  <span class="font-semibold text-(--color-heading)">{{ pendingAssignmentsCount }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-muted-foreground">Released feedback</span>
+                  <span class="font-semibold text-(--color-heading)">{{ releasedAssignmentPhrases }}</span>
+                </div>
+              </div>
+            </aside>
           </CardContent>
         </Card>
 
-        <div class="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <Card>
+        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div
+            v-for="item in metricCards"
+            :key="item.label"
+            class="rounded-xl border border-border/70 bg-card/85 p-4 shadow-xs"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex min-w-0 flex-col gap-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {{ item.label }}
+                </p>
+                <p class="truncate font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  {{ item.value }}
+                </p>
+                <p class="text-sm leading-6 text-muted-foreground">
+                  {{ item.copy }}
+                </p>
+              </div>
+              <span :class="['flex size-10 shrink-0 items-center justify-center rounded-xl', item.iconClass]">
+                <component :is="item.icon" class="size-5" />
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <div class="grid items-stretch gap-5 xl:grid-cols-2">
+          <Card class="order-1 flex h-full border-border/80 bg-card/95">
             <CardHeader class="flex flex-col gap-3">
-              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                Next session
-              </Badge>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                Continue where your speech rhythm left off
-              </CardTitle>
-              <CardDescription>
-                {{ continueModule ? 'Return to your most recently active topic and keep building repetition.' : 'Pick a module to begin your first guided pronunciation set.' }}
-              </CardDescription>
+              <div class="flex items-center justify-between gap-3">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                  Next session
+                </Badge>
+                <Clock3 class="size-5 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <div class="flex flex-col gap-2">
+                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  {{ continueModule ? continueModule.title : 'Choose your first module' }}
+                </CardTitle>
+                <CardDescription>
+                  {{ continueModule ? 'Return to your most recently active topic and keep building repetition.' : 'Pick a module to begin your first guided pronunciation set.' }}
+                </CardDescription>
+              </div>
             </CardHeader>
 
-            <CardContent class="flex flex-col gap-4">
-              <div v-if="continueModule" class="flex min-w-0 items-start gap-4 rounded-xl border bg-muted/50 p-4">
-                <span class="flex size-12 items-center justify-center rounded-2xl bg-secondary text-primary">
-                  <AppIcon :name="moduleIconName(continueModule.module_id)" :size="22" />
-                </span>
-                <div class="flex min-w-0 flex-col gap-2">
-                  <p class="text-lg font-semibold text-(--color-heading)">
-                    {{ continueModule.title }}
-                  </p>
-                  <p class="text-sm leading-7 text-muted-foreground">
-                    {{ continueProgress?.total_attempts ?? 0 }} attempts logged
-                    <span v-if="continueProgress?.last_attempted_at">
-                      , last active {{ formatRelativeDate(continueProgress.last_attempted_at) }}
-                    </span>
-                  </p>
+            <CardContent class="flex flex-1 flex-col">
+              <div v-if="continueModule" class="flex flex-1 flex-col justify-between gap-5 rounded-xl border border-border/70 bg-muted/40 p-4">
+                <div class="flex min-w-0 items-start gap-4">
+                  <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                    <component :is="moduleIcon(continueModule.module_id)" class="size-5" />
+                  </span>
+                  <div class="flex min-w-0 flex-col gap-2">
+                    <p class="text-sm leading-6 text-muted-foreground">
+                      {{ continueSessionCopy }}
+                    </p>
+                    <p class="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      {{ continueSessionSource }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div class="rounded-lg border border-border/60 bg-background/70 p-3">
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Session type
+                    </p>
+                    <p class="mt-1 text-sm font-semibold text-(--color-heading)">
+                      Short speaking set
+                    </p>
+                  </div>
+                  <div class="rounded-lg border border-border/60 bg-background/70 p-3">
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Next action
+                    </p>
+                    <p class="mt-1 text-sm font-semibold text-(--color-heading)">
+                      Record next phrase
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <Alert v-else>
-                <AppIcon name="book" :size="18" />
+              <Alert v-else class="flex-1">
+                <BookOpen />
                 <AlertTitle>No recent module yet</AlertTitle>
                 <AlertDescription>
                   Start with any lesson module and your quick-return shortcut will appear here.
@@ -126,72 +180,182 @@
             </CardContent>
 
             <CardFooter class="border-t">
-              <Button @click="continueSession">
-                <AppIcon name="forward" :size="18" data-icon="inline-start" />
+              <Button class="w-full rounded-xl md:w-auto" @click="continueSession">
+                <ArrowRight data-icon="inline-start" />
                 <span>{{ continueModule ? 'Open module' : 'Browse lessons' }}</span>
               </Button>
             </CardFooter>
           </Card>
 
-          <Card>
+            <Card class="order-3 border-border/80 bg-card/95 xl:col-span-2">
+              <CardHeader class="gap-3">
+                <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                  <div class="flex min-w-0 flex-col gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
+                      <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                        Teacher assignments
+                      </Badge>
+                      <ClipboardList class="size-5 text-muted-foreground" aria-hidden="true" />
+                    </div>
+                    <div class="flex flex-col gap-2">
+                      <CardTitle class="font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
+                        Assigned practice queue
+                      </CardTitle>
+                      <CardDescription>
+                        Teacher-assigned phrases stay separate from normal practice scores.
+                      </CardDescription>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2 sm:w-64">
+                    <div :class="['rounded-xl border p-3', pendingSummaryCardClass]">
+                      <p :class="['text-xs font-semibold uppercase tracking-[0.14em]', pendingSummaryLabelClass]">
+                        Pending
+                      </p>
+                      <p class="mt-2 font-(--font-display) text-3xl leading-none">
+                        {{ pendingAssignmentsCount }}
+                      </p>
+                    </div>
+                    <div :class="['rounded-xl border p-3', releasedSummaryCardClass]">
+                      <p :class="['text-xs font-semibold uppercase tracking-[0.14em]', releasedSummaryLabelClass]">
+                        Released
+                      </p>
+                      <p class="mt-2 font-(--font-display) text-3xl leading-none">
+                        {{ releasedAssignmentPhrases }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
+                <div class="flex flex-col gap-3">
+                  <LoadingSpinner v-if="assignmentsLoading" size="sm" />
+
+                  <Alert v-else-if="assignmentsError" variant="destructive">
+                    <AlertTriangle />
+                    <AlertTitle>Assignments could not load</AlertTitle>
+                    <AlertDescription>
+                      {{ assignmentsError }}
+                    </AlertDescription>
+                  </Alert>
+
+                  <template v-else-if="assignmentPreview.length">
+                    <div
+                      v-for="assignment in assignmentPreview"
+                      :key="assignment.exercise_id"
+                      class="grid gap-3 rounded-xl border border-border/70 bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+                    >
+                      <div class="flex min-w-0 flex-col gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <p class="font-semibold text-(--color-heading)">
+                            {{ assignment.title }}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            :class="assignmentStatusClass(assignment)"
+                          >
+                            {{ assignment.completed_at ? 'Submitted' : assignment.is_overdue ? 'Overdue' : 'Open' }}
+                          </Badge>
+                        </div>
+
+                        <p class="text-sm leading-6 text-muted-foreground">
+                          {{ submittedPhraseCount(assignment) }}/{{ assignment.phrases.length }} phrases submitted
+                          <span v-if="assignment.due_date">
+                            , due {{ formatDueDate(assignment.due_date) }}
+                          </span>
+                        </p>
+                      </div>
+
+                      <Badge
+                        variant="outline"
+                        :class="releasedPhraseBadgeClass(assignment)"
+                      >
+                        {{ releasedPhraseCount(assignment) }} released
+                      </Badge>
+                    </div>
+                  </template>
+
+                  <Alert v-else>
+                    <BookOpen />
+                    <AlertTitle>No teacher assignments yet</AlertTitle>
+                    <AlertDescription>
+                      Assigned work from your teachers will appear here once it is sent to your account.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+
+                <div class="rounded-xl border border-dashed border-border/80 bg-background/70 p-4">
+                  <div class="flex flex-col gap-3">
+                    <span class="flex size-10 items-center justify-center rounded-xl bg-secondary text-primary">
+                      <FileCheck2 class="size-5" aria-hidden="true" />
+                    </span>
+                    <p class="text-sm leading-6 text-muted-foreground">
+                      Record pending phrases or review released feedback.
+                    </p>
+                    <Button class="w-full rounded-xl lg:px-3" @click="router.push('/assignments')">
+                      <span>Open</span>
+                      <ArrowRight data-icon="inline-end" />
+                      <span class="sr-only">Assignments</span>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+          <Card class="order-2 h-full border-border/80 bg-card/95">
             <CardHeader class="flex flex-col gap-3">
-              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                Focus area
-              </Badge>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                What deserves your next repetition
-              </CardTitle>
-              <CardDescription>
-                Focus modules help you raise your overall average faster than spreading effort randomly.
-              </CardDescription>
+              <div class="flex items-center justify-between gap-3">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                  Focus area
+                </Badge>
+                <Target class="size-5 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <div class="flex flex-col gap-2">
+                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  What deserves your next repetition
+                </CardTitle>
+                <CardDescription>
+                  Focus modules help you raise your overall average faster than spreading effort randomly.
+                </CardDescription>
+              </div>
             </CardHeader>
 
-            <CardContent class="flex flex-col gap-4">
-              <Alert v-if="dashboard?.weakest_module_id">
-                <AppIcon name="alert" :size="18" />
+            <CardContent class="flex flex-1 flex-col gap-4">
+              <Alert
+                v-if="dashboard?.weakest_module_id"
+                class="border-amber-200 bg-amber-50 text-amber-950"
+              >
+                <Target />
                 <AlertTitle>{{ weakestModuleTitle }}</AlertTitle>
-                <AlertDescription>
+                <AlertDescription class="text-amber-900">
                   {{ weakestModuleTitle }} is currently averaging
                   {{ dashboard.weakest_module_score?.toFixed(0) }}%.
                 </AlertDescription>
               </Alert>
 
-              <Alert v-else>
-                <AppIcon name="spark" :size="18" />
+              <Alert v-else class="border-sky-200 bg-sky-50 text-sky-950">
+                <Sparkles />
                 <AlertTitle>Focus module not available yet</AlertTitle>
-                <AlertDescription>
+                <AlertDescription class="text-sky-900">
                   Complete a few speaking checks and the dashboard will identify where extra reps help most.
                 </AlertDescription>
               </Alert>
 
-              <div class="grid gap-3 sm:grid-cols-2">
-                <Card class="gap-0 shadow-none">
-                  <CardHeader class="gap-2">
-                    <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Strongest module
-                    </p>
-                    <CardTitle class="text-xl text-(--color-heading)">
-                      {{ strongestModuleTitle }}
-                    </CardTitle>
-                    <CardDescription>
-                      {{ strongestModule ? `${strongestModule.average_accuracy.toFixed(0)}% average accuracy` : 'Finish a module to unlock this insight.' }}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-
-                <Card class="gap-0 shadow-none">
-                  <CardHeader class="gap-2">
-                    <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Weekly rhythm
-                    </p>
-                    <CardTitle class="text-xl text-(--color-heading)">
-                      {{ weeklyAccuracy.length ? `${weeklyAccuracy.length} tracked weeks` : 'No trend yet' }}
-                    </CardTitle>
-                    <CardDescription>
-                      {{ weeklyAccuracy.length ? 'Short, frequent practice makes your trend steadier.' : 'Weekly rhythm appears after your first completed week.' }}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+              <div :class="['rounded-xl border p-4', focusPlanClass]">
+                <div class="flex flex-col gap-2">
+                  <p :class="['text-xs font-semibold uppercase tracking-[0.14em]', focusPlanLabelClass]">
+                    Repetition plan
+                  </p>
+                  <p class="text-lg font-semibold">
+                    {{ dashboard?.weakest_module_id ? `Start with ${weakestModuleTitle}` : 'Build enough signal first' }}
+                  </p>
+                  <p :class="['text-sm leading-6', focusPlanCopyClass]">
+                    {{ dashboard?.weakest_module_id
+                      ? 'Practice the lowest-scoring topic next so the dashboard recommendation stays action-oriented.'
+                      : 'After a few completed recordings, this card will point to the topic that needs the clearest next rep.' }}
+                  </p>
+                </div>
               </div>
             </CardContent>
 
@@ -199,122 +363,25 @@
               <Button
                 variant="outline"
                 :disabled="!dashboard?.weakest_module_id"
+                class="rounded-xl"
                 @click="practiceWeakest"
               >
-                <AppIcon name="mic" :size="18" data-icon="inline-start" />
+                <Mic data-icon="inline-start" />
                 <span>Practice focus area</span>
               </Button>
             </CardFooter>
           </Card>
         </div>
 
-        <Card>
-          <CardHeader class="flex flex-col gap-3">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="flex flex-col gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                  Teacher assignments
-                </Badge>
-                <div class="flex flex-col gap-2">
-                  <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                    Assignment work stays separate from practice
-                  </CardTitle>
-                  <CardDescription>
-                    Record assigned phrases in the dedicated Assignments tab and wait for teacher review there instead of using the normal practice results flow.
-                  </CardDescription>
-                </div>
-              </div>
-
-              <Badge variant="outline" class="rounded-full px-3 py-1">
-                {{ pendingAssignmentsCount }} pending
-              </Badge>
-            </div>
-          </CardHeader>
-
-          <CardContent class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
-            <div class="flex flex-col gap-3">
-              <LoadingSpinner v-if="assignmentsLoading" size="sm" />
-
-              <Alert v-else-if="assignmentsError" variant="destructive">
-                <AppIcon name="alert" :size="18" />
-                <AlertTitle>Assignments could not load</AlertTitle>
-                <AlertDescription>
-                  {{ assignmentsError }}
-                </AlertDescription>
-              </Alert>
-
-              <template v-else-if="assignmentPreview.length">
-                <template
-                  v-for="(assignment, index) in assignmentPreview"
-                  :key="assignment.exercise_id"
-                >
-                  <div class="flex items-start justify-between gap-4 rounded-xl p-3">
-                    <div class="flex min-w-0 flex-col gap-2">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <p class="font-semibold text-(--color-heading)">
-                          {{ assignment.title }}
-                        </p>
-                        <Badge
-                          :variant="assignment.completed_at ? 'secondary' : assignment.is_overdue ? 'destructive' : 'outline'"
-                          class="rounded-full px-2.5 py-1"
-                        >
-                          {{ assignment.completed_at ? 'Submitted' : assignment.is_overdue ? 'Overdue' : 'Open' }}
-                        </Badge>
-                      </div>
-
-                      <p class="text-sm leading-7 text-muted-foreground">
-                        {{ submittedPhraseCount(assignment) }}/{{ assignment.phrases.length }} phrases submitted
-                        <span v-if="assignment.due_date">
-                          , due {{ formatDueDate(assignment.due_date) }}
-                        </span>
-                      </p>
-                    </div>
-
-                    <Badge variant="outline" class="rounded-full px-2.5 py-1">
-                      {{ releasedPhraseCount(assignment) }} released
-                    </Badge>
-                  </div>
-                  <Separator v-if="index < assignmentPreview.length - 1" />
-                </template>
-              </template>
-
-              <Alert v-else>
-                <AppIcon name="book" :size="18" />
-                <AlertTitle>No teacher assignments yet</AlertTitle>
-                <AlertDescription>
-                  Assigned work from your teachers will appear here once it is sent to your account.
-                </AlertDescription>
-              </Alert>
-            </div>
-
-            <Card class="border-dashed shadow-none">
-              <CardHeader class="gap-2">
-                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Released feedback
-                </p>
-                <CardTitle class="font-(--font-display) text-4xl leading-none text-(--color-heading)">
-                  {{ releasedAssignmentPhrases }}
-                </CardTitle>
-                <CardDescription>
-                  Reviewed assignment phrases already released back to your student view.
-                </CardDescription>
-              </CardHeader>
-              <CardFooter class="border-t">
-                <Button class="w-full" @click="router.push('/assignments')">
-                  <AppIcon name="forward" :size="18" data-icon="inline-start" />
-                  <span>Open Assignments</span>
-                </Button>
-              </CardFooter>
-            </Card>
-          </CardContent>
-        </Card>
-
         <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <Card>
+          <Card class="border-border/80 bg-card/95">
             <CardHeader class="flex flex-col gap-3">
-              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                Module atlas
-              </Badge>
+              <div class="flex items-center justify-between gap-3">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                  Module atlas
+                </Badge>
+                <BookOpen class="size-5 text-muted-foreground" aria-hidden="true" />
+              </div>
               <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
                 Where you sound strongest
               </CardTitle>
@@ -326,10 +393,10 @@
             <CardContent class="flex flex-col gap-1">
               <template v-if="rankedModules.length">
                 <template v-for="(summary, index) in rankedModules" :key="summary.module_id">
-                  <div class="flex items-start justify-between gap-4 rounded-xl p-3">
+                  <div class="flex flex-col gap-3 rounded-xl p-3 sm:flex-row sm:items-start sm:justify-between">
                     <div class="flex min-w-0 items-start gap-3">
                       <span class="flex size-10 items-center justify-center rounded-2xl bg-secondary text-primary">
-                        <AppIcon :name="moduleIconName(summary.module_id)" :size="20" />
+                        <component :is="moduleIcon(summary.module_id)" class="size-5" />
                       </span>
                       <div class="flex min-w-0 flex-col gap-2">
                         <p class="font-semibold text-(--color-heading)">
@@ -341,7 +408,10 @@
                       </div>
                     </div>
 
-                    <Badge :variant="scoreBadgeVariant(summary.average_accuracy)" class="rounded-full px-3 py-1">
+                    <Badge
+                      variant="outline"
+                      :class="scoreBadgeClass(summary.average_accuracy)"
+                    >
                       {{ summary.average_accuracy.toFixed(0) }}%
                     </Badge>
                   </div>
@@ -350,7 +420,7 @@
               </template>
 
               <Alert v-else>
-                <AppIcon name="chart" :size="18" />
+                <ChartColumn />
                 <AlertTitle>No module ranking yet</AlertTitle>
                 <AlertDescription>
                   Complete a module to build your first accuracy leaderboard.
@@ -359,18 +429,21 @@
             </CardContent>
 
             <CardFooter class="border-t">
-              <Button variant="outline" @click="router.push('/lessons')">
-                <AppIcon name="book" :size="18" data-icon="inline-start" />
+              <Button variant="outline" class="rounded-xl" @click="router.push('/lessons')">
+                <BookOpen data-icon="inline-start" />
                 <span>Explore all modules</span>
               </Button>
             </CardFooter>
           </Card>
 
-          <Card>
+          <Card class="border-border/80 bg-card/95">
             <CardHeader class="flex flex-col gap-3">
-              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                Recent work
-              </Badge>
+              <div class="flex items-center justify-between gap-3">
+                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                  Recent work
+                </Badge>
+                <MessageSquareText class="size-5 text-muted-foreground" aria-hidden="true" />
+              </div>
               <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
                 Latest speaking checks
               </CardTitle>
@@ -384,16 +457,17 @@
 
               <template v-else-if="recentAttempts.length">
                 <template v-for="(attempt, index) in recentAttempts" :key="attempt.attempt_id">
-                  <div class="flex items-start justify-between gap-4 rounded-xl p-3">
+                  <div class="flex flex-col gap-3 rounded-xl p-3 sm:flex-row sm:items-start sm:justify-between">
                     <div class="flex min-w-0 flex-col gap-2">
-                      <p class="font-semibold text-(--color-heading)">
-                        {{ attempt.phrase_id }}
-                      </p>
+                      <p class="font-semibold text-(--color-heading)">{{ attempt.phrase_id }}</p>
                       <p class="text-sm text-muted-foreground">
                         {{ formatAttemptDate(attempt.attempted_at) }}
                       </p>
                     </div>
-                    <Badge :variant="scoreBadgeVariant(attempt.accuracy_score)" class="rounded-full px-3 py-1">
+                    <Badge
+                      variant="outline"
+                      :class="scoreBadgeClass(attempt.accuracy_score)"
+                    >
                       {{ attempt.accuracy_score.toFixed(0) }}%
                     </Badge>
                   </div>
@@ -402,7 +476,7 @@
               </template>
 
               <Alert v-else>
-                <AppIcon name="mic" :size="18" />
+                <Mic />
                 <AlertTitle>No attempts yet</AlertTitle>
                 <AlertDescription>
                   Start with a lesson and submit your first recording to populate this list.
@@ -411,8 +485,8 @@
             </CardContent>
 
             <CardFooter class="border-t">
-              <Button @click="router.push('/lessons')">
-                <AppIcon name="mic" :size="18" data-icon="inline-start" />
+              <Button class="rounded-xl" @click="router.push('/lessons')">
+                <Mic data-icon="inline-start" />
                 <span>Start a new session</span>
               </Button>
             </CardFooter>
@@ -424,11 +498,35 @@
 </template>
 
 <script setup lang="ts">
+import type { Component } from 'vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  AlertTriangle,
+  ArrowRight,
+  BookOpen,
+  Building2,
+  ChartColumn,
+  CircleGauge,
+  ClipboardList,
+  Clock3,
+  FileCheck2,
+  Flame,
+  Globe2,
+  Hand,
+  MapPinned,
+  MessageSquareText,
+  Mic,
+  RefreshCcw,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Trophy,
+  UtensilsCrossed,
+} from 'lucide-vue-next'
 
-import AppIcon from '@/components/shared/AppIcon.vue'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
+import LogoMark from '@/components/shared/LogoMark.vue'
 import StudentLayout from '@/layouts/StudentLayout.vue'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -443,13 +541,26 @@ import {
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { getStudentAssignments } from '@/api/assignments'
-import { moduleIconName } from '@/constants/modules'
 import { useAttemptsStore } from '@/stores/attempts'
 import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
 import { useModulesStore } from '@/stores/modules'
 import { useProgressStore } from '@/stores/progress'
+import {
+  getLastPracticeSession,
+  setLastPracticeSession,
+  type LastPracticeSession,
+} from '@/utils/studentSession'
 import type { ProgressSummary, StudentAssignment } from '@/types'
+
+const MODULE_ICONS: Record<string, Component> = {
+  module_greetings: Hand,
+  module_hotel: Building2,
+  module_directions: MapPinned,
+  module_food: UtensilsCrossed,
+  module_emergency: ShieldCheck,
+  module_tour_guide: Globe2,
+}
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -460,11 +571,13 @@ const attemptsStore = useAttemptsStore()
 const assignmentsLoading = ref(false)
 const assignmentsError = ref<string | null>(null)
 const studentAssignments = ref<StudentAssignment[]>([])
+const lastPracticeSession = ref<LastPracticeSession | null>(null)
 
 const dashboard = computed(() => progressStore.dashboard)
 const latestAttempt = computed(() => attemptsStore.attemptHistory[0] ?? null)
 const recentAttempts = computed(() => attemptsStore.attemptHistory.slice(0, 4))
 const weeklyAccuracy = computed(() => dashboard.value?.weekly_accuracy.slice(-6) ?? [])
+const studentName = computed(() => authStore.profile?.display_name ?? 'Student')
 const pendingAssignmentsCount = computed(() =>
   studentAssignments.value.filter((assignment) => !assignment.completed_at).length,
 )
@@ -486,7 +599,7 @@ const timeOfDay = computed(() => {
   return 'evening'
 })
 
-const continueModule = computed(() => {
+const latestProgressModule = computed(() => {
   const attemptedModules = (dashboard.value?.progress_by_module ?? []).filter(
     (summary) => summary.total_attempts > 0 && summary.last_attempted_at,
   )
@@ -502,9 +615,38 @@ const continueModule = computed(() => {
   return modulesStore.getModuleById(lastProgress?.module_id) ?? null
 })
 
+const rememberedModule = computed(() => {
+  if (!lastPracticeSession.value?.moduleId) return null
+  return modulesStore.getModuleById(lastPracticeSession.value.moduleId) ?? null
+})
+
+const continueModule = computed(() => rememberedModule.value ?? latestProgressModule.value)
+
 const continueProgress = computed(() => {
   if (!continueModule.value) return null
   return progressStore.getProgressForModule(continueModule.value.module_id)
+})
+
+const continueSessionCopy = computed(() => {
+  if (!continueModule.value) return ''
+
+  if (rememberedModule.value) {
+    const attemptCount = continueProgress.value?.total_attempts ?? 0
+    return attemptCount > 0
+      ? `${attemptCount} attempts logged in this module.`
+      : 'You opened this module recently. Start a recording to create its first progress signal.'
+  }
+
+  return `${continueProgress.value?.total_attempts ?? 0} attempts logged${
+    continueProgress.value?.last_attempted_at
+      ? `, last active ${formatRelativeDate(continueProgress.value.last_attempted_at)}`
+      : ''
+  }.`
+})
+
+const continueSessionSource = computed(() => {
+  if (!continueModule.value) return ''
+  return rememberedModule.value ? 'Last opened lesson' : 'Latest recorded attempt'
 })
 
 const activeModulesCount = computed(
@@ -549,26 +691,66 @@ const weeklyDeltaText = computed(() => {
 
 const weeklyDeltaVariant = computed(() => {
   if (weeklyDelta.value == null) return 'outline'
-  if (weeklyDelta.value < 0) return 'outline'
+  if (weeklyDelta.value < 0) return 'destructive'
   if (weeklyDelta.value === 0) return 'secondary'
   return 'default'
 })
+
+const focusPlanClass = computed(() =>
+  dashboard.value?.weakest_module_id
+    ? 'border-amber-200 bg-amber-50 text-amber-950'
+    : 'border-sky-200 bg-sky-50 text-sky-950',
+)
+
+const focusPlanLabelClass = computed(() =>
+  dashboard.value?.weakest_module_id ? 'text-amber-800' : 'text-sky-800',
+)
+
+const focusPlanCopyClass = computed(() =>
+  dashboard.value?.weakest_module_id ? 'text-amber-900' : 'text-sky-900',
+)
+
+const pendingSummaryCardClass = computed(() =>
+  pendingAssignmentsCount.value > 0
+    ? 'border-amber-200 bg-amber-50 text-amber-950'
+    : 'border-border/70 bg-muted/35 text-card-foreground',
+)
+
+const pendingSummaryLabelClass = computed(() =>
+  pendingAssignmentsCount.value > 0 ? 'text-amber-800' : 'text-muted-foreground',
+)
+
+const releasedSummaryCardClass = computed(() =>
+  releasedAssignmentPhrases.value > 0
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
+    : 'border-border/70 bg-muted/35 text-card-foreground',
+)
+
+const releasedSummaryLabelClass = computed(() =>
+  releasedAssignmentPhrases.value > 0 ? 'text-emerald-800' : 'text-muted-foreground',
+)
 
 const metricCards = computed(() => [
   {
     label: 'Streak',
     value: `${dashboard.value?.streak_days ?? 0}`,
     copy: (dashboard.value?.streak_days ?? 0) > 0 ? 'days in a row' : 'start a daily rhythm',
+    icon: Flame,
+    iconClass: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200',
   },
   {
     label: 'Attempts',
     value: `${dashboard.value?.total_attempts ?? 0}`,
     copy: 'submitted speaking checks',
+    icon: Mic,
+    iconClass: 'bg-secondary text-primary ring-1 ring-primary/15',
   },
   {
     label: 'Modules active',
     value: `${activeModulesCount.value}`,
     copy: 'topics you have already touched',
+    icon: BookOpen,
+    iconClass: 'bg-sky-50 text-sky-800 ring-1 ring-sky-200',
   },
   {
     label: 'Strongest module',
@@ -576,14 +758,38 @@ const metricCards = computed(() => [
     copy: strongestModule.value
       ? `${strongestModule.value.average_accuracy.toFixed(0)}% average accuracy`
       : 'Complete a few reps to unlock this insight.',
+    icon: Trophy,
+    iconClass: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200',
   },
 ])
 
-function scoreBadgeVariant(score: number): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (score >= 85) return 'default'
-  if (score >= 70) return 'secondary'
-  if (score >= 55) return 'outline'
-  return 'destructive'
+function scoreBadgeClass(score: number) {
+  if (score >= 85) {
+    return 'rounded-full border-emerald-700 bg-emerald-700 px-3 py-1 text-white'
+  }
+  if (score >= 70) {
+    return 'rounded-full border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-950'
+  }
+  if (score >= 55) {
+    return 'rounded-full border-amber-300 bg-amber-50 px-3 py-1 text-amber-950'
+  }
+  return 'rounded-full border-red-200 bg-red-50 px-3 py-1 text-red-950'
+}
+
+function assignmentStatusClass(assignment: StudentAssignment) {
+  if (assignment.completed_at) {
+    return 'rounded-full border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-950'
+  }
+  if (assignment.is_overdue) {
+    return 'rounded-full border-red-700 bg-red-700 px-2.5 py-1 text-white'
+  }
+  return 'rounded-full border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-950'
+}
+
+function releasedPhraseBadgeClass(assignment: StudentAssignment) {
+  return releasedPhraseCount(assignment) > 0
+    ? 'rounded-full border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-950'
+    : 'rounded-full border-border/70 bg-card px-2.5 py-1 text-card-foreground'
 }
 
 function formatAttemptDate(dateStr: string) {
@@ -618,6 +824,10 @@ function releasedPhraseCount(assignment: StudentAssignment) {
   return assignment.phrases.filter((phrase) => phrase.released_at).length
 }
 
+function moduleIcon(moduleId: string) {
+  return MODULE_ICONS[moduleId] ?? BookOpen
+}
+
 async function loadStudentAssignments(uid: string) {
   assignmentsError.value = null
   studentAssignments.value = await getStudentAssignments(uid)
@@ -629,10 +839,26 @@ async function openModule(moduleId?: string | null) {
     return
   }
 
+  const rememberedPhraseId = lastPracticeSession.value?.moduleId === moduleId
+    ? lastPracticeSession.value.phraseId
+    : null
+  if (rememberedPhraseId) {
+    setLastPracticeSession(authStore.uid, {
+      moduleId,
+      phraseId: rememberedPhraseId,
+    })
+    await router.push(`/practice/${moduleId}/${rememberedPhraseId}`)
+    return
+  }
+
   await modulesStore.fetchPhrases(moduleId)
   const phrases = modulesStore.getPhrasesForModule(moduleId)
 
   if (phrases.length) {
+    setLastPracticeSession(authStore.uid, {
+      moduleId,
+      phraseId: phrases[0].phrase_id,
+    })
     await router.push(`/practice/${moduleId}/${phrases[0].phrase_id}`)
     return
   }
@@ -659,6 +885,7 @@ onMounted(async () => {
       attemptsStore.fetchHistory(uid),
       classesStore.ensureLoaded(),
     ])
+    lastPracticeSession.value = getLastPracticeSession(uid)
     await loadStudentAssignments(uid)
   } catch (error) {
     console.error('Failed to load student dashboard assignments:', error)

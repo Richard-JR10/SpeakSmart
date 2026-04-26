@@ -1,12 +1,10 @@
 # SpeakSmart Backend Setup Guide
 
-This guide explains how to set up the SpeakSmart backend on a new computer.
+This guide explains how to set up the SpeakSmart backend on another computer.
 
 The backend uses FastAPI, PostgreSQL, Alembic, Firebase Auth, Cloudflare R2, Google Cloud Text-to-Speech, and OpenAI Whisper.
 
 ## Folder Reference
-
-The commands below use these folder names:
 
 ```text
 Repository root: SpeakSmart
@@ -28,9 +26,9 @@ Install these first:
 - Docker Desktop
 - `uv`
 
-Optional but recommended:
+Optional:
 
-- FFmpeg, useful if audio decoding fails or if you need to support non-WAV uploads
+- FFmpeg, only if audio validation/transcription fails or if you need to support non-WAV uploads
 
 ### Git
 
@@ -83,9 +81,7 @@ uv --version
 
 ### Optional: FFmpeg
 
-The current frontend converts recordings to WAV before uploading them, so FFmpeg may not be required for the normal local setup.
-
-Install FFmpeg only if audio validation/transcription fails, or if you need to handle browser WebM/non-WAV audio directly.
+The current frontend converts recordings to WAV before uploading them, so FFmpeg may not be required for normal local setup.
 
 Download FFmpeg:
 
@@ -114,13 +110,13 @@ cd SpeakSmart
 
 After this, your terminal is in the repository root.
 
-If the project already exists on the computer, open the terminal in the repository root:
+If the project already exists on the computer, open the terminal in:
 
 ```text
 SpeakSmart
 ```
 
-## 3. Install Python 3.14
+## 3. Install Python and Backend Dependencies
 
 This backend requires Python `3.14`.
 
@@ -136,13 +132,7 @@ Run from any folder:
 uv python list
 ```
 
-The backend also has `.python-version` set to:
-
-```text
-3.14
-```
-
-## 4. Install Backend Dependencies
+Then install the backend dependencies.
 
 Run from the repository root:
 
@@ -161,7 +151,7 @@ This installs all backend dependencies from `pyproject.toml` and `uv.lock`, incl
 
 You do not need to manually run `pip install` for this project.
 
-## 5. Create the `.env` File
+## 4. Create and Configure `.env`
 
 Run from the Backend folder:
 
@@ -177,7 +167,7 @@ Minimum local database value:
 DATABASE_URL=postgresql+asyncpg://speaksmart:speaksmart_secret@localhost:5432/speaksmart
 ```
 
-Important values to configure:
+Important values:
 
 ```env
 APP_ENV=development
@@ -216,13 +206,75 @@ OPENAI_WHISPER_CACHE_DIR=.cache/openai-whisper
 Notes:
 
 - Never commit `.env`.
-- Ask the project owner for real Firebase and R2 values.
 - Keep `FIREBASE_PRIVATE_KEY` quoted and keep `\n` line breaks inside the value.
 - Keep `OPENAI_WHISPER_DEVICE=cpu` unless the computer has CUDA set up correctly.
 
-## 6. Add the TTS Service Account File
+## 5. Get Cloudflare R2 Credentials
 
-The `GOOGLE_APPLICATION_CREDENTIALS` value is used by Google Cloud Text-to-Speech when running the phrase seeding script.
+R2 stores the actual audio files. The database only stores URLs such as `reference_audio_url`.
+
+Get these values from Cloudflare:
+
+```env
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET_NAME=
+R2_PUBLIC_URL=
+```
+
+### Where to Get Each Value
+
+`R2_BUCKET_NAME`
+
+- Go to Cloudflare Dashboard.
+- Open **R2** or **Storage & databases > R2**.
+- Create or choose the bucket used for SpeakSmart audio.
+- Use the bucket name as `R2_BUCKET_NAME`.
+
+`R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`
+
+- Go to **R2 > Manage API tokens**.
+- Create an R2 API token.
+- Use permissions that allow object read and write.
+- Copy the generated Access Key ID and Secret Access Key.
+- Save the secret immediately because Cloudflare will not show it again.
+
+`R2_ACCOUNT_ID`
+
+- Cloudflare R2 S3-compatible clients use an endpoint like:
+
+```text
+https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+```
+
+- Use the Cloudflare account ID for `R2_ACCOUNT_ID`.
+
+`R2_PUBLIC_URL`
+
+- Open the R2 bucket settings.
+- Use the bucket's Public Development URL or custom public domain.
+- This must be the public base URL for uploaded audio files.
+
+Example:
+
+```env
+R2_ACCOUNT_ID=abc123...
+R2_ACCESS_KEY_ID=your-access-key-id
+R2_SECRET_ACCESS_KEY=your-secret-access-key
+R2_BUCKET_NAME=speaksmart-audio
+R2_PUBLIC_URL=https://pub-your-bucket.r2.dev
+```
+
+Official Cloudflare docs:
+
+- R2 API tokens: https://developers.cloudflare.com/r2/api/tokens/
+- Public buckets: https://developers.cloudflare.com/r2/buckets/public-buckets/
+- S3-compatible setup: https://developers.cloudflare.com/r2/get-started/s3/
+
+## 6. Configure the TTS Service Account
+
+The `GOOGLE_APPLICATION_CREDENTIALS` value is used by Google Cloud Text-to-Speech when running `seed_phrases.py`.
 
 Best option for TTS:
 
@@ -302,15 +354,38 @@ Run this command:
 - after pulling new migration files
 - after resetting the local database
 
-## 9. Optional: Restore an Existing Database Dump
+## 9. Choose Data Setup Path
 
-Use this path if another developer gave you a database dump, for example:
+Choose only one path.
+
+Use **Path A** if this is a trusted teammate who should use the project owner's current database and R2 audio.
+
+Use **Path B** if this computer should have its own independent R2 bucket and generated phrase audio.
+
+### Path A: Recommended Fast Path - Restore Shared Database Dump
+
+This is the easiest handoff path for trusted teammates.
+
+Use this path when the project owner gives you:
+
+- `speaksmart.dump`
+- the same R2 values used by the dumped database:
+
+```env
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET_NAME=
+R2_PUBLIC_URL=
+```
+
+The `R2_PUBLIC_URL` must match the URLs already saved in the database dump.
+
+Put the dump file here:
 
 ```text
 SpeakSmart\Backend\speaksmart.dump
 ```
-
-This is the easiest handoff path because the database already contains modules, phrases, users, classes, and the saved `reference_audio_url` values that point to R2.
 
 Run from the Backend folder after `docker compose up -d`:
 
@@ -319,22 +394,27 @@ docker compose cp .\speaksmart.dump db:/tmp/speaksmart.dump
 docker compose exec db pg_restore -U speaksmart -d speaksmart --clean --if-exists /tmp/speaksmart.dump
 ```
 
-If you restore a dump, you usually do not need to run:
+After restoring the dump, skip:
 
 ```powershell
 uv run python scripts/seed_phrases.py
 ```
 
-Skip `seed_phrases.py` when:
+Why this works:
 
-- the dump already has phrase records
-- phrase records already have `reference_audio_url`
-- the R2 bucket URLs in the dump still work
-- the other user is allowed to use the same R2 bucket or public R2 URLs
+- The dump already contains modules and phrases.
+- The phrase rows already contain `reference_audio_url`.
+- The actual `.wav` files are already in R2.
 
-Only run `seed_phrases.py` if phrase data is missing, `reference_audio_url` is empty, the old R2 files are gone, or the user needs to upload reference audio to a different R2 bucket.
+Why a different R2 bucket can break:
 
-### Creating the Dump for Another User
+- The database stores full `reference_audio_url` values.
+- The backend extracts object keys by stripping the configured `R2_PUBLIC_URL`.
+- If the dump has the owner's R2 URLs but the other user sets a different `R2_PUBLIC_URL`, reference audio downloads can fail.
+
+Only use this path if the other user is allowed to use the same R2 bucket/settings or the same public R2 URLs.
+
+#### Creating the Dump for Another User
 
 If you are the person sharing your current local database, run this on your computer.
 
@@ -352,6 +432,33 @@ SpeakSmart\Backend\speaksmart.dump
 ```
 
 Do not commit `speaksmart.dump` if it contains real users, class data, attempts, or other private information.
+
+### Path B: Independent Setup - Use Your Own R2 and Generate Phrases
+
+Use this path if the other user should not use the owner's R2 bucket.
+
+Before running this path, make sure:
+
+- `.env` uses the user's own R2 bucket values.
+- `.env` points `GOOGLE_APPLICATION_CREDENTIALS` to a TTS service account JSON.
+- `serviceAccountKey.json` exists in the Backend folder.
+- Cloud Text-to-Speech is enabled for the Google Cloud project.
+
+Run from the Backend folder:
+
+```powershell
+uv run python scripts/seed_phrases.py
+```
+
+This script:
+
+- creates default learning modules
+- creates default Japanese phrases
+- generates reference audio using Google Cloud Text-to-Speech
+- uploads the reference audio to the configured R2 bucket
+- saves phrase metadata and R2 audio URLs in PostgreSQL
+
+Do not restore the owner's dump for this path unless the phrase audio URLs are cleared, regenerated, or migrated to the user's own R2 bucket.
 
 ## 10. Download the Whisper Model
 
@@ -403,35 +510,7 @@ OPENAI_WHISPER_CACHE_DIR=.cache/openai-whisper
 
 The first download can take a while. After it is cached, backend startup is faster.
 
-## 11. Seed Modules, Phrases, and Reference Audio
-
-Run this only if the database is new or empty and you are not restoring a database dump.
-
-Run from the Backend folder:
-
-```powershell
-uv run python scripts/seed_phrases.py
-```
-
-This script:
-
-- creates default learning modules
-- creates default Japanese phrases
-- generates reference audio using Google Cloud Text-to-Speech
-- uploads the reference audio to Cloudflare R2
-- saves phrase metadata and audio URLs in PostgreSQL
-
-Before running this, make sure:
-
-- PostgreSQL is running
-- migrations were applied
-- `.env` points `GOOGLE_APPLICATION_CREDENTIALS` to the TTS service account JSON
-- `.env` has valid Cloudflare R2 credentials
-- `serviceAccountKey.json` exists in the Backend folder
-
-If you restored a database dump from another developer, skip this step unless phrase/audio data is missing.
-
-## 12. Run the Backend Server
+## 11. Run the Backend Server
 
 Run from the Backend folder:
 
@@ -459,7 +538,7 @@ Expected health response:
 {"status":"healthy"}
 ```
 
-## 13. Run Backend Tests
+## 12. Run Backend Tests
 
 Run from the Backend folder:
 
@@ -479,7 +558,7 @@ Run from the Backend folder:
 uv run python scripts/test_scoring.py
 ```
 
-## 14. Connect the Frontend
+## 13. Connect the Frontend
 
 Start the backend first.
 
@@ -541,7 +620,7 @@ uv run uvicorn app.main:app --reload
 
 ## Fresh Setup Checklist
 
-Use this quick checklist to confirm the setup is complete:
+Use this quick checklist to confirm setup is complete:
 
 - `git --version` works from any folder
 - `docker --version` works from any folder
@@ -551,12 +630,12 @@ Use this quick checklist to confirm the setup is complete:
 - `uv python install 3.14` completed
 - `uv sync` completed from the Backend folder
 - `Backend\.env` exists and has real secrets
-- `Backend\serviceAccountKey.json` exists if seeding phrase audio
+- R2 values are configured in `Backend\.env`
+- `Backend\serviceAccountKey.json` exists if running `seed_phrases.py`
 - PostgreSQL is running from the Backend folder with `docker compose up -d`
 - `uv run alembic upgrade head` completed from the Backend folder
-- database dump was restored from the Backend folder, if using a shared dump
+- either the shared dump was restored with the owner's R2 settings, or `seed_phrases.py` was run with the user's own R2 settings
 - `npm run setup:whisper` completed from the repository root, or `uv run python scripts/prefetch_whisper_model.py` completed from the Backend folder
-- `uv run python scripts/seed_phrases.py` completed from the Backend folder only if using a fresh empty database without a dump
 - `uv run uvicorn app.main:app --reload` starts the server from the Backend folder
 - `http://127.0.0.1:8000/health` returns healthy
 
@@ -609,7 +688,18 @@ docker compose up -d
 uv run alembic upgrade head
 ```
 
-### Whisper model download is slow
+### Restored Dump Cannot Download Reference Audio
+
+Check:
+
+- the other user is using the owner's same R2 values
+- `R2_PUBLIC_URL` exactly matches the URL saved in `reference_audio_url`
+- the R2 bucket still contains the `reference-audio/...` files
+- the R2 access key has object read permission
+
+If the other user wants to use their own R2 bucket, use Path B and run `seed_phrases.py` instead of restoring the dump.
+
+### Whisper Model Download Is Slow
 
 This is normal the first time. The model is cached in:
 
@@ -617,7 +707,7 @@ This is normal the first time. The model is cached in:
 Backend\.cache\openai-whisper
 ```
 
-### FFmpeg error
+### FFmpeg Error
 
 Run from any folder:
 
@@ -627,7 +717,7 @@ ffmpeg -version
 
 If it fails, install FFmpeg and add it to `PATH`.
 
-### Firebase private key error
+### Firebase Private Key Error
 
 Use quotes and escaped newlines:
 
@@ -635,7 +725,7 @@ Use quotes and escaped newlines:
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 ```
 
-### Seeding fails during Text-to-Speech
+### Seeding Fails During Text-to-Speech
 
 Check:
 
@@ -644,7 +734,7 @@ Check:
 - the Google Cloud project has Text-to-Speech enabled
 - the service account has permission to use Text-to-Speech
 
-### Seeding fails during R2 upload
+### Seeding Fails During R2 Upload
 
 Check:
 

@@ -17,7 +17,7 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
 $updates = @{
     "ASR_PROVIDER" = "openai_whisper"
     "OPENAI_WHISPER_MODEL" = "small"
-    "OPENAI_WHISPER_DEVICE" = "cpu"
+    "OPENAI_WHISPER_DEVICE" = "auto"
     "OPENAI_WHISPER_LANGUAGE" = "ja"
     "OPENAI_WHISPER_CACHE_DIR" = ".cache/openai-whisper"
 }
@@ -50,7 +50,7 @@ Write-Host ""
 Write-Host "Official OpenAI Whisper is ready for local development."
 Write-Host "Provider: openai_whisper"
 Write-Host "Model:    small"
-Write-Host "Device:   cpu"
+Write-Host "Device:   auto"
 Write-Host "Cache:    $cacheDir"
 Write-Host ""
 Write-Host "Restart your backend after this setup finishes."

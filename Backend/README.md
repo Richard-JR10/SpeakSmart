@@ -198,7 +198,7 @@ GOOGLE_APPLICATION_CREDENTIALS=serviceAccountKey.json
 MAX_AUDIO_SIZE_MB=10
 ASR_PROVIDER=openai_whisper
 OPENAI_WHISPER_MODEL=small
-OPENAI_WHISPER_DEVICE=cpu
+OPENAI_WHISPER_DEVICE=auto
 OPENAI_WHISPER_LANGUAGE=ja
 OPENAI_WHISPER_CACHE_DIR=.cache/openai-whisper
 ```
@@ -207,7 +207,7 @@ Notes:
 
 - Never commit `.env`.
 - Keep `FIREBASE_PRIVATE_KEY` quoted and keep `\n` line breaks inside the value.
-- Keep `OPENAI_WHISPER_DEVICE=cpu` unless the computer has CUDA set up correctly.
+- Use `OPENAI_WHISPER_DEVICE=auto` to use CUDA when PyTorch can see a GPU and fall back to CPU otherwise. Use `cpu` or `cuda` only when you want to force a specific path while testing.
 
 ## 5. Get Cloudflare R2 Credentials
 

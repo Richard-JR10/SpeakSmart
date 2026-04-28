@@ -22,6 +22,7 @@ class ASRTranscript:
 
 
 _whisper_model = None
+_whisper_device = None
 
 
 def initialize_asr() -> None:
@@ -32,29 +33,30 @@ def initialize_asr() -> None:
 
 
 def get_whisper_model():
-    global _whisper_model
+    global _whisper_model, _whisper_device
     if _whisper_model is not None:
         return _whisper_model
 
     cache_dir = get_whisper_cache_dir()
     cache_dir.mkdir(parents=True, exist_ok=True)
+    _whisper_device = resolve_whisper_device()
 
     logger.info(
         "loading whisper model provider=%s model=%s device=%s cache_dir=%s",
         settings.ASR_PROVIDER,
         settings.OPENAI_WHISPER_MODEL,
-        settings.OPENAI_WHISPER_DEVICE,
+        _whisper_device,
         cache_dir,
     )
     _whisper_model = whisper.load_model(
         settings.OPENAI_WHISPER_MODEL,
-        device=settings.OPENAI_WHISPER_DEVICE,
+        device=_whisper_device,
         download_root=str(cache_dir),
     )
     logger.info(
         "whisper model loaded model=%s device=%s",
         settings.OPENAI_WHISPER_MODEL,
-        settings.OPENAI_WHISPER_DEVICE,
+        _whisper_device,
     )
     return _whisper_model
 
@@ -87,7 +89,7 @@ def transcribe_audio_bytes(audio_bytes: bytes) -> ASRTranscript:
         language=language,
         task="transcribe",
         without_timestamps=True,
-        fp16=settings.OPENAI_WHISPER_DEVICE.startswith("cuda"),
+        fp16=str(model.device).startswith("cuda"),
     )
     result = whisper.decode(model, mel, options)
 
@@ -101,7 +103,7 @@ def transcribe_audio_bytes(audio_bytes: bytes) -> ASRTranscript:
     logger.info(
         "whisper transcript model=%s device=%s detected_language=%s avg_logprob=%s no_speech_prob=%s compression_ratio=%s text=%s",
         settings.OPENAI_WHISPER_MODEL,
-        settings.OPENAI_WHISPER_DEVICE,
+        model.device,
         transcript.language,
         transcript.avg_logprob,
         transcript.no_speech_prob,
@@ -116,6 +118,20 @@ def get_whisper_cache_dir() -> Path:
     if cache_dir.is_absolute():
         return cache_dir
     return Path(__file__).resolve().parents[2] / cache_dir
+
+
+def resolve_whisper_device() -> str:
+    configured_device = settings.OPENAI_WHISPER_DEVICE.strip().lower()
+    if configured_device != "auto":
+        return configured_device
+
+    try:
+        import torch
+
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except Exception:
+        logger.exception("failed to auto-detect torch device; falling back to cpu")
+        return "cpu"
 
 
 def _truncate_for_log(value: str | None, limit: int = 160) -> str | None:

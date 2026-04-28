@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     MAX_AUDIO_SIZE_MB: int = 10
     ASR_PROVIDER: str = "openai_whisper"
     OPENAI_WHISPER_MODEL: str = "small"
-    OPENAI_WHISPER_DEVICE: str = "cpu"
+    OPENAI_WHISPER_DEVICE: str = "auto"
     OPENAI_WHISPER_LANGUAGE: str = "ja"
     OPENAI_WHISPER_CACHE_DIR: str = ".cache/openai-whisper"
     VERIFICATION_MAX_CANDIDATES: int = 8

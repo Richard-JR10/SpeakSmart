@@ -17,7 +17,7 @@
         </Alert>
 
         <section
-          class="overflow-hidden rounded-3xl border border-border/80 bg-[radial-gradient(circle_at_15%_20%,rgba(184,141,70,0.16),transparent_28%),linear-gradient(135deg,#fffdf9_0%,#edf4ef_54%,#fbf6ea_100%)] shadow-(--shadow-soft)"
+          class="overflow-hidden rounded-3xl border border-border/80 bg-[radial-gradient(circle_at_15%_20%,rgba(193,120,150,0.16),transparent_28%),linear-gradient(135deg,#fffdfb_0%,#fde8f2_54%,#fff4e8_100%)] shadow-(--shadow-soft)"
           aria-labelledby="student-home-title"
         >
           <div class="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_25rem]">

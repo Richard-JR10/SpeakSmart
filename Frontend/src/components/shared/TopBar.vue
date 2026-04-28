@@ -38,8 +38,8 @@ defineEmits<{
   padding: max(14px, env(safe-area-inset-top)) 18px 16px;
   min-height: 84px;
   background:
-    linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(247, 243, 234, 0.92));
-  border-bottom: 1px solid rgba(215, 225, 218, 0.9);
+    linear-gradient(180deg, rgba(255, 253, 251, 0.98), rgba(255, 247, 250, 0.92));
+  border-bottom: 1px solid rgba(234, 209, 220, 0.9);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -55,7 +55,7 @@ defineEmits<{
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(46, 138, 103, 0.1);
+  background: rgba(168, 31, 93, 0.1);
 }
 
 .topbar__title-block {

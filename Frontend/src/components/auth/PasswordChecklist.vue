@@ -47,8 +47,8 @@ const checklist = computed(() => [
 .password-checklist {
   padding: 16px;
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(237, 244, 239, 0.98), rgba(251, 246, 234, 0.92));
-  border: 1px solid rgba(215, 225, 218, 0.92);
+  background: linear-gradient(180deg, rgba(253, 232, 242, 0.86), rgba(255, 244, 248, 0.92));
+  border: 1px solid rgba(234, 209, 220, 0.92);
 }
 
 .password-checklist__title {
@@ -84,7 +84,7 @@ const checklist = computed(() => [
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #c3d2ca;
+  background: #dfbdca;
   flex-shrink: 0;
 }
 

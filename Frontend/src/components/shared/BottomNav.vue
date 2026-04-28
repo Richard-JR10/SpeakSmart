@@ -38,10 +38,10 @@ const navItems = [
   width: calc(100% - 24px);
   max-width: 480px;
   min-height: 72px;
-  background: rgba(255, 252, 246, 0.92);
-  border: 1px solid rgba(215, 225, 218, 0.9);
+  background: rgba(255, 253, 251, 0.92);
+  border: 1px solid rgba(234, 209, 220, 0.9);
   border-radius: 24px;
-  box-shadow: 0 18px 38px rgba(25, 48, 38, 0.16);
+  box-shadow: 0 18px 38px rgba(58, 20, 39, 0.14);
   backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
@@ -66,7 +66,7 @@ const navItems = [
 
 .bottom-nav__item--active {
   color: var(--color-primary-dark);
-  background: linear-gradient(180deg, rgba(46, 138, 103, 0.14), rgba(228, 242, 234, 0.9));
+  background: linear-gradient(180deg, rgba(168, 31, 93, 0.13), rgba(253, 232, 242, 0.9));
   transform: translateY(-1px);
 }
 

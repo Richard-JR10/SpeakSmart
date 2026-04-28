@@ -31,9 +31,9 @@ defineProps<{
 .spinner {
   border-radius: 50%;
   border-style: solid;
-  border-color: var(--color-primary) rgba(46, 138, 103, 0.14) rgba(184, 141, 70, 0.14) rgba(46, 138, 103, 0.14);
+  border-color: var(--color-primary) rgba(168, 31, 93, 0.14) rgba(193, 120, 150, 0.14) rgba(168, 31, 93, 0.14);
   animation: spin 0.8s linear infinite;
-  box-shadow: 0 0 0 1px rgba(46, 138, 103, 0.04);
+  box-shadow: 0 0 0 1px rgba(168, 31, 93, 0.04);
 }
 
 .spinner--sm { width: 20px; height: 20px; border-width: 2px; }

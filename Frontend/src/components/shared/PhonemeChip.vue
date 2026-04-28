@@ -34,9 +34,9 @@ const chipClass = computed(() => ({
 }
 
 .phoneme-chip--ok {
-  background: rgba(46, 138, 103, 0.12);
+  background: rgba(35, 116, 92, 0.12);
   color: #185843;
-  border-color: rgba(46, 138, 103, 0.16);
+  border-color: rgba(35, 116, 92, 0.16);
 }
 
 .phoneme-chip--error {

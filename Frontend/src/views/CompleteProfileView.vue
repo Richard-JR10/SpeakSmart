@@ -1,7 +1,7 @@
 <template>
   <section class="relative min-h-dvh overflow-hidden bg-background text-foreground">
     <div
-      class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(184,141,70,0.12),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(46,138,103,0.14),transparent_28%),linear-gradient(180deg,#faf7f0_0%,#f4f0e8_100%)]"
+      class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(193,120,150,0.14),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(168,31,93,0.13),transparent_28%),linear-gradient(180deg,#fff7fa_0%,#fceef4_100%)]"
     />
 
     <main class="relative">

@@ -81,9 +81,9 @@ const router = useRouter()
   min-height: 100dvh;
   overflow: hidden;
   background:
-    radial-gradient(circle at top left, rgba(46, 138, 103, 0.18), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(184, 141, 70, 0.16), transparent 26%),
-    linear-gradient(180deg, #f8f5ee 0%, #f2eee6 52%, #f8f4ed 100%);
+    radial-gradient(circle at top left, rgba(168, 31, 93, 0.16), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(193, 120, 150, 0.14), transparent 26%),
+    linear-gradient(180deg, #fff7fa 0%, #fceef4 52%, #fff8fb 100%);
 }
 
 .auth-page__backdrop {
@@ -91,7 +91,7 @@ const router = useRouter()
   inset: 0;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.62), transparent 42%),
-    radial-gradient(circle at center right, rgba(46, 138, 103, 0.06), transparent 24%);
+    radial-gradient(circle at center right, rgba(168, 31, 93, 0.06), transparent 24%);
   pointer-events: none;
 }
 

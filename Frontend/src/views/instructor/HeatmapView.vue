@@ -270,8 +270,8 @@ function cellColor(score: number) {
   if (score === 0) return 'rgba(244, 247, 245, 0.85)'
   if (score < 55) return 'rgba(198, 85, 73, 0.10)'
   if (score < 70) return 'rgba(184, 123, 38, 0.12)'
-  if (score < 85) return 'rgba(46, 138, 103, 0.09)'
-  return 'rgba(46, 138, 103, 0.16)'
+  if (score < 85) return 'rgba(35, 116, 92, 0.09)'
+  return 'rgba(35, 116, 92, 0.16)'
 }
 
 async function loadHeatmap(classId: string | null) {

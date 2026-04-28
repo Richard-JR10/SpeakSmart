@@ -4,7 +4,7 @@
       <circle
         cx="60" cy="60" r="50"
         fill="none"
-        stroke="#d7e1da"
+        stroke="var(--color-border)"
         stroke-width="10"
       />
       <circle
@@ -42,8 +42,8 @@ const dashOffset = computed(() =>
 )
 
 const strokeColor = computed(() => {
-  if (props.score >= 85) return '#2e8a67'
-  if (props.score >= 70) return '#4ca07e'
+  if (props.score >= 85) return 'var(--color-success)'
+  if (props.score >= 70) return '#4f9a7d'
   if (props.score >= 55) return '#b87b26'
   return '#c65549'
 })
@@ -66,7 +66,7 @@ const scoreClass = computed(() => ({
   position: relative;
   width: 160px;
   height: 160px;
-  filter: drop-shadow(0 18px 28px rgba(25, 48, 38, 0.08));
+  filter: drop-shadow(0 18px 28px rgba(58, 20, 39, 0.08));
 }
 
 .score-circle--sm {

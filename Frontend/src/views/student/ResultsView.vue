@@ -86,6 +86,14 @@
                     {{ scoreSummaryLabel }}
                   </Badge>
 
+                  <Badge
+                    v-if="assessmentConfidence"
+                    :variant="confidenceBadgeVariant"
+                    class="mx-auto rounded-full px-3 py-1"
+                  >
+                    {{ assessmentConfidence.label }}
+                  </Badge>
+
                   <p class="text-sm leading-6 text-muted-foreground">
                     {{ scoreSummaryCopy }}
                   </p>
@@ -172,44 +180,44 @@
               <div class="grid gap-3">
                 <div class="flex items-center justify-between gap-3">
                   <p class="text-sm font-semibold text-(--color-heading)">
-                    Chunk guide
+                    Mora guide
                   </p>
                   <p class="text-xs text-muted-foreground">
-                    Read one chunk at a time, then blend them together smoothly.
+                    Read one mora at a time, then blend them together smoothly.
                   </p>
                 </div>
 
-                <Alert v-if="!pronunciationChunks.length">
+                <Alert v-if="!pronunciationMorae.length">
                   <CircleAlert aria-hidden="true" />
-                  <AlertTitle>No chunk guide yet</AlertTitle>
+                  <AlertTitle>No mora guide yet</AlertTitle>
                   <AlertDescription>
-                    This attempt has the overall pronunciation target, but chunk-level guidance was not returned.
+                    This attempt has the overall pronunciation target, but mora-level guidance was not returned.
                   </AlertDescription>
                 </Alert>
 
                 <div v-else class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   <div
-                    v-for="(chunk, index) in pronunciationChunks"
-                    :key="`${chunk.kana}-${index}`"
+                    v-for="(mora, index) in pronunciationMorae"
+                    :key="`${mora.kana}-${index}`"
                     class="rounded-2xl border p-3 transition-colors"
-                    :class="highlightedChunkIndexes.has(chunk.index) ? 'border-destructive/40 bg-destructive/5' : 'border-border/70 bg-muted/25'"
+                    :class="highlightedMoraIndexes.has(mora.index) ? 'border-destructive/40 bg-destructive/5' : 'border-border/70 bg-muted/25'"
                   >
                     <div class="flex items-center justify-between gap-2">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Chunk {{ index + 1 }}
+                        Mora {{ index + 1 }}
                       </p>
                       <Badge
-                        :variant="highlightedChunkIndexes.has(chunk.index) ? 'destructive' : 'outline'"
+                        :variant="highlightedMoraIndexes.has(mora.index) ? 'destructive' : 'outline'"
                         class="rounded-full px-2 py-0.5"
                       >
-                        {{ highlightedChunkIndexes.has(chunk.index) ? 'Focus' : 'Stable' }}
+                        {{ highlightedMoraIndexes.has(mora.index) ? 'Focus' : 'Stable' }}
                       </Badge>
                     </div>
                     <p class="mt-3 text-2xl font-semibold leading-none text-(--color-heading)">
-                      {{ chunk.kana }}
+                      {{ mora.kana }}
                     </p>
                     <p class="mt-2 text-sm font-medium text-primary">
-                      {{ chunk.romaji }}
+                      {{ mora.romaji }}
                     </p>
                   </div>
                 </div>
@@ -226,7 +234,7 @@
                 Next-Try Coaching
               </CardTitle>
               <CardDescription>
-                Focus on one or two chunks first. Fixing the highest-priority issue is more useful than trying to change everything at once.
+                Focus on one or two sounds first. Small clear fixes are more useful than trying to change everything at once.
               </CardDescription>
             </CardHeader>
 
@@ -239,6 +247,17 @@
                 <AlertTitle>{{ verificationGuidanceTitle }}</AlertTitle>
                 <AlertDescription>
                   {{ verificationGuidanceCopy }}
+                </AlertDescription>
+              </Alert>
+
+              <Alert
+                v-if="attempt.verification_status === 'accepted' && isLowAssessmentConfidence"
+                variant="default"
+              >
+                <CircleAlert aria-hidden="true" />
+                <AlertTitle>Try one clearer take first</AlertTitle>
+                <AlertDescription>
+                  {{ assessmentConfidence?.guidance ?? 'The app needs a clearer recording before making strong pronunciation corrections.' }}
                 </AlertDescription>
               </Alert>
 
@@ -268,22 +287,39 @@
                 </div>
               </template>
 
+              <template v-else-if="isLowAssessmentConfidence">
+                <div class="rounded-3xl border border-border/70 bg-muted/25 p-4">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Before detailed coaching
+                  </p>
+                  <p class="mt-2 text-xl font-semibold text-(--color-heading)">
+                    Record one clearer attempt
+                  </p>
+                  <p class="mt-2 text-sm leading-7 text-muted-foreground">
+                    Speak the phrase in one steady take, keep the microphone close, and reduce background noise. Then the app can give more reliable sound-level tips.
+                  </p>
+                  <p class="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-3 text-sm font-semibold text-primary">
+                    Try slowly: {{ targetPracticeText }}
+                  </p>
+                </div>
+              </template>
+
               <template v-else-if="topPronunciationIssues.length">
                 <div
                   v-for="item in topPronunciationIssues"
-                  :key="`${item.chunk_index}-${item.issue_type}`"
+                  :key="`${item.mora_index ?? item.chunk_index}-${item.phoneme_index ?? item.issue_type}-${item.issue_type}`"
                   class="rounded-3xl border border-border/70 bg-muted/25 p-4"
                 >
                   <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Focus chunk {{ item.chunk_index + 1 }}
+                        Sound to improve
                       </p>
                       <p class="mt-2 text-xl font-semibold leading-none text-(--color-heading)">
-                        {{ item.kana }}
+                        {{ item.sound_to_improve ?? item.kana }}
                       </p>
                       <p class="mt-1 text-sm font-medium text-primary">
-                        {{ item.romaji }}
+                        Try: {{ item.try_slowly ?? item.romaji }}
                       </p>
                     </div>
 
@@ -297,31 +333,60 @@
                     </div>
                   </div>
 
-                  <div class="mt-4 grid gap-3">
+                  <div
+                    v-if="item.expected_phoneme || item.heard_phoneme"
+                    class="mt-4 grid gap-3 sm:grid-cols-2"
+                  >
                     <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Correct target
+                        Expected sound
                       </p>
-                      <p class="mt-2 text-sm leading-7 text-foreground/85">
-                        {{ item.expected_note }}
+                      <p class="mt-2 text-lg font-semibold text-(--color-heading)">
+                        {{ item.expected_phoneme ?? 'target' }}
+                      </p>
+                      <p class="mt-1 text-sm text-muted-foreground">
+                        {{ item.expected_label ?? 'Target sound' }}
                       </p>
                     </div>
 
                     <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        What we heard
+                        Heard sound
+                      </p>
+                      <p class="mt-2 text-lg font-semibold text-(--color-heading)">
+                        {{ item.heard_phoneme ?? 'unclear' }}
+                      </p>
+                      <p class="mt-1 text-sm text-muted-foreground">
+                        {{ item.heard_label ?? 'Unclear sound' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="mt-4 grid gap-3">
+                    <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        What happened
                       </p>
                       <p class="mt-2 text-sm leading-7 text-foreground/85">
-                        {{ item.heard_note }}
+                        {{ item.what_happened ?? item.heard_note }}
+                      </p>
+                    </div>
+
+                    <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        How to fix it
+                      </p>
+                      <p class="mt-2 text-sm leading-7 text-foreground/85">
+                        {{ item.how_to_fix ?? item.fix_tip }}
                       </p>
                     </div>
 
                     <div class="rounded-2xl border border-primary/20 bg-primary/5 p-3">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                        Fix on the next try
+                        Try slowly
                       </p>
                       <p class="mt-2 text-sm leading-7 text-foreground/85">
-                        {{ item.fix_tip }}
+                        {{ item.try_slowly ?? item.romaji }}
                       </p>
                     </div>
                   </div>
@@ -332,7 +397,7 @@
                 <BookOpen aria-hidden="true" />
                 <AlertTitle>Pronunciation stayed stable</AlertTitle>
                 <AlertDescription>
-                  This accepted take did not surface a strong chunk-level correction. Keep the same rhythm, light vowels, and smooth blending on the next phrase.
+                  This accepted take did not surface a strong sound-level correction. Keep the same rhythm, light vowels, and smooth blending on the next phrase.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -397,12 +462,12 @@
                 Breakdown By Sound
               </CardTitle>
               <CardDescription>
-                These signal-level checks are still useful, but the chunk coaching above should guide your next retake first.
+                Expected and heard sounds come from the aligned Japanese phoneme and mora assessment.
               </CardDescription>
             </CardHeader>
 
             <CardContent>
-              <Alert v-if="!phonemeItems.length">
+              <Alert v-if="!detailedPhonemeItems.length && !phonemeItems.length">
                 <CircleAlert aria-hidden="true" />
                 <AlertTitle>No detailed phoneme data</AlertTitle>
                 <AlertDescription>
@@ -411,6 +476,56 @@
               </Alert>
 
               <div v-else class="grid gap-3">
+                <Alert v-if="recognizerWarning">
+                  <CircleAlert aria-hidden="true" />
+                  <AlertTitle>Phoneme recognizer fallback</AlertTitle>
+                  <AlertDescription>
+                    {{ recognizerWarning }}
+                  </AlertDescription>
+                </Alert>
+
+                <div
+                  v-for="item in detailedPhonemeItems"
+                  :key="item.key"
+                  class="rounded-2xl border bg-muted/25 p-4"
+                  :class="item.error ? 'border-destructive/30' : 'border-border/70'"
+                >
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Sound {{ item.index + 1 }} / {{ item.kana }} / {{ item.romaji }}
+                      </p>
+                      <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" class="rounded-full px-2.5 py-1">
+                          Expected {{ item.expectedSound }}
+                        </Badge>
+                        <Badge :variant="item.error ? 'destructive' : 'secondary'" class="rounded-full px-2.5 py-1">
+                          Heard {{ item.heardSound }}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <Badge :variant="scoreVariant(item.score)" class="rounded-full px-2.5 py-1">
+                      {{ item.score.toFixed(0) }}%
+                    </Badge>
+                  </div>
+
+                  <div class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                    <div>
+                      <p class="font-semibold text-(--color-heading)">
+                        {{ item.issueLabel }}
+                      </p>
+                      <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                        {{ item.fixTip }}
+                      </p>
+                    </div>
+
+                    <Badge variant="outline" class="w-fit rounded-full px-2.5 py-1">
+                      {{ item.operationLabel }}
+                    </Badge>
+                  </div>
+                </div>
+
                 <div
                   v-for="item in phonemeItems"
                   :key="item.key"
@@ -625,6 +740,7 @@ import {
 } from '@/components/ui/card'
 import { useAttemptsStore } from '@/stores/attempts'
 import { useModulesStore } from '@/stores/modules'
+import type { DetailedPhonemeError } from '@/types'
 import { formatRecognizedTextForDisplay } from '@/utils/japanese'
 
 type BreakdownItem = {
@@ -641,6 +757,15 @@ type PhonemeItem = {
   error: boolean
   description: string
   icon: Component
+}
+
+type DetailedPhonemeItem = DetailedPhonemeError & {
+  key: string
+  expectedSound: string
+  heardSound: string
+  issueLabel: string
+  operationLabel: string
+  fixTip: string
 }
 
 const route = useRoute()
@@ -734,6 +859,8 @@ const targetPronunciation = computed(() => {
     kana: currentPhrase.value.japanese_text,
     romaji: currentPhrase.value.romaji,
     chunks: [],
+    morae: [],
+    phonemes: [],
   }
 })
 
@@ -741,12 +868,70 @@ const pronunciationChunks = computed(() =>
   targetPronunciation.value?.chunks ?? [],
 )
 
+const pronunciationMorae = computed(() => {
+  if (targetPronunciation.value?.morae?.length) {
+    return targetPronunciation.value.morae
+  }
+
+  return pronunciationChunks.value.map((chunk) => ({
+    index: chunk.index,
+    chunk_index: chunk.index,
+    display_text: chunk.display_text,
+    kana: chunk.kana,
+    romaji: chunk.romaji,
+    phoneme_indexes: [],
+    phonemes: [],
+    issue_type: 'unknown',
+  }))
+})
+
+const targetPracticeText = computed(() => {
+  const moraText = pronunciationMorae.value
+    .map((item) => item.kana)
+    .filter(Boolean)
+    .join('・')
+
+  return moraText || targetPronunciation.value?.kana || currentPhrase.value?.japanese_text || 'target phrase'
+})
+
 const topPronunciationIssues = computed(() =>
   (attempt.value?.pronunciation_feedback ?? []).slice(0, 2),
 )
 
-const highlightedChunkIndexes = computed(
-  () => new Set(topPronunciationIssues.value.map((item) => item.chunk_index)),
+const highlightedMoraIndexes = computed(
+  () => new Set(topPronunciationIssues.value.map((item) => item.mora_index ?? item.chunk_index)),
+)
+
+const detailedPhonemeItems = computed<DetailedPhonemeItem[]>(() => {
+  const phonemes = attempt.value?.phoneme_error_map?.phonemes ?? []
+
+  return [...phonemes]
+    .sort((first, second) => {
+      if (first.error !== second.error) return first.error ? -1 : 1
+      if (first.score !== second.score) return first.score - second.score
+      return first.index - second.index
+    })
+    .map((item) => ({
+      ...item,
+      key: `${item.index}-${item.expected_phoneme}-${item.issue_type}`,
+      expectedSound: formatSound(item.expected_phoneme, item.expected_label),
+      heardSound: formatSound(item.heard_phoneme, item.heard_label),
+      issueLabel: issueTypeLabel(item.issue_type),
+      operationLabel: operationLabel(item.operation),
+      fixTip: phonemeFixTip(item),
+    }))
+})
+
+const recognizerWarning = computed(() =>
+  attempt.value?.phoneme_error_map?.recognizer?.warning ?? '',
+)
+
+const assessmentConfidence = computed(() =>
+  attempt.value?.phoneme_error_map?.assessment_confidence ?? null,
+)
+
+const isLowAssessmentConfidence = computed(() =>
+  assessmentConfidence.value?.level === 'low',
 )
 
 const recognizedTextDisplay = computed(() => {
@@ -831,6 +1016,7 @@ const scoreSummaryLabel = computed(() => {
   if (attempt.value?.verification_status === 'wrong_phrase_detected') return 'Phrase Mismatch'
   if (attempt.value?.verification_status === 'no_clear_speech') return 'Retry Needed'
   if (attempt.value?.verification_status === 'retry_needed') return 'Provisional'
+  if (isLowAssessmentConfidence.value) return 'Practice Take'
 
   const score = attempt.value?.accuracy_score ?? 0
 
@@ -853,6 +1039,10 @@ const scoreSummaryCopy = computed(() => {
     return 'This score is shown for reference only because phrase verification was uncertain.'
   }
 
+  if (isLowAssessmentConfidence.value) {
+    return 'The app scored this take, but the recording or recognizer signal was not strong enough for detailed correction claims.'
+  }
+
   const score = attempt.value?.accuracy_score ?? 0
 
   if (score >= 90) {
@@ -871,6 +1061,12 @@ const scoreSummaryCopy = computed(() => {
 })
 
 const scoreBadgeVariant = computed(() => scoreVariant(attempt.value?.accuracy_score ?? 0))
+
+const confidenceBadgeVariant = computed(() => {
+  if (assessmentConfidence.value?.level === 'high') return 'default'
+  if (assessmentConfidence.value?.level === 'medium') return 'outline'
+  return 'secondary'
+})
 
 const breakdownItems = computed<BreakdownItem[]>(() => {
   if (!attempt.value) return []
@@ -901,7 +1097,20 @@ const phonemeItems = computed<PhonemeItem[]>(() => {
   const map = attempt.value?.phoneme_error_map
   if (!map) return []
 
-  return [
+  const items: PhonemeItem[] = []
+
+  if (map.phoneme_match) {
+    items.push({
+      key: 'phoneme_match',
+      label: map.phoneme_match.label,
+      score: map.phoneme_match.score,
+      error: map.phoneme_match.error,
+      description: 'How closely expected Japanese phonemes matched the aligned audio.',
+      icon: Mic,
+    })
+  }
+
+  items.push(
     {
       key: 'overall_acoustic',
       label: map.overall_acoustic.label,
@@ -934,7 +1143,20 @@ const phonemeItems = computed<PhonemeItem[]>(() => {
       description: 'Vowel shape accuracy and stability.',
       icon: Volume2,
     },
-  ]
+  )
+
+  if (map.fluency) {
+    items.push({
+      key: 'fluency',
+      label: map.fluency.label,
+      score: map.fluency.score,
+      error: map.fluency.error,
+      description: 'Pause density, speaking rate, and prosody stability.',
+      icon: AudioLines,
+    })
+  }
+
+  return items
 })
 
 const nextActionLabel = computed(() =>
@@ -975,6 +1197,52 @@ function issueSeverityLabel(severity: 'low' | 'medium' | 'high') {
   if (severity === 'high') return 'Priority Fix'
   if (severity === 'medium') return 'Watch Closely'
   return 'Light Adjustment'
+}
+
+function formatSound(symbol: string | null, label: string) {
+  if (!symbol && !label) return 'unclear'
+  if (!label || label === symbol) return symbol || label
+  return `${symbol} (${label})`
+}
+
+function issueTypeLabel(issueType: string) {
+  const labels: Record<string, string> = {
+    match: 'Matched target sound',
+    substitution: 'Sound substitution',
+    deletion: 'Missing or clipped sound',
+    long_vowel_issue: 'Long vowel timing',
+    geminate_issue: 'Small-tsu hold',
+    nasal_issue: 'Nasal mora clarity',
+    r_flap_issue: 'Japanese r-flap',
+    vowel_drift: 'Vowel drift',
+    devoicing_issue: 'Devoicing control',
+  }
+
+  return labels[issueType] ?? 'Sound clarity'
+}
+
+function operationLabel(operation: DetailedPhonemeError['operation']) {
+  const labels: Record<DetailedPhonemeError['operation'], string> = {
+    match: 'Match',
+    substitution: 'Substitution',
+    deletion: 'Deletion',
+    insertion: 'Insertion',
+    duration_error: 'Timing',
+  }
+
+  return labels[operation]
+}
+
+function phonemeFixTip(item: DetailedPhonemeError) {
+  if (!item.error) return 'Keep this sound stable in the next take.'
+  if (item.issue_type === 'long_vowel_issue') return 'Hold this vowel for the full extra beat.'
+  if (item.issue_type === 'geminate_issue') return 'Hold a tiny beat before releasing the next consonant.'
+  if (item.issue_type === 'nasal_issue') return 'Keep the nasal sound closed and distinct.'
+  if (item.issue_type === 'r_flap_issue') return 'Tap the Japanese r lightly behind the teeth.'
+  if (item.issue_type === 'vowel_drift') return 'Keep the vowel steady without sliding.'
+  if (item.issue_type === 'devoicing_issue') return 'Lighten the ending so it does not sound too fully voiced.'
+  if (item.operation === 'deletion') return 'Give this sound enough time instead of clipping it.'
+  return 'Replay the reference and make this sound cleaner on the next take.'
 }
 
 async function ensureResultContext() {

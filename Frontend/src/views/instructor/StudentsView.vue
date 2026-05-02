@@ -1,66 +1,60 @@
 <template>
   <InstructorLayout>
-    <div class="flex flex-col gap-5">
-      <Card class="border-border/80 bg-card/95">
-        <CardHeader class="gap-4">
-          <div class="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-              Student directory
-            </Badge>
-            <Badge variant="outline" class="rounded-full px-3 py-1">
-              {{ filteredStudents.length }} visible
-            </Badge>
-          </div>
+    <div class="flex flex-col gap-4">
+      <Card class="border-rose-200/80 bg-gradient-to-br from-card via-card to-rose-50/70 shadow-sm shadow-rose-900/5">
+        <CardHeader class="gap-3 p-4 sm:p-5">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <Badge class="rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-primary uppercase tracking-[0.18em] hover:bg-primary/10">
+                  Student directory
+                </Badge>
+                <Badge variant="outline" class="rounded-full border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">
+                  {{ filteredStudents.length }} visible
+                </Badge>
+              </div>
 
-          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
-            <div class="flex flex-col gap-2">
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading) sm:text-4xl">
-                Search the roster and open individual drilldown quickly
+              <CardTitle class="mt-3 font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
+                Roster scan
               </CardTitle>
-              <CardDescription class="max-w-3xl text-sm leading-7 text-foreground/80 sm:text-base">
-                Track who is falling behind, compare learner rhythm, and inspect recent attempts without leaving the class context.
+              <CardDescription class="mt-1 max-w-2xl text-sm">
+                Search learners, spot review needs, and open details only when you need the drilldown.
               </CardDescription>
             </div>
 
-            <div class="rounded-3xl border border-border/70 bg-muted/30 p-4">
-              <Label for="student-search" class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Search students
-              </Label>
-              <div class="mt-2 flex items-center gap-2 rounded-2xl border border-border bg-background px-3">
-                <Search class="text-muted-foreground" />
+            <div class="w-full lg:max-w-sm">
+              <Label for="student-search" class="sr-only">Search students</Label>
+              <div class="flex h-11 items-center gap-2 rounded-xl border border-rose-200 bg-white/85 px-3 shadow-xs shadow-rose-900/5 transition focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+                <Search class="size-4 text-muted-foreground" />
                 <Input
                   id="student-search"
                   v-model="search"
-                  class="border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                  class="h-9 rounded-none border-0 bg-transparent px-0 text-sm shadow-none ring-0 outline-none focus-visible:!border-transparent focus-visible:!shadow-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!outline-none"
                   placeholder="Search by name or email"
                 />
               </div>
             </div>
           </div>
-        </CardHeader>
 
-        <CardContent class="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
-          <Card
-            v-for="item in summaryCards"
-            :key="item.label"
-            class="gap-0 shadow-none"
-          >
-            <CardHeader class="gap-2">
-              <div class="flex items-center justify-between gap-3">
-                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <div class="grid overflow-hidden rounded-2xl border border-rose-200/80 bg-white/70 shadow-inner shadow-rose-900/5 sm:grid-cols-3">
+            <div
+              v-for="item in summaryCards"
+              :key="item.label"
+              class="flex items-center justify-between gap-3 border-b border-rose-200/80 px-4 py-3 last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0"
+              :class="item.surfaceClass"
+            >
+              <div class="min-w-0">
+                <p class="truncate text-[11px] font-semibold uppercase tracking-[0.16em]" :class="item.labelClass">
                   {{ item.label }}
                 </p>
-                <component :is="item.icon" class="text-muted-foreground" />
+                <p class="mt-1 truncate font-(--font-display) text-2xl leading-none text-(--color-heading)">
+                  {{ item.value }}
+                </p>
               </div>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                {{ item.value }}
-              </CardTitle>
-              <CardDescription>
-                {{ item.copy }}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </CardContent>
+              <component :is="item.icon" class="size-5 shrink-0" :class="item.iconClass" />
+            </div>
+          </div>
+        </CardHeader>
       </Card>
 
       <LoadingSpinner
@@ -75,175 +69,210 @@
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
 
-      <div v-else class="grid gap-5 xl:grid-cols-[minmax(0,0.92fr)_minmax(360px,0.68fr)]">
-        <Card class="border-border/80 bg-card/95">
-          <CardHeader class="gap-3">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="flex flex-col gap-2">
-                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                  Class roster
-                </Badge>
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                  {{ filteredStudents.length }} learners
-                </CardTitle>
-                <CardDescription>
-                  Select any learner to inspect their averages, weakest area, and recent attempts.
-                </CardDescription>
-              </div>
-
-              <Badge variant="outline" class="rounded-full px-3 py-1">
-                {{ flaggedCount }} flagged
+      <Card v-else class="gap-0 overflow-hidden border-rose-200/80 bg-card/95 py-0 shadow-sm shadow-rose-900/5">
+        <CardHeader class="border-b border-rose-200/80 bg-linear-to-r from-white via-rose-50/60 to-white p-0!">
+          <div class="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 py-3">
+            <div class="flex min-w-0 flex-wrap items-center gap-3">
+              <CardTitle class="font-(--font-display) text-xl leading-none text-(--color-heading)">
+                Class roster
+              </CardTitle>
+              <Badge class="rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-primary hover:bg-primary/10">
+                {{ filteredStudents.length }} {{ filteredStudents.length === 1 ? 'learner' : 'learners' }}
               </Badge>
+              <span class="hidden truncate text-sm text-muted-foreground lg:inline">
+                Open learner details in a modal without leaving the list.
+              </span>
             </div>
-          </CardHeader>
 
-          <CardContent class="flex flex-col gap-3">
-            <template v-if="filteredStudents.length">
-              <button
-                v-for="student in filteredStudents"
-                :key="student.uid"
-                type="button"
-                class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition"
-                :class="selectedStudentUid === student.uid
-                  ? 'border-primary/35 bg-primary/5'
-                  : student.is_flagged
-                    ? 'border-destructive/20 bg-destructive/5 hover:border-destructive/35'
-                    : 'border-border/70 bg-muted/30 hover:border-primary/30 hover:bg-muted/45'"
-                @click="selectStudent(student.uid)"
-              >
-                <div
-                  class="flex size-11 shrink-0 items-center justify-center rounded-2xl font-semibold"
-                  :class="student.is_flagged ? 'bg-destructive/10 text-destructive' : 'bg-secondary text-primary'"
-                >
-                  {{ student.display_name.slice(0, 1).toUpperCase() }}
-                </div>
+            <Badge
+              variant="outline"
+              class="rounded-full px-3 py-1"
+              :class="flaggedCount ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'"
+            >
+              {{ flaggedCount }} flagged
+            </Badge>
+          </div>
+        </CardHeader>
 
-                <div class="min-w-0 flex-1">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <p class="truncate font-semibold text-(--color-heading)">
-                      {{ student.display_name }}
-                    </p>
-                    <Badge :variant="student.is_flagged ? 'destructive' : 'secondary'" class="rounded-full px-2.5 py-1">
-                      {{ student.is_flagged ? 'Needs review' : 'On track' }}
-                    </Badge>
-                  </div>
-
-                  <p class="mt-1 truncate text-sm text-muted-foreground">
-                    {{ student.email }}
-                  </p>
-
-                  <div class="mt-3 grid gap-3 sm:grid-cols-3">
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        Accuracy
-                      </span>
-                      <div class="flex items-center gap-2">
-                        <div class="h-2 flex-1 overflow-hidden rounded-full bg-border/70">
-                          <div
-                            class="h-full rounded-full bg-primary"
-                            :style="{ width: `${student.overall_average}%` }"
-                          />
+        <CardContent class="p-0">
+          <template v-if="filteredStudents.length">
+            <Table class="min-w-205 table-fixed">
+                <colgroup>
+                  <col class="w-[40%]">
+                  <col class="w-[30%]">
+                  <col class="w-[20%]">
+                  <col class="w-[10%]">
+                </colgroup>
+                <TableHeader class="bg-rose-50/60">
+                  <TableRow class="hover:bg-transparent">
+                    <TableHead class="px-5 py-2 text-left text-[11px] font-semibold text-rose-900/60 uppercase tracking-[0.16em]">
+                      Learner
+                    </TableHead>
+                    <TableHead class="px-5 py-2 text-left text-[11px] font-semibold text-rose-900/60 uppercase tracking-[0.16em]">
+                      Progress
+                    </TableHead>
+                    <TableHead class="px-5 py-2 text-left text-[11px] font-semibold text-rose-900/60 uppercase tracking-[0.16em]">
+                      Activity
+                    </TableHead>
+                    <TableHead class="px-5 py-2 text-left text-[11px] font-semibold text-rose-900/60 uppercase tracking-[0.16em]">
+                      Action
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow
+                    v-for="student in filteredStudents"
+                    :key="student.uid"
+                    class="transition hover:bg-rose-50/45"
+                  >
+                    <TableCell class="px-5 py-3 align-middle">
+                      <div class="flex min-w-0 items-center gap-3">
+                        <div
+                          class="flex size-9 shrink-0 items-center justify-center rounded-xl border text-sm font-semibold"
+                          :class="student.is_flagged ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'"
+                        >
+                          {{ student.display_name.slice(0, 1).toUpperCase() }}
                         </div>
-                        <span class="text-sm font-semibold text-(--color-heading)">
-                          {{ student.overall_average.toFixed(0) }}%
-                        </span>
+
+                        <div class="min-w-0">
+                          <div class="flex min-w-0 flex-wrap items-center gap-2">
+                            <p class="truncate font-semibold text-(--color-heading)">
+                              {{ student.display_name }}
+                            </p>
+                            <Badge
+                              class="rounded-full border px-2.5 py-1 text-xs"
+                              :class="student.is_flagged ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-50' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50'"
+                            >
+                              {{ student.is_flagged ? 'Needs review' : 'On track' }}
+                            </Badge>
+                          </div>
+                          <p class="truncate text-xs text-muted-foreground">
+                            {{ student.email }}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    </TableCell>
 
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        Attempts
-                      </span>
-                      <span class="text-sm font-semibold text-(--color-heading)">
+                    <TableCell class="px-5 py-3 align-middle">
+                      <div class="w-full max-w-72">
+                        <div class="grid grid-cols-[minmax(120px,220px)_3rem] items-center gap-3">
+                          <div class="h-1.5 overflow-hidden rounded-full bg-rose-100">
+                            <div
+                              class="h-full rounded-full"
+                              :class="progressToneClass(student)"
+                              :style="{ width: `${student.overall_average}%` }"
+                            />
+                          </div>
+                          <span class="text-left text-sm font-semibold leading-none tabular-nums text-(--color-heading)">
+                            {{ student.overall_average.toFixed(0) }}%
+                          </span>
+                        </div>
+                        <p class="mt-1 text-xs text-muted-foreground">Overall accuracy</p>
+                      </div>
+                    </TableCell>
+
+                    <TableCell class="px-5 py-3 align-middle">
+                      <p class="font-semibold tabular-nums text-(--color-heading)">
                         {{ student.total_attempts }}
-                      </span>
-                    </div>
+                        <span class="font-normal text-muted-foreground">attempts</span>
+                      </p>
+                      <p class="mt-1 text-xs text-muted-foreground">
+                        {{ student.streak_days }} day streak
+                      </p>
+                    </TableCell>
 
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        Streak
-                      </span>
-                      <span class="text-sm font-semibold text-(--color-heading)">
-                        {{ student.streak_days }} days
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </template>
+                    <TableCell class="px-5 py-3 text-left align-middle">
+                      <div class="flex justify-start">
+                        <Button class="border-primary/25 bg-white text-primary shadow-xs shadow-rose-900/5 hover:bg-primary/10 hover:text-primary" variant="outline" size="sm" @click="openStudentDetail(student.uid)">
+                          <Eye data-icon="inline-start" />
+                          <span>View</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+          </template>
 
-            <Alert v-else>
+          <div v-else class="p-5">
+            <Alert class="border-sky-200 bg-sky-50 text-sky-950">
               <UserRoundSearch />
               <AlertTitle>No matching students</AlertTitle>
               <AlertDescription>
                 Adjust the search input or switch the active class to see a different roster.
               </AlertDescription>
             </Alert>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card class="border-border/80 bg-card/95">
-          <CardHeader class="gap-3">
-            <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-              Learner detail
-            </Badge>
+      <DialogRoot :open="detailModalOpen" @update:open="handleDetailModalOpenChange">
+        <DialogPortal>
+          <DialogOverlay class="fixed inset-0 z-50 bg-rose-950/25 backdrop-blur-sm" />
+          <DialogContent class="fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-2xl border border-rose-200 bg-gradient-to-br from-background via-card to-rose-50 p-5 shadow-lg shadow-rose-950/15 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:p-6">
+            <button
+              type="button"
+              class="absolute top-4 right-4 rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              aria-label="Close learner detail"
+              @click="detailModalOpen = false"
+            >
+              <X class="size-5" />
+            </button>
 
-            <template v-if="selectedStudent">
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                {{ selectedStudent.display_name }}
-              </CardTitle>
-              <CardDescription>
-                {{ selectedStudent.email }}
-              </CardDescription>
-            </template>
+            <div class="pr-10">
+              <Badge class="w-fit rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-primary uppercase tracking-[0.18em] hover:bg-primary/10">
+                Learner detail
+              </Badge>
 
-            <template v-else>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                Select a student
-              </CardTitle>
-              <CardDescription>
-                Choose a learner from the roster to inspect their drilldown summary.
-              </CardDescription>
-            </template>
-          </CardHeader>
+              <template v-if="selectedStudent">
+                <DialogTitle class="mt-3 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  {{ selectedStudent.display_name }}
+                </DialogTitle>
+                <DialogDescription class="mt-1 text-sm text-muted-foreground">
+                  {{ selectedStudent.email }}
+                </DialogDescription>
+              </template>
 
-          <CardContent class="flex flex-col gap-4">
+              <template v-else>
+                <DialogTitle class="mt-3 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  Learner detail
+                </DialogTitle>
+                <DialogDescription class="mt-1 text-sm text-muted-foreground">
+                  Loading selected learner.
+                </DialogDescription>
+              </template>
+            </div>
+
             <LoadingSpinner v-if="drilldownLoading" size="sm" />
 
             <template v-else-if="selectedStudent && drilldown">
               <div class="grid gap-3 sm:grid-cols-3">
-                <Card class="gap-0 bg-muted/30 shadow-none">
-                  <CardHeader class="gap-2">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Average
-                    </p>
-                    <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                      {{ drilldown.overall_average.toFixed(1) }}%
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3">
+                  <p class="text-[11px] font-semibold text-emerald-800/70 uppercase tracking-[0.16em]">
+                    Average
+                  </p>
+                  <p class="mt-1 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                    {{ drilldown.overall_average.toFixed(1) }}%
+                  </p>
+                </div>
 
-                <Card class="gap-0 bg-muted/30 shadow-none">
-                  <CardHeader class="gap-2">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Attempts
-                    </p>
-                    <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                      {{ drilldown.total_attempts }}
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
+                <div class="rounded-2xl border border-sky-200 bg-sky-50/70 px-4 py-3">
+                  <p class="text-[11px] font-semibold text-sky-800/70 uppercase tracking-[0.16em]">
+                    Attempts
+                  </p>
+                  <p class="mt-1 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                    {{ drilldown.total_attempts }}
+                  </p>
+                </div>
 
-                <Card class="gap-0 bg-muted/30 shadow-none">
-                  <CardHeader class="gap-2">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Streak
-                    </p>
-                    <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                      {{ drilldown.streak_days }}
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
+                <div class="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3">
+                  <p class="text-[11px] font-semibold text-amber-800/70 uppercase tracking-[0.16em]">
+                    Streak
+                  </p>
+                  <p class="mt-1 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                    {{ drilldown.streak_days }}
+                  </p>
+                </div>
               </div>
 
               <Separator />
@@ -256,11 +285,11 @@
                   </Badge>
                 </div>
 
-                <div class="grid gap-3">
+                <div class="grid gap-3 md:grid-cols-3">
                   <div
                     v-for="item in phonemeRows"
                     :key="item.label"
-                    class="rounded-2xl border border-border/70 bg-muted/30 p-4"
+                    class="rounded-2xl border border-rose-200/80 bg-white/75 p-3"
                   >
                     <div class="flex items-center justify-between gap-3">
                       <p class="font-semibold text-(--color-heading)">{{ item.label }}</p>
@@ -268,7 +297,7 @@
                         {{ item.value.toFixed(0) }}%
                       </Badge>
                     </div>
-                    <div class="mt-3 h-2 overflow-hidden rounded-full bg-border/70">
+                    <div class="mt-3 h-2 overflow-hidden rounded-full bg-rose-100">
                       <div
                         class="h-full rounded-full bg-primary"
                         :style="{ width: `${item.value}%` }"
@@ -292,7 +321,7 @@
                   <div
                     v-for="attempt in drilldown.recent_attempts"
                     :key="attempt.attempt_id"
-                    class="rounded-2xl border border-border/70 bg-muted/30 p-4"
+                    class="rounded-2xl border border-rose-200/80 bg-white/75 p-3"
                   >
                     <div class="flex flex-wrap items-start justify-between gap-3">
                       <div class="min-w-0">
@@ -309,7 +338,7 @@
                       </Badge>
                     </div>
 
-                    <p v-if="attempt.feedback_text" class="mt-3 text-sm leading-7 text-muted-foreground">
+                    <p v-if="attempt.feedback_text" class="mt-3 text-sm leading-6 text-muted-foreground">
                       {{ attempt.feedback_text }}
                     </p>
                   </div>
@@ -332,9 +361,9 @@
                 Pick a student from the roster to open their progress summary here.
               </AlertDescription>
             </Alert>
-          </CardContent>
-        </Card>
-      </div>
+          </DialogContent>
+        </DialogPortal>
+      </DialogRoot>
     </div>
   </InstructorLayout>
 </template>
@@ -344,17 +373,27 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   ChartColumn,
   Clock3,
+  Eye,
   Search,
   TriangleAlert,
-  UserRoundCheck,
   UserRoundSearch,
   Users,
+  X,
 } from 'lucide-vue-next'
+import {
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
+} from 'reka-ui'
 
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import { getAllStudents, getStudentDrillDown } from '@/api/analytics'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -365,6 +404,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
 import { useClassesStore } from '@/stores/classes'
 import type { StudentDrillDown, StudentStat } from '@/types'
@@ -378,6 +425,7 @@ const search = ref('')
 const selectedStudentUid = ref<string | null>(null)
 const drilldown = ref<StudentDrillDown | null>(null)
 const drilldownLoading = ref(false)
+const detailModalOpen = ref(false)
 
 const filteredStudents = computed(() => {
   if (!search.value) return students.value
@@ -398,26 +446,26 @@ const summaryCards = computed(() => [
   {
     label: 'Students',
     value: `${students.value.length}`,
-    copy: 'learners currently visible in this class roster',
     icon: Users,
+    surfaceClass: 'bg-emerald-50/40',
+    labelClass: 'text-emerald-800/70',
+    iconClass: 'text-emerald-700',
   },
   {
     label: 'Flagged',
     value: `${flaggedCount.value}`,
-    copy: 'students currently below the review threshold',
     icon: TriangleAlert,
-  },
-  {
-    label: 'Selected',
-    value: selectedStudent.value?.display_name ?? 'None',
-    copy: selectedStudent.value ? 'active learner in the drilldown panel' : 'choose a learner to inspect detail',
-    icon: UserRoundCheck,
+    surfaceClass: flaggedCount.value ? 'bg-amber-50/55' : 'bg-rose-50/25',
+    labelClass: flaggedCount.value ? 'text-amber-800/75' : 'text-rose-900/55',
+    iconClass: flaggedCount.value ? 'text-amber-700' : 'text-rose-700/60',
   },
   {
     label: 'Search results',
     value: `${filteredStudents.value.length}`,
-    copy: 'matching learners after the current roster filter',
     icon: ChartColumn,
+    surfaceClass: 'bg-sky-50/45',
+    labelClass: 'text-sky-800/70',
+    iconClass: 'text-sky-700',
   },
 ])
 
@@ -452,12 +500,23 @@ function scoreVariant(score: number): 'default' | 'secondary' | 'outline' | 'des
   return 'destructive'
 }
 
-async function selectStudent(uid: string) {
+function progressToneClass(student: StudentStat) {
+  if (student.is_flagged || student.overall_average < 55) return 'bg-red-500'
+  if (student.overall_average < 70) return 'bg-amber-500'
+  return 'bg-emerald-600'
+}
+
+function handleDetailModalOpenChange(open: boolean) {
+  detailModalOpen.value = open
+}
+
+async function openStudentDetail(uid: string) {
   const classId = classesStore.activeClassId
   if (!classId) return
 
   selectedStudentUid.value = uid
   drilldown.value = null
+  detailModalOpen.value = true
   drilldownLoading.value = true
 
   try {
@@ -473,6 +532,7 @@ async function loadStudents(classId: string | null) {
   students.value = []
   selectedStudentUid.value = null
   drilldown.value = null
+  detailModalOpen.value = false
   error.value = null
 
   if (!classId) {
@@ -483,9 +543,6 @@ async function loadStudents(classId: string | null) {
   loading.value = true
   try {
     students.value = await getAllStudents(classId)
-    if (students.value.length) {
-      await selectStudent(students.value[0].uid)
-    }
   } catch {
     error.value = 'Failed to load students.'
   } finally {

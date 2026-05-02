@@ -105,27 +105,94 @@
               </CardHeader>
 
               <CardContent>
-                <div class="grid min-h-[240px] grid-cols-6 items-end gap-3 rounded-3xl border border-border/70 bg-muted/30 p-4">
-                  <div
-                    v-for="week in displayTrend"
-                    :key="week.week_start"
-                    class="flex min-w-0 flex-col items-center justify-end gap-3"
+                <div
+                  v-if="trendChartData.length"
+                  class="rounded-3xl border border-border/70 bg-muted/30 px-3 pt-4 pb-2"
+                >
+                  <ChartContainer
+                    :config="trendChartConfig"
+                    class="h-[230px] min-h-[230px] w-full"
+                    cursor
                   >
-                    <p class="text-xs font-medium text-muted-foreground">
-                      {{ week.attempt_count ? `${week.average_accuracy.toFixed(0)}%` : '--' }}
-                    </p>
-                    <div class="flex h-36 w-full items-end justify-center">
-                      <div
-                        class="w-full rounded-t-2xl bg-primary transition-[height,background-color] duration-300"
-                        :class="week.attempt_count ? '' : 'bg-border/80'"
-                        :style="{ height: `${barHeight(week.average_accuracy)}px` }"
+                    <VisXYContainer
+                      :data="trendChartData"
+                      :margin="{ top: 12, right: 12, bottom: 0, left: 8 }"
+                      :y-domain="[0, 100]"
+                    >
+                      <VisAxis
+                        type="x"
+                        :tick-values="trendChartData.map((point) => point.timestamp)"
+                        :tick-format="formatTrendTick"
+                        :grid-line="false"
+                        :tick-line="false"
+                        :domain-line="false"
+                        tick-text-font-size="12px"
                       />
+                      <VisAxis
+                        type="y"
+                        :num-ticks="4"
+                        :tick-format="formatPercentTick"
+                        :tick-line="false"
+                        :domain-line="false"
+                        tick-text-font-size="12px"
+                      />
+                      <VisArea
+                        :x="(point: TrendChartPoint) => point.timestamp"
+                        :y="(point: TrendChartPoint) => point.accuracy"
+                        :color="trendChartConfig.accuracy.color"
+                        :opacity="0.22"
+                        :line="true"
+                        :line-color="trendChartConfig.accuracy.color"
+                        :line-width="3"
+                      />
+                      <VisLine
+                        :x="(point: TrendChartPoint) => point.timestamp"
+                        :y="(point: TrendChartPoint) => point.participation"
+                        :color="trendChartConfig.participation.color"
+                        :line-width="2"
+                      />
+                      <VisLine
+                        :x="(point: TrendChartPoint) => point.timestamp"
+                        :y="(point: TrendChartPoint) => point.practiceVolume"
+                        :color="trendChartConfig.practiceVolume.color"
+                        :line-width="2"
+                      />
+                      <ChartCrosshair
+                        :template="componentToString(trendChartConfig, ChartTooltipContent, {
+                          labelFormatter: formatTrendTooltipLabel,
+                          valueFormatter: formatTrendTooltipValue,
+                        })"
+                        :color="trendChartColors"
+                      />
+                      <ChartTooltip />
+                    </VisXYContainer>
+                  </ChartContainer>
+
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 pb-2 text-xs text-muted-foreground">
+                    <div
+                      v-for="item in trendLegendItems"
+                      :key="item.key"
+                      class="flex items-center gap-1.5"
+                    >
+                      <span
+                        class="size-2.5 rounded-sm"
+                        :style="{ backgroundColor: item.color }"
+                      />
+                      <span>{{ item.label }}</span>
                     </div>
-                    <p class="text-center text-xs text-muted-foreground">
-                      {{ formatWeekLabel(week.week_start) }}
-                    </p>
                   </div>
+                  <p class="px-5 pb-2 text-xs leading-5 text-muted-foreground">
+                    Practice volume compares each week's submissions against the busiest week shown.
+                  </p>
                 </div>
+
+                <Alert v-else>
+                  <Activity />
+                  <AlertTitle>No weekly trend yet</AlertTitle>
+                  <AlertDescription>
+                    Weekly accuracy movement will appear once this class has recorded practice activity.
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
 
@@ -234,6 +301,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { VisArea, VisAxis, VisLine, VisXYContainer } from '@unovis/vue'
 import {
   Activity,
   CheckCircle2,
@@ -255,6 +323,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  ChartContainer,
+  ChartCrosshair,
+  ChartTooltip,
+  ChartTooltipContent,
+  componentToString,
+  type ChartConfig,
+} from '@/components/ui/chart'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
 import { getClassOverview } from '@/api/analytics'
 import { useAuthStore } from '@/stores/auth'
@@ -269,6 +345,38 @@ const overview = ref<ClassOverview | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const flagThreshold = 60
+const trendChartConfig = {
+  accuracy: {
+    label: 'Accuracy',
+    color: 'var(--color-chart-1)',
+  },
+  participation: {
+    label: 'Active students',
+    color: 'var(--color-chart-2)',
+  },
+  practiceVolume: {
+    label: 'Practice volume',
+    color: 'var(--color-chart-3)',
+  },
+} satisfies ChartConfig
+const trendChartColors = [
+  trendChartConfig.accuracy.color,
+  trendChartConfig.participation.color,
+  trendChartConfig.practiceVolume.color,
+]
+const trendLegendItems = Object.entries(trendChartConfig).map(([key, item]) => ({
+  key,
+  label: item.label,
+  color: item.color,
+}))
+
+type TrendChartPoint = {
+  week_start: string
+  timestamp: number
+  accuracy: number
+  participation: number
+  practiceVolume: number
+}
 
 const todayLabel = computed(() =>
   new Date().toLocaleDateString('en-US', {
@@ -319,17 +427,46 @@ const phonemeRows = computed(() => {
   ]
 })
 
-const displayTrend = computed(() => overview.value?.weekly_trend.slice(-6) ?? [])
+const displayTrend = computed(() => overview.value?.weekly_trend.slice(-8) ?? [])
+const trendChartData = computed<TrendChartPoint[]>(() => {
+  const weeks = displayTrend.value
+  if (!weeks.length) return []
 
-function barHeight(accuracy: number) {
-  return Math.max(12, (accuracy / 100) * 144)
-}
+  const maxAttempts = Math.max(...weeks.map((week) => week.attempt_count), 1)
+  const totalStudents = Math.max(overview.value?.total_students ?? 0, 1)
+
+  return weeks.map((week) => ({
+    week_start: week.week_start,
+    timestamp: new Date(week.week_start).getTime(),
+    accuracy: week.attempt_count ? week.average_accuracy : 0,
+    participation: Math.min(100, ((week.active_students ?? 0) / totalStudents) * 100),
+    practiceVolume: Math.min(100, (week.attempt_count / maxAttempts) * 100),
+  }))
+})
 
 function formatWeekLabel(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
   })
+}
+
+function formatTrendTick(value: number | Date) {
+  return formatWeekLabel(new Date(value).toISOString())
+}
+
+function formatPercentTick(value: number | Date) {
+  const numericValue = typeof value === 'number' ? value : value.getTime()
+  return `${numericValue.toFixed(0)}%`
+}
+
+function formatTrendTooltipLabel(value: number | Date) {
+  return `Week of ${formatWeekLabel(new Date(value).toISOString())}`
+}
+
+function formatTrendTooltipValue(value: unknown) {
+  if (typeof value !== 'number') return String(value ?? '')
+  return `${value.toFixed(0)}%`
 }
 
 function scoreVariant(score: number): 'default' | 'secondary' | 'outline' | 'destructive' {

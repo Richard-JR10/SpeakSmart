@@ -8,7 +8,7 @@
         <Button
           variant="outline"
           size="icon"
-          class="absolute top-6 right-0 z-60 hidden size-8 translate-x-1/2 rounded-full bg-background shadow-sm lg:inline-flex"
+          class="absolute top-8 right-0 z-60 hidden size-9 -translate-y-1/2 translate-x-1/2 rounded-full bg-background shadow-sm lg:inline-flex"
           @click="toggleSidebar"
         >
           <ChevronLeft v-if="!sidebarCollapsed" />
@@ -85,12 +85,12 @@
 
       <div class="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col">
         <header class="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur">
-          <div class="flex items-center gap-3 px-4 py-2 sm:px-6 lg:px-8">
+          <div class="flex min-h-14 items-center gap-2 px-4 py-1.5 sm:min-h-16 sm:gap-3 sm:px-6 lg:px-8">
             <Sheet v-model:open="mobileNavOpen">
               <Button
                 variant="outline"
                 size="icon"
-                class="shrink-0 rounded-xl lg:hidden"
+                class="size-9 shrink-0 rounded-xl lg:hidden"
                 @click="mobileNavOpen = true"
               >
                 <Menu />
@@ -150,7 +150,7 @@
               v-if="props.showBack"
               variant="outline"
               size="icon"
-              class="shrink-0 rounded-xl"
+              class="size-9 shrink-0 rounded-xl"
               @click="router.back()"
             >
               <ChevronLeft />
@@ -160,10 +160,10 @@
             <LogoMark size="sm" class="lg:hidden" />
 
             <div class="min-w-0">
-              <h1 class="truncate font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              <h1 class="truncate font-(--font-display) text-xl leading-tight text-(--color-heading) sm:text-2xl">
                 {{ props.title }}
               </h1>
-              <p class="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
+              <p class="mt-0.5 hidden max-w-3xl truncate text-xs leading-5 text-muted-foreground sm:block">
                 {{ currentSectionCopy }}
               </p>
             </div>
@@ -378,7 +378,7 @@ const desktopSidebarClass = computed(() => [
 ])
 
 const desktopBrandClass = computed(() => [
-  'grid w-full grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-0 px-3 py-4',
+  'grid min-h-16 w-full grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-0 px-3 py-0',
 ])
 
 const desktopBrandTextClass = computed(() => [

@@ -75,12 +75,11 @@
             </CardHeader>
 
             <CardContent class="flex flex-col gap-5">
-              <Alert v-if="assignmentPhraseStatus.released_at && assignmentPhraseStatus.teacher_accuracy_score != null">
+              <Alert v-if="assignmentPhraseStatus.released_at">
                 <ClipboardList />
                 <AlertTitle>Teacher review released</AlertTitle>
                 <AlertDescription>
-                  {{ assignmentPhraseStatus.teacher_accuracy_score.toFixed(0) }}% ·
-                  {{ assignmentPhraseStatus.teacher_feedback_text || 'Teacher feedback is available for this phrase.' }}
+                  This phrase is locked. Open the assignment list to view the released teacher feedback.
                 </AlertDescription>
               </Alert>
 
@@ -324,7 +323,7 @@ const submissionStateCopy = computed(() => {
     return 'Your assignment recording is being uploaded and prepared for teacher review.'
   }
   if (assignmentPhraseStatus.value?.released_at) {
-    return 'Teacher feedback has been released and is shown on this page.'
+    return 'Teacher feedback has been released. Open the assignment list to view it.'
   }
   if (assignmentPhraseStatus.value?.reviewed_at) {
     return 'Your teacher reviewed this phrase already, but the result is not yet released to your student view.'

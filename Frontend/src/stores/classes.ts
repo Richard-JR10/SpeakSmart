@@ -3,13 +3,14 @@ import { defineStore } from 'pinia'
 
 import {
   createClass as createClassRequest,
+  getClassStudents,
   getMyClasses,
   joinClass as joinClassRequest,
   leaveClass as leaveClassRequest,
   regenerateJoinCode as regenerateJoinCodeRequest,
 } from '@/api/classes'
 import { useAuthStore } from '@/stores/auth'
-import type { ClassSummary } from '@/types'
+import type { ClassStudent, ClassSummary } from '@/types'
 
 export const useClassesStore = defineStore('classes', () => {
   const authStore = useAuthStore()
@@ -19,6 +20,7 @@ export const useClassesStore = defineStore('classes', () => {
   const loaded = ref(false)
   const error = ref<string | null>(null)
   const activeClassId = ref<string | null>(null)
+  const classStudents = ref<Record<string, ClassStudent[]>>({})
 
   const activeClass = computed(() =>
     classes.value.find((item) => item.class_id === activeClassId.value) ?? null,
@@ -85,9 +87,21 @@ export const useClassesStore = defineStore('classes', () => {
     return joined
   }
 
+  async function fetchClassStudents(classId: string) {
+    const students = await getClassStudents(classId)
+    classStudents.value = {
+      ...classStudents.value,
+      [classId]: students,
+    }
+    return students
+  }
+
   async function leaveClass(classId: string) {
     await leaveClassRequest(classId)
     classes.value = classes.value.filter((item) => item.class_id !== classId)
+    const remainingStudents = { ...classStudents.value }
+    delete remainingStudents[classId]
+    classStudents.value = remainingStudents
     syncActiveClass()
   }
 
@@ -107,6 +121,7 @@ export const useClassesStore = defineStore('classes', () => {
     loaded.value = false
     error.value = null
     activeClassId.value = null
+    classStudents.value = {}
   }
 
   function syncActiveClass() {
@@ -172,11 +187,13 @@ export const useClassesStore = defineStore('classes', () => {
     error,
     activeClassId,
     activeClass,
+    classStudents,
     ensureLoaded,
     fetchClasses,
     setActiveClass,
     createClass,
     joinClass,
+    fetchClassStudents,
     leaveClass,
     regenerateJoinCode,
     reset,

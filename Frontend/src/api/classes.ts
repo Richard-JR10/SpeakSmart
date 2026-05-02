@@ -1,5 +1,5 @@
 import api from './axios'
-import type { ClassSummary, JoinCodeResponse } from '@/types'
+import type { ClassStudent, ClassSummary, JoinCodeResponse } from '@/types'
 
 export const getMyClasses = async (): Promise<ClassSummary[]> => {
   const res = await api.get('/api/v1/classes')
@@ -13,6 +13,11 @@ export const createClass = async (name: string): Promise<ClassSummary> => {
 
 export const joinClass = async (joinCode: string): Promise<ClassSummary> => {
   const res = await api.post('/api/v1/classes/join', { join_code: joinCode })
+  return res.data
+}
+
+export const getClassStudents = async (classId: string): Promise<ClassStudent[]> => {
+  const res = await api.get(`/api/v1/classes/${classId}/students`)
   return res.data
 }
 

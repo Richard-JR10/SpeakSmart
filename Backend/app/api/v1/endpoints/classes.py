@@ -21,6 +21,7 @@ from app.db.models.exercise import Exercise, ExerciseAssignment
 from app.db.models.user import User
 from app.schemas.class_ import (
     ClassCreateRequest,
+    ClassStudentResponse,
     ClassSummaryResponse,
     JoinClassRequest,
     JoinCodeResponse,
@@ -196,6 +197,37 @@ async def join_class(
         student_count=student_count,
         is_owner=False,
     )
+
+
+@router.get("/{class_id}/students", response_model=list[ClassStudentResponse])
+async def list_class_students(
+    class_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if current_user.role == "instructor":
+        await get_owned_class(db, class_id, current_user.uid)
+    else:
+        await get_class_membership(db, class_id, current_user.uid)
+
+    result = await db.execute(
+        select(User.uid, User.display_name, ClassMembership.joined_at)
+        .join(ClassMembership, ClassMembership.user_uid == User.uid)
+        .where(
+            ClassMembership.class_id == class_id,
+            User.role == "student",
+        )
+        .order_by(User.display_name.asc())
+    )
+
+    return [
+        ClassStudentResponse(
+            uid=uid,
+            display_name=display_name,
+            joined_at=joined_at,
+        )
+        for uid, display_name, joined_at in result.all()
+    ]
 
 
 @router.delete("/{class_id}/members/me", status_code=204)

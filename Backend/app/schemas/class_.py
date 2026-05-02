@@ -23,6 +23,12 @@ class ClassSummaryResponse(BaseModel):
     is_owner: bool
 
 
+class ClassStudentResponse(BaseModel):
+    uid: str
+    display_name: str
+    joined_at: datetime
+
+
 class JoinCodeResponse(BaseModel):
     class_id: str
     join_code: str

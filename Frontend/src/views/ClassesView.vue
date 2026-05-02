@@ -223,7 +223,21 @@
               </Button>
 
               <Button
-                v-else
+                variant="outline"
+                size="sm"
+                :disabled="rosterLoading && selectedRosterClassId === item.class_id"
+                @click="openRosterModal(item.class_id)"
+              >
+                <LoaderCircle
+                  v-if="rosterLoading && selectedRosterClassId === item.class_id"
+                  class="mr-2 size-4 animate-spin"
+                />
+                <Eye v-else class="mr-2 size-4" />
+                <span>View class</span>
+              </Button>
+
+              <Button
+                v-if="!isInstructor"
                 variant="outline"
                 size="sm"
                 :disabled="busyClassId === item.class_id"
@@ -240,6 +254,84 @@
           </CardFooter>
         </Card>
       </section>
+
+      <DialogRoot :open="rosterModalOpen" @update:open="handleRosterModalOpenChange">
+        <DialogPortal>
+          <DialogOverlay class="fixed inset-0 z-50 bg-black/45 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <DialogContent class="fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-2xl border border-border bg-background p-5 shadow-lg data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0 space-y-2">
+                <Badge variant="secondary" class="rounded-full">
+                  {{ selectedClassStudents.length }}
+                  {{ selectedClassStudents.length === 1 ? 'student' : 'students' }}
+                </Badge>
+                <DialogTitle class="text-balance font-(--font-display) text-2xl leading-tight text-(--color-heading)">
+                  {{ selectedRosterClass?.name ?? 'Class list' }}
+                </DialogTitle>
+                <DialogDescription class="text-pretty text-sm leading-6 text-muted-foreground">
+                  See who is enrolled in this class.
+                </DialogDescription>
+              </div>
+
+              <DialogClose class="rounded-full p-2 text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden">
+                <X class="size-4" />
+                <span class="sr-only">Close class list</span>
+              </DialogClose>
+            </div>
+
+            <Alert v-if="rosterError" variant="destructive">
+              <AlertTitle>Could not load class list</AlertTitle>
+              <AlertDescription>{{ rosterError }}</AlertDescription>
+            </Alert>
+
+            <div
+              v-if="rosterLoading"
+              class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/30 text-sm text-muted-foreground"
+            >
+              <LoaderCircle class="mr-2 size-4 animate-spin" />
+              Loading classmates...
+            </div>
+
+            <div
+              v-else-if="!selectedClassStudents.length && !rosterError"
+              class="rounded-2xl border border-dashed border-border/70 bg-muted/30 p-5 text-sm text-muted-foreground"
+            >
+              No students are enrolled in this class yet.
+            </div>
+
+            <div v-else class="grid gap-2">
+              <div
+                v-for="student in selectedClassStudents"
+                :key="student.uid"
+                class="flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-muted/25 px-3 py-3"
+              >
+                <div class="flex min-w-0 items-center gap-3">
+                  <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                    {{ getInitials(student.display_name) }}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex min-w-0 flex-wrap items-center gap-2">
+                      <p class="truncate font-semibold text-(--color-heading)">
+                        {{ student.display_name }}
+                      </p>
+                      <Badge
+                        v-if="student.uid === authStore.uid"
+                        variant="secondary"
+                        class="rounded-full"
+                      >
+                        You
+                      </Badge>
+                    </div>
+                    <p class="text-xs text-muted-foreground">
+                      Joined {{ formatShortDate(student.joined_at) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </DialogPortal>
+      </DialogRoot>
     </div>
   </component>
 </template>
@@ -249,12 +341,23 @@ import { computed, onMounted, ref } from 'vue'
 import {
   Check,
   Copy,
+  Eye,
   LoaderCircle,
   RefreshCcw,
   School,
   Trash2,
   Users,
+  X,
 } from 'lucide-vue-next'
+import {
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
+} from 'reka-ui'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -284,6 +387,10 @@ const actionError = ref<string | null>(null)
 const actionMessage = ref<string | null>(null)
 const busyClassId = ref<string | null>(null)
 const copiedClassId = ref<string | null>(null)
+const rosterModalOpen = ref(false)
+const selectedRosterClassId = ref<string | null>(null)
+const rosterLoading = ref(false)
+const rosterError = ref<string | null>(null)
 
 const isStudent = computed(() => authStore.profile?.role === 'student')
 const isInstructor = computed(() => authStore.profile?.role === 'instructor')
@@ -293,6 +400,13 @@ const layoutProps = computed(() =>
     ? { title: 'Classes', wide: true }
     : {},
 )
+const selectedRosterClass = computed(() =>
+  classesStore.classes.find((item) => item.class_id === selectedRosterClassId.value) ?? null,
+)
+const selectedClassStudents = computed(() => {
+  if (!selectedRosterClassId.value) return []
+  return classesStore.classStudents[selectedRosterClassId.value] ?? []
+})
 
 onMounted(async () => {
   try {
@@ -378,6 +492,36 @@ async function handleRegenerateCode(classId: string, className: string) {
   }
 }
 
+async function openRosterModal(classId: string) {
+  selectedRosterClassId.value = classId
+  rosterModalOpen.value = true
+  rosterLoading.value = true
+  rosterError.value = null
+
+  try {
+    await classesStore.fetchClassStudents(classId)
+  } catch (error) {
+    rosterError.value = getErrorMessage(error, 'Failed to load the class list.')
+  } finally {
+    rosterLoading.value = false
+  }
+}
+
+function closeRosterModal() {
+  rosterModalOpen.value = false
+  selectedRosterClassId.value = null
+  rosterError.value = null
+}
+
+function handleRosterModalOpenChange(open: boolean) {
+  if (!open) {
+    closeRosterModal()
+    return
+  }
+
+  rosterModalOpen.value = true
+}
+
 async function copyJoinCode(classId: string, joinCodeValue: string | null) {
   if (!joinCodeValue || typeof navigator === 'undefined' || !navigator.clipboard) {
     return
@@ -390,6 +534,25 @@ async function copyJoinCode(classId: string, joinCodeValue: string | null) {
       copiedClassId.value = null
     }
   }, 1800)
+}
+
+function formatShortDate(value: string | null) {
+  if (!value) return 'recently'
+
+  return new Date(value).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'S'
 }
 
 function getErrorMessage(errorValue: unknown, fallback: string) {

@@ -3,12 +3,12 @@
     <div class="flex min-h-screen">
       <aside
         :class="desktopSidebarClass"
-        class="relative hidden h-screen overflow-visible border-r border-border/70 bg-card/90 transition-[width] duration-300 ease-in-out lg:sticky lg:top-0 lg:z-50 lg:flex lg:flex-col"
+        class="relative hidden h-screen overflow-visible border-r border-border/70 bg-background/85 transition-[width] duration-300 ease-in-out lg:sticky lg:top-0 lg:z-50 lg:flex lg:flex-col"
       >
         <Button
           variant="outline"
           size="icon"
-          class="absolute top-6 right-0 hidden size-8 translate-x-1/2 rounded-full bg-background shadow-sm lg:inline-flex"
+          class="absolute top-8 right-0 z-60 hidden size-9 -translate-y-1/2 translate-x-1/2 rounded-full bg-background shadow-sm lg:inline-flex"
           @click="toggleSidebar"
         >
           <ChevronLeft v-if="!sidebarCollapsed" />
@@ -17,47 +17,20 @@
         </Button>
 
         <div class="flex h-full flex-col overflow-hidden">
-          <div class="border-b border-border/70 px-3 py-4">
+          <div class="border-b border-border/70">
             <div :class="desktopBrandClass">
-              <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-                S
-              </div>
+              <LogoMark size="sm" />
 
               <div :class="desktopBrandTextClass">
-                <p class="truncate text-sm font-semibold text-(--color-heading)">
+                <p class="w-fit truncate text-sm font-semibold text-(--color-heading)" translate="no">
                   SpeakSmart
                 </p>
-                <p class="truncate text-xs text-muted-foreground">
+                <p class="w-fit truncate text-xs text-muted-foreground">
                   Instructor Studio
                 </p>
               </div>
             </div>
 
-            <div class="mt-4 flex flex-col gap-2">
-              <Label
-                for="desktop-active-class"
-                :class="desktopMetaLabelClass"
-              >
-                Active class
-              </Label>
-              <select
-                id="desktop-active-class"
-                :value="classesStore.activeClassId ?? ''"
-                :class="desktopSelectClass"
-                @change="handleClassChange"
-              >
-                <option value="" disabled>
-                  {{ classSelectLabel }}
-                </option>
-                <option
-                  v-for="item in classesStore.classes"
-                  :key="item.class_id"
-                  :value="item.class_id"
-                >
-                  {{ item.name }}
-                </option>
-              </select>
-            </div>
           </div>
 
           <nav class="flex flex-1 flex-col gap-2 px-3 py-4" aria-label="Instructor navigation">
@@ -96,119 +69,114 @@
 
       <div class="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col">
         <header class="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur">
-          <div class="flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
-            <div class="flex items-center gap-3 lg:hidden">
-              <Sheet v-model:open="mobileNavOpen">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  class="shrink-0 rounded-xl"
-                  @click="mobileNavOpen = true"
-                >
-                  <Menu />
-                  <span class="sr-only">Open navigation</span>
-                </Button>
+          <div class="flex min-h-14 items-center gap-2 px-4 py-1.5 sm:min-h-16 sm:gap-3 sm:px-6 lg:px-8">
+            <Sheet v-model:open="mobileNavOpen">
+              <Button
+                variant="outline"
+                size="icon"
+                class="size-9 shrink-0 rounded-xl lg:hidden"
+                @click="mobileNavOpen = true"
+              >
+                <Menu />
+                <span class="sr-only">Open navigation</span>
+              </Button>
 
-                <SheetContent side="left" class="w-[18rem] border-r border-border/70 bg-card p-0">
-                  <SheetHeader class="border-b border-border/70 px-4 py-4 text-left">
-                    <SheetTitle class="flex items-center gap-3 text-lg">
-                      <span class="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-                        SS
-                      </span>
-                      <span class="flex flex-col">
-                        <span class="font-semibold text-(--color-heading)">SpeakSmart</span>
-                        <span class="text-xs font-normal text-muted-foreground">Instructor Studio</span>
-                      </span>
-                    </SheetTitle>
-                    <SheetDescription class="sr-only">
-                      Instructor navigation
-                    </SheetDescription>
-                  </SheetHeader>
+              <SheetContent side="left" class="w-[18rem] border-r border-border/70 bg-card p-0">
+                <SheetHeader class="border-b border-border/70 px-4 py-4 text-left">
+                  <SheetTitle class="flex items-center gap-3 text-lg">
+                    <LogoMark size="sm" />
+                    <span class="flex flex-col">
+                      <span class="font-semibold text-(--color-heading)" translate="no">SpeakSmart</span>
+                      <span class="text-xs font-normal text-muted-foreground">Instructor Studio</span>
+                    </span>
+                  </SheetTitle>
+                  <SheetDescription class="sr-only">
+                    Instructor navigation
+                  </SheetDescription>
+                </SheetHeader>
 
-                  <div class="flex h-full flex-col">
-                    <div class="border-b border-border/70 px-4 py-4">
-                      <Label
-                        for="mobile-active-class"
-                        class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-                      >
-                        Active class
-                      </Label>
-                      <select
-                        id="mobile-active-class"
-                        :value="classesStore.activeClassId ?? ''"
-                        class="mt-2 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-medium text-foreground outline-none transition focus:border-primary"
-                        @change="handleMobileClassChange"
-                      >
-                        <option value="" disabled>
-                          {{ classSelectLabel }}
-                        </option>
-                        <option
-                          v-for="item in classesStore.classes"
-                          :key="item.class_id"
-                          :value="item.class_id"
-                        >
-                          {{ item.name }}
-                        </option>
-                      </select>
-                    </div>
-
-                    <nav class="flex flex-1 flex-col gap-2 px-3 py-4" aria-label="Instructor navigation">
-                      <Button
-                        v-for="item in navItems"
-                        :key="item.name"
-                        as-child
-                        :variant="navButtonVariant(item.name)"
-                        class="h-11 w-full justify-start rounded-xl px-3"
-                      >
-                        <RouterLink :to="item.to" @click="mobileNavOpen = false">
-                          <component :is="item.icon" data-icon="inline-start" />
-                          <span>{{ item.label }}</span>
-                        </RouterLink>
-                      </Button>
-                    </nav>
-
-                    <div class="border-t border-border/70 p-3">
-                      <Button
-                        variant="outline"
-                        class="h-11 w-full justify-start rounded-xl px-3"
-                        @click="openSignOutDialog"
-                      >
-                        <LogOut data-icon="inline-start" />
-                        <span>Sign out</span>
-                      </Button>
-                    </div>
+                <div class="flex h-full flex-col">
+                  <div class="border-b border-border/70 px-4 py-4">
+                    <Label
+                      class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+                    >
+                      Active class
+                    </Label>
+                    <AppSelect
+                      :model-value="classesStore.activeClassId"
+                      :options="classOptions"
+                      :placeholder="classSelectLabel"
+                      :disabled="classesStore.loading || !classesStore.classes.length"
+                      aria-label="Active class"
+                      trigger-class="mt-2 h-11 w-full rounded-xl"
+                      @update:model-value="handleMobileClassChange"
+                    />
                   </div>
-                </SheetContent>
-              </Sheet>
 
-              <div class="min-w-0">
-                <p class="truncate text-sm font-semibold text-(--color-heading)">SpeakSmart</p>
-                <p class="truncate text-xs text-muted-foreground">Instructor Studio</p>
-              </div>
+                  <nav class="flex flex-1 flex-col gap-2 px-3 py-4" aria-label="Instructor navigation">
+                    <Button
+                      v-for="item in navItems"
+                      :key="item.name"
+                      as-child
+                      :variant="navButtonVariant(item.name)"
+                      class="h-11 w-full justify-start rounded-xl px-3"
+                    >
+                      <RouterLink :to="item.to" @click="mobileNavOpen = false">
+                        <component :is="item.icon" data-icon="inline-start" />
+                        <span>{{ item.label }}</span>
+                      </RouterLink>
+                    </Button>
+                  </nav>
+
+                  <div class="border-t border-border/70 p-3">
+                    <Button
+                      variant="outline"
+                      class="h-11 w-full justify-start rounded-xl px-3"
+                      @click="openSignOutDialog"
+                    >
+                      <LogOut data-icon="inline-start" />
+                      <span>Sign out</span>
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            <LogoMark size="sm" class="lg:hidden" />
+
+            <div class="min-w-0">
+              <h1 class="truncate font-(--font-display) text-xl leading-tight text-(--color-heading) sm:text-2xl">
+                {{ currentTitle }}
+              </h1>
+              <p class="mt-0.5 hidden max-w-3xl truncate text-xs leading-5 text-muted-foreground sm:block">
+                {{ currentDescription }}
+              </p>
             </div>
 
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="min-w-0">
-                <h1 class="truncate font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                  {{ currentTitle }}
-                </h1>
-                <p class="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-                  {{ currentDescription }}
-                </p>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" class="rounded-full px-3 py-1">
-                  Instructor workspace
-                </Badge>
-                <Badge variant="outline" class="rounded-full px-3 py-1">
-                  <Building2 />
-                  {{ classesStore.activeClass?.name ?? 'No active class' }}
-                </Badge>
+            <div class="ml-auto hidden shrink-0 flex-wrap items-center justify-end gap-2 sm:flex">
+              <Badge variant="secondary" class="rounded-full px-3 py-1">
+                Instructor workspace
+              </Badge>
+              <div class="relative">
+                <AppSelect
+                  :model-value="classesStore.activeClassId"
+                  :options="classOptions"
+                  :placeholder="classSelectLabel"
+                  :disabled="classesStore.loading || !classesStore.classes.length"
+                  aria-label="Active class"
+                  trigger-class="h-9 max-w-52 rounded-full px-3"
+                  @update:model-value="handleClassChange"
+                >
+                  <template #icon>
+                    <Building2 class="size-4 shrink-0 text-muted-foreground" />
+                  </template>
+                </AppSelect>
               </div>
             </div>
+          </div>
 
-            <Alert v-if="classesStore.error" variant="destructive">
+          <div v-if="classesStore.error" class="px-4 pb-3 sm:px-6 lg:px-8">
+            <Alert variant="destructive">
               <TriangleAlert />
               <AlertTitle>Class data unavailable</AlertTitle>
               <AlertDescription>{{ classesStore.error }}</AlertDescription>
@@ -309,6 +277,7 @@ import {
 } from 'reka-ui'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AppSelect, type AppSelectOption } from '@/components/ui/app-select'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -319,6 +288,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import LogoMark from '@/components/shared/LogoMark.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
 
@@ -382,28 +352,24 @@ const classSelectLabel = computed(() => {
   if (classesStore.classes.length) return 'Select a class'
   return 'No classes yet'
 })
+const classOptions = computed<AppSelectOption[]>(() =>
+  classesStore.classes.map((item) => ({
+    value: item.class_id,
+    label: item.name,
+  })),
+)
 
 const desktopSidebarClass = computed(() => [
   sidebarCollapsed.value ? 'w-16' : 'w-72',
 ])
 
 const desktopBrandClass = computed(() => [
-  'grid w-full grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-0',
+  'grid min-h-16 w-full grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-0 px-3 py-0',
 ])
 
 const desktopBrandTextClass = computed(() => [
-  'flex min-w-0 flex-col justify-center overflow-hidden px-2 text-left transition-[max-width,opacity] duration-300 ease-in-out',
+  'flex min-w-0 flex-col justify-center overflow-hidden p-2 text-left whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out',
   sidebarCollapsed.value ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-40 opacity-100',
-])
-
-const desktopMetaLabelClass = computed(() => [
-  'text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-[max-width,opacity] duration-300 ease-in-out',
-  sidebarCollapsed.value ? 'max-w-0 opacity-0 pointer-events-none overflow-hidden' : 'max-w-40 opacity-100',
-])
-
-const desktopSelectClass = computed(() => [
-  'h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-medium text-foreground outline-none transition focus:border-primary',
-  sidebarCollapsed.value ? 'pointer-events-none hidden' : 'block',
 ])
 
 const desktopNavButtonClass = computed(() => [
@@ -457,13 +423,12 @@ function toggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
-function handleClassChange(event: Event) {
-  const target = event.target as HTMLSelectElement
-  classesStore.setActiveClass(target.value || null)
+function handleClassChange(classId: string | null) {
+  classesStore.setActiveClass(classId)
 }
 
-function handleMobileClassChange(event: Event) {
-  handleClassChange(event)
+function handleMobileClassChange(classId: string | null) {
+  handleClassChange(classId)
   mobileNavOpen.value = false
 }
 

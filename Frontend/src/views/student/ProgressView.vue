@@ -1,24 +1,24 @@
 <template>
   <StudentLayout title="My Progress">
-    <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-3">
       <LoadingSpinner v-if="progressStore.loading" full-screen message="Loading progress..." />
 
       <template v-else-if="dashboard">
         <Card class="overflow-hidden border-border/80 bg-card/95 shadow-(--shadow-soft)">
-          <CardHeader class="gap-5">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div class="flex flex-col gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                  Progress overview
-                </Badge>
-                <div>
-                  <CardTitle class="font-(--font-display) text-4xl leading-none text-(--color-heading) sm:text-5xl">
-                    Your pronunciation trend
-                  </CardTitle>
-                  <CardDescription class="mt-3 max-w-3xl text-base leading-8">
-                    Review your current average, how often you practice, and where your speech is getting stronger.
-                  </CardDescription>
+          <CardHeader class="gap-3 px-4 py-4 sm:px-5">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="min-w-0">
+                <div class="mb-2 flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em]">
+                    Progress overview
+                  </Badge>
                 </div>
+                <CardTitle class="font-(--font-display) text-2xl leading-tight text-(--color-heading) sm:text-3xl">
+                  Your pronunciation trend
+                </CardTitle>
+                <CardDescription class="mt-1 max-w-3xl text-sm leading-6">
+                  Current average, practice rhythm, and the next place to focus.
+                </CardDescription>
               </div>
 
               <Badge :variant="deltaBadgeVariant" class="w-fit rounded-full px-3 py-1">
@@ -27,73 +27,78 @@
             </div>
           </CardHeader>
 
-          <CardContent class="grid gap-4 md:grid-cols-3">
-            <Card class="gap-0 bg-secondary/50 shadow-none">
-              <CardHeader class="gap-2">
-                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <CardContent class="border-t border-border/70 px-4 py-3 sm:px-5">
+            <div class="grid gap-0 rounded-xl border border-border/70 bg-secondary/30 sm:grid-cols-3">
+              <div class="min-w-0 px-4 py-3">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Overall accuracy
                 </p>
-                <CardTitle class="font-(--font-display) text-4xl leading-none text-(--color-heading)">
+                <p class="mt-1 font-(--font-display) text-3xl leading-none tabular-nums text-(--color-heading)">
                   {{ dashboard.overall_average.toFixed(1) }}%
-                </CardTitle>
-                <CardDescription>
-                  Your average across all completed submissions.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+                </p>
+                <p class="mt-1 truncate text-xs text-muted-foreground">
+                  Completed submissions
+                </p>
+              </div>
 
-            <Card class="gap-0 bg-secondary/50 shadow-none">
-              <CardHeader class="gap-2">
-                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              <div class="min-w-0 border-t border-border/70 px-4 py-3 sm:border-t-0 sm:border-l">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Total attempts
                 </p>
-                <CardTitle class="font-(--font-display) text-4xl leading-none text-(--color-heading)">
+                <p class="mt-1 font-(--font-display) text-3xl leading-none tabular-nums text-(--color-heading)">
                   {{ dashboard.total_attempts }}
-                </CardTitle>
-                <CardDescription>
-                  Practice submissions recorded so far.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+                </p>
+                <p class="mt-1 truncate text-xs text-muted-foreground">
+                  Practice submissions
+                </p>
+              </div>
 
-            <Card class="gap-0 bg-secondary/50 shadow-none">
-              <CardHeader class="gap-2">
-                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              <div class="min-w-0 border-t border-border/70 px-4 py-3 sm:border-t-0 sm:border-l">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Current streak
                 </p>
-                <CardTitle class="font-(--font-display) text-4xl leading-none text-(--color-heading)">
+                <p class="mt-1 font-(--font-display) text-3xl leading-none tabular-nums text-(--color-heading)">
                   {{ dashboard.streak_days }}
-                </CardTitle>
-                <CardDescription>
-                  Consecutive days with recorded speaking work.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+                </p>
+                <p class="mt-1 truncate text-xs text-muted-foreground">
+                  Consecutive practice days
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card class="border-border/80 bg-card/95 shadow-(--shadow-soft)">
-          <CardHeader class="gap-3">
-            <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-              Weekly accuracy
-            </Badge>
-            <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-              Consistency over time
-            </CardTitle>
-            <CardDescription>
-              Weekly average accuracy shown as a bar chart.
+          <CardHeader class="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div>
+              <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em]">
+                Weekly accuracy
+              </Badge>
+              <CardTitle class="mt-2 font-(--font-display) text-2xl leading-tight text-(--color-heading)">
+                Consistency over time
+              </CardTitle>
+            </div>
+            <CardDescription class="text-sm sm:text-right">
+              Weekly average accuracy
             </CardDescription>
           </CardHeader>
 
-          <CardContent>
-            <div v-if="weeklyChartBars.length" class="overflow-x-auto">
+          <CardContent class="px-4 pb-4 sm:px-5">
+            <div v-if="weeklyChartPoints.length" class="overflow-x-auto">
               <div class="min-w-160">
                 <svg
-                  class="h-65 w-full"
+                  class="h-44 w-full"
                   :viewBox="`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`"
                   role="img"
-                  aria-label="Weekly accuracy bar chart"
+                  aria-label="Weekly accuracy line chart"
                 >
+                  <defs>
+                    <linearGradient id="weeklyAccuracyFill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stop-color="var(--color-chart-1)" stop-opacity="0.24" />
+                      <stop offset="100%" stop-color="var(--color-chart-1)" stop-opacity="0.02" />
+                    </linearGradient>
+                  </defs>
+
                   <g v-for="tick in chartTickLines" :key="tick.value">
                     <line
                       :x1="CHART_PADDING.left"
@@ -114,34 +119,49 @@
                     </text>
                   </g>
 
-                  <g v-for="bar in weeklyChartBars" :key="bar.weekStart">
-                    <rect
-                      :x="bar.x"
-                      :y="bar.y"
-                      :width="bar.width"
-                      :height="bar.height"
-                      rx="12"
-                      :fill="bar.value > 0 ? 'var(--color-chart-1)' : 'var(--color-border)'"
+                  <path
+                    v-if="weeklyChartAreaPath"
+                    :d="weeklyChartAreaPath"
+                    fill="url(#weeklyAccuracyFill)"
+                  />
+
+                  <polyline
+                    :points="weeklyChartLinePoints"
+                    fill="none"
+                    stroke="var(--color-chart-1)"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="4"
+                  />
+
+                  <g v-for="point in weeklyChartPoints" :key="point.weekStart">
+                    <circle
+                      :cx="point.x"
+                      :cy="point.y"
+                      r="6"
+                      fill="var(--color-background)"
+                      stroke="var(--color-chart-1)"
+                      stroke-width="3"
                     />
 
                     <text
-                      :x="bar.labelX"
-                      :y="bar.y - 8"
+                      :x="point.x"
+                      :y="point.y - 12"
                       text-anchor="middle"
                       font-size="11"
                       fill="var(--color-muted-foreground)"
                     >
-                      {{ bar.value > 0 ? `${bar.value.toFixed(0)}%` : '' }}
+                      {{ point.value.toFixed(0) }}%
                     </text>
 
                     <text
-                      :x="bar.labelX"
+                      :x="point.x"
                       :y="CHART_HEIGHT - 12"
                       text-anchor="middle"
                       font-size="11"
                       fill="var(--color-muted-foreground)"
                     >
-                      {{ bar.label }}
+                      {{ point.label }}
                     </text>
                   </g>
                 </svg>
@@ -152,7 +172,7 @@
               <AppIcon name="chart" :size="18" />
               <AlertTitle>No weekly accuracy data yet</AlertTitle>
               <AlertDescription>
-                Weekly accuracy bars will appear once you have recorded practice activity.
+                Weekly accuracy trends will appear once you have recorded practice activity.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -162,50 +182,50 @@
           v-if="dashboard.weakest_module_id"
           class="border-border/80 bg-[linear-gradient(145deg,rgba(46,138,103,0.12),rgba(184,141,70,0.12))] shadow-(--shadow-soft)"
         >
-          <CardContent class="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
-            <div class="flex flex-col gap-2">
-              <Badge variant="outline" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+          <CardContent class="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between sm:px-5">
+            <div class="min-w-0">
+              <Badge variant="outline" class="w-fit rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em]">
                 Recommended focus
               </Badge>
-              <h3 class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              <h3 class="mt-2 truncate font-(--font-display) text-2xl leading-tight text-(--color-heading)">
                 {{ weakestTitle }}
               </h3>
-              <p class="max-w-3xl text-sm leading-7 text-muted-foreground">
+              <p class="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
                 This module is averaging {{ dashboard.weakest_module_score?.toFixed(0) }}%.
                 A short replay session here should lift your overall score fastest.
               </p>
             </div>
 
-            <Button size="lg" class="w-full md:w-auto" @click="practiceWeakest">
+            <Button size="sm" class="w-full shrink-0 md:w-auto" @click="practiceWeakest">
               <AppIcon name="mic" :size="18" data-icon="inline-start" />
               Practice module
             </Button>
           </CardContent>
         </Card>
 
-        <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Card class="border-border/80 bg-card/95 shadow-(--shadow-soft)">
-            <CardHeader class="gap-3">
-              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+            <CardHeader class="gap-2 px-4 py-4 sm:px-5">
+              <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em]">
                 By module
               </Badge>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              <CardTitle class="font-(--font-display) text-2xl leading-tight text-(--color-heading)">
                 Where you are strongest
               </CardTitle>
             </CardHeader>
 
-            <CardContent class="flex flex-col gap-1">
+            <CardContent class="flex flex-col gap-1 px-4 pb-4 sm:px-5">
               <template v-for="(summary, index) in dashboard.progress_by_module" :key="summary.module_id">
-                <div class="flex items-center justify-between gap-4 rounded-[22px] bg-secondary/35 p-4">
-                  <div class="flex min-w-0 items-center gap-4">
-                    <span class="flex size-12 items-center justify-center rounded-[18px] bg-secondary text-primary">
-                      <AppIcon :name="moduleIconName(summary.module_id)" :size="22" />
+                <div class="flex items-center justify-between gap-3 rounded-xl bg-secondary/35 px-3 py-2.5">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                      <AppIcon :name="moduleIconName(summary.module_id)" :size="18" />
                     </span>
                     <div class="min-w-0">
-                      <p class="truncate font-semibold text-(--color-heading)">
+                      <p class="truncate text-sm font-semibold text-(--color-heading)">
                         {{ modulesStore.getModuleById(summary.module_id)?.title ?? summary.module_id }}
                       </p>
-                      <p class="mt-1 text-sm text-muted-foreground">
+                      <p class="mt-0.5 text-xs text-muted-foreground">
                         {{ summary.total_attempts }} attempts
                       </p>
                     </div>
@@ -219,34 +239,34 @@
           </Card>
 
           <Card class="border-border/80 bg-card/95 shadow-(--shadow-soft)">
-            <CardHeader class="gap-3">
-              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+            <CardHeader class="gap-2 px-4 py-4 sm:px-5">
+              <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em]">
                 Attempt history
               </Badge>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              <CardTitle class="font-(--font-display) text-2xl leading-tight text-(--color-heading)">
                 Recent submissions
               </CardTitle>
-              <CardDescription>
+              <CardDescription class="text-sm">
                 Showing your 5 most recent attempts.
               </CardDescription>
             </CardHeader>
 
-            <CardContent class="flex flex-col gap-1">
+            <CardContent class="flex flex-col gap-1 px-4 pb-4 sm:px-5">
               <LoadingSpinner v-if="attemptsStore.loading" size="sm" />
 
               <template v-else-if="visibleAttempts.length">
                 <template v-for="(attempt, index) in visibleAttempts" :key="attempt.attempt_id">
-                  <div class="flex items-center justify-between gap-4 rounded-[22px] bg-secondary/35 p-4">
+                  <div class="flex items-center justify-between gap-3 rounded-xl bg-secondary/35 px-3 py-2.5">
                     <div class="min-w-0">
-                      <p class="truncate font-semibold text-(--color-heading)">
+                      <p class="truncate text-sm font-semibold text-(--color-heading)">
                         {{ attempt.phrase_id }}
                       </p>
-                      <p class="mt-1 text-sm text-muted-foreground">
+                      <p class="mt-0.5 text-xs text-muted-foreground">
                         {{ formatDate(attempt.attempted_at) }}
                       </p>
                     </div>
 
-                    <Badge :variant="scoreBadgeVariant(attempt.accuracy_score)" class="rounded-full px-3 py-1">
+                    <Badge :variant="scoreBadgeVariant(attempt.accuracy_score)" class="shrink-0 rounded-full px-2.5 py-1">
                       {{ attempt.accuracy_score.toFixed(0) }}%
                     </Badge>
                   </div>
@@ -312,12 +332,12 @@ const modulesStore = useModulesStore()
 const authStore = useAuthStore()
 
 const CHART_WIDTH = 680
-const CHART_HEIGHT = 260
+const CHART_HEIGHT = 180
 const CHART_PADDING = {
-  top: 20,
-  right: 18,
-  bottom: 42,
-  left: 44,
+  top: 18,
+  right: 16,
+  bottom: 34,
+  left: 40,
 }
 const CHART_TICKS = [0, 25, 50, 75, 100]
 
@@ -333,32 +353,45 @@ const chartTickLines = computed(() =>
   })),
 )
 
-const weeklyChartBars = computed(() => {
+const weeklyChartPoints = computed(() => {
   const weeklyAccuracy = dashboard.value?.weekly_accuracy ?? []
   if (!weeklyAccuracy.length) return []
 
-  const slotWidth = chartInnerWidth / weeklyAccuracy.length
-  const barWidth = Math.min(48, Math.max(22, slotWidth * 0.52))
+  const slotWidth = weeklyAccuracy.length > 1
+    ? chartInnerWidth / (weeklyAccuracy.length - 1)
+    : 0
 
   return weeklyAccuracy.map((week, index) => {
     const value = Math.max(0, Math.min(100, week.average_accuracy))
-    const height = value === 0
-      ? 8
-      : Math.max(14, (value / 100) * chartInnerHeight)
-    const x = CHART_PADDING.left + index * slotWidth + (slotWidth - barWidth) / 2
-    const y = CHART_PADDING.top + chartInnerHeight - height
+    const x = weeklyAccuracy.length > 1
+      ? CHART_PADDING.left + index * slotWidth
+      : CHART_PADDING.left + chartInnerWidth / 2
+    const y = CHART_PADDING.top + chartInnerHeight - (value / 100) * chartInnerHeight
 
     return {
       weekStart: week.week_start,
       value,
       x,
       y,
-      width: barWidth,
-      height,
-      labelX: x + barWidth / 2,
       label: formatWeekLabel(week.week_start),
     }
   })
+})
+
+const weeklyChartLinePoints = computed(() =>
+  weeklyChartPoints.value.map((point) => `${point.x},${point.y}`).join(' '),
+)
+
+const weeklyChartAreaPath = computed(() => {
+  const points = weeklyChartPoints.value
+  if (points.length < 2) return ''
+
+  const baseline = CHART_HEIGHT - CHART_PADDING.bottom
+  const line = points.map((point) => `L ${point.x} ${point.y}`).join(' ')
+  const first = points[0]
+  const last = points[points.length - 1]
+
+  return `M ${first.x} ${baseline} ${line} L ${last.x} ${baseline} Z`
 })
 
 const weakestTitle = computed(() => {

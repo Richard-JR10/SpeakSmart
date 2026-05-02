@@ -1,36 +1,37 @@
 <template>
   <InstructorLayout>
-    <div class="flex flex-col gap-5">
-      <Card class="border-border/80 bg-card/95">
-        <CardHeader class="gap-4">
-          <div class="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-              Analytics heatmap
-            </Badge>
-            <Badge variant="outline" class="rounded-full px-3 py-1">
-              {{ moduleIds.length }} modules
-            </Badge>
-          </div>
+    <div class="flex flex-col gap-4">
+      <Card class="border-border/80 bg-card/95 shadow-sm shadow-rose-900/5">
+        <CardHeader class="gap-3 p-4 sm:p-5">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                  Analytics heatmap
+                </Badge>
+                <Badge variant="outline" class="rounded-full px-3 py-1">
+                  {{ moduleIds.length }} modules
+                </Badge>
+              </div>
 
-          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
-            <div class="flex flex-col gap-2">
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading) sm:text-4xl">
-                Compare module performance across pronunciation categories
+              <CardTitle class="mt-3 font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
+                Pronunciation heatmap
               </CardTitle>
-              <CardDescription class="max-w-3xl text-sm leading-7 text-foreground/80 sm:text-base">
-                Use the heatmap to see where class averages are strongest, where scores soften, and which modules deserve direct intervention first.
+              <CardDescription class="mt-1 max-w-3xl text-sm">
+                Scan timing, consonants, vowels, and overall scores across every module.
               </CardDescription>
             </div>
 
-            <div class="rounded-3xl border border-border/70 bg-muted/30 p-4">
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Legend
-              </p>
-              <div class="mt-3 h-3 rounded-full bg-gradient-to-r from-destructive/60 via-amber-400/55 to-primary/70" />
-              <div class="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Low</span>
-                <span>Moderate</span>
-                <span>Strong</span>
+            <div class="w-full rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 lg:max-w-xs">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Score range
+                </p>
+                <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>Low</span>
+                  <span class="h-2.5 w-20 rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-600" />
+                  <span>Strong</span>
+                </div>
               </div>
             </div>
           </div>
@@ -50,115 +51,126 @@
       </Alert>
 
       <template v-else>
-        <div class="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <Card class="border-border/80 bg-card/95">
-            <CardHeader class="gap-3">
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <Card class="gap-0 overflow-hidden border-border/80 bg-card/95 py-0 shadow-sm shadow-rose-900/5">
+            <CardHeader class="border-b border-border/70 p-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-col gap-2">
-                  <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                    Module matrix
-                  </Badge>
-                  <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                      Module matrix
+                    </Badge>
+                    <Badge variant="outline" class="rounded-full px-3 py-1">
+                      {{ topErrors.length }} weak clusters
+                    </Badge>
+                  </div>
+                  <CardTitle class="mt-2 font-(--font-display) text-xl leading-none text-(--color-heading)">
                     Class heatmap
                   </CardTitle>
-                  <CardDescription>
-                    Each module is split into timing, consonants, vowels, and overall score so weak clusters are easy to compare.
+                  <CardDescription class="mt-1 text-sm">
+                    Compact rows keep all module scores visible for faster comparison.
                   </CardDescription>
                 </div>
-
-                <Badge variant="outline" class="rounded-full px-3 py-1">
-                  {{ topErrors.length }} weak clusters
-                </Badge>
               </div>
             </CardHeader>
 
-            <CardContent class="grid gap-3">
+            <CardContent class="p-0">
               <template v-if="moduleIds.length">
-                <Card
-                  v-for="moduleId in moduleIds"
-                  :key="moduleId"
-                  class="border-border/70 bg-muted/25 shadow-none"
-                >
-                  <CardContent class="flex flex-col gap-4 px-4 py-4">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                      <div class="flex min-w-0 items-center gap-3">
-                        <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary">
-                          <BookMarked />
+                <div class="overflow-x-auto">
+                  <div class="min-w-[760px]">
+                    <div class="grid grid-cols-[minmax(200px,1.4fr)_repeat(4,minmax(118px,0.7fr))] border-b border-border/70 bg-muted/20 px-4 py-2">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Module
+                      </p>
+                      <p
+                        v-for="label in heatmapColumnLabels"
+                        :key="label"
+                        class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+                      >
+                        {{ label }}
+                      </p>
+                    </div>
+
+                    <div
+                      v-for="moduleId in moduleIds"
+                      :key="moduleId"
+                      class="grid grid-cols-[minmax(200px,1.4fr)_repeat(4,minmax(118px,0.7fr))] items-stretch gap-2 border-b border-border/60 px-4 py-2 last:border-b-0 hover:bg-muted/20"
+                    >
+                      <div class="flex min-w-0 items-center gap-3 pr-2">
+                        <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                          <BookMarked class="size-4" />
                         </div>
                         <div class="min-w-0">
-                          <p class="truncate font-semibold text-(--color-heading)">
+                          <p class="truncate text-sm font-semibold text-(--color-heading)">
                             {{ moduleName(moduleId) }}
                           </p>
-                          <p class="text-sm text-muted-foreground">
+                          <p class="truncate text-xs text-muted-foreground">
                             Module performance snapshot
                           </p>
                         </div>
                       </div>
 
-                      <Badge :variant="scoreVariant(moduleScore(moduleId, 'overall_avg'))" class="rounded-full px-3 py-1">
-                        {{ moduleScore(moduleId, 'overall_avg').toFixed(0) }}% overall
-                      </Badge>
-                    </div>
-
-                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <div
                         v-for="item in scoreRows(moduleId)"
                         :key="item.label"
-                        class="rounded-2xl border border-border/70 p-4"
-                        :style="{ backgroundColor: cellColor(item.value) }"
+                        class="rounded-xl border px-3 py-2"
+                        :class="item.label === 'Overall' ? 'ring-1 ring-primary/15' : ''"
+                        :style="cellStyle(item.value)"
                       >
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                           {{ item.label }}
                         </p>
-                        <p class="mt-2 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                        <p class="mt-1 font-(--font-display) text-2xl leading-none text-(--color-heading)">
                           {{ item.value.toFixed(0) }}%
                         </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </template>
 
-              <Alert v-else>
-                <ChartNoAxesCombined />
-                <AlertTitle>No heatmap data yet</AlertTitle>
-                <AlertDescription>
-                  This class needs more attempt history before module comparisons can be shown.
-                </AlertDescription>
-              </Alert>
+              <div v-else class="p-4">
+                <Alert>
+                  <ChartNoAxesCombined />
+                  <AlertTitle>No heatmap data yet</AlertTitle>
+                  <AlertDescription>
+                    This class needs more attempt history before module comparisons can be shown.
+                  </AlertDescription>
+                </Alert>
+              </div>
             </CardContent>
           </Card>
 
-          <Card class="border-border/80 bg-card/95">
-            <CardHeader class="gap-3">
+          <Card class="gap-0 border-border/80 bg-card/95 py-0 shadow-sm shadow-rose-900/5">
+            <CardHeader class="gap-2 border-b border-border/70 p-4">
               <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                 Lowest performing areas
               </Badge>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              <CardTitle class="font-(--font-display) text-xl leading-none text-(--color-heading)">
                 Top error clusters
               </CardTitle>
-              <CardDescription>
+              <CardDescription class="text-sm">
                 These are the lowest scoring module-category combinations in the active class.
               </CardDescription>
             </CardHeader>
 
-            <CardContent class="flex flex-col gap-3">
+            <CardContent class="flex flex-col gap-2 p-4">
               <template v-if="topErrors.length">
                 <div
                   v-for="item in topErrors"
                   :key="item.key"
-                  class="rounded-2xl border border-border/70 bg-muted/30 p-4"
+                  class="rounded-xl border border-border/70 bg-muted/25 px-3 py-2.5"
                 >
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
-                      <p class="font-semibold text-(--color-heading)">
+                      <p class="truncate text-sm font-semibold text-(--color-heading)">
                         {{ moduleName(item.moduleId) }}
                       </p>
-                      <p class="mt-1 text-sm text-muted-foreground">
+                      <p class="mt-0.5 text-xs text-muted-foreground">
                         {{ phonemeLabels[item.phoneme] }}
                       </p>
                     </div>
-                    <Badge variant="destructive" class="rounded-full px-3 py-1">
+                    <Badge variant="destructive" class="rounded-full px-2.5 py-1">
                       {{ item.score.toFixed(0) }}%
                     </Badge>
                   </div>
@@ -224,6 +236,7 @@ const phonemeLabels: Record<(typeof phonemeKeys)[number], string> = {
   consonant_avg: 'Consonants',
   vowel_avg: 'Vowel purity',
 }
+const heatmapColumnLabels = ['Timing', 'Consonants', 'Vowels', 'Overall']
 
 const moduleIds = computed(() => modulesStore.modules.map((module) => module.module_id))
 
@@ -259,19 +272,39 @@ function scoreRows(moduleId: string) {
   ]
 }
 
-function scoreVariant(score: number): 'default' | 'secondary' | 'outline' | 'destructive' {
-  if (score >= 85) return 'default'
-  if (score >= 70) return 'secondary'
-  if (score >= 55) return 'outline'
-  return 'destructive'
-}
+function cellStyle(score: number) {
+  if (score === 0) {
+    return {
+      backgroundColor: 'rgba(244, 247, 245, 0.9)',
+      borderColor: 'rgba(208, 214, 210, 0.9)',
+    }
+  }
 
-function cellColor(score: number) {
-  if (score === 0) return 'rgba(244, 247, 245, 0.85)'
-  if (score < 55) return 'rgba(198, 85, 73, 0.10)'
-  if (score < 70) return 'rgba(184, 123, 38, 0.12)'
-  if (score < 85) return 'rgba(35, 116, 92, 0.09)'
-  return 'rgba(35, 116, 92, 0.16)'
+  if (score < 55) {
+    return {
+      backgroundColor: 'rgba(198, 85, 73, 0.24)',
+      borderColor: 'rgba(198, 85, 73, 0.42)',
+    }
+  }
+
+  if (score < 70) {
+    return {
+      backgroundColor: 'rgba(184, 123, 38, 0.26)',
+      borderColor: 'rgba(184, 123, 38, 0.44)',
+    }
+  }
+
+  if (score < 85) {
+    return {
+      backgroundColor: 'rgba(35, 116, 92, 0.22)',
+      borderColor: 'rgba(35, 116, 92, 0.38)',
+    }
+  }
+
+  return {
+    backgroundColor: 'rgba(35, 116, 92, 0.34)',
+    borderColor: 'rgba(35, 116, 92, 0.54)',
+  }
 }
 
 async function loadHeatmap(classId: string | null) {

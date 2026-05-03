@@ -11,6 +11,7 @@ from app.services.pronunciation import (
     build_target_pronunciation,
     summarize_pronunciation_feedback,
 )
+from app.services.phoneme_assessment import assess_pronunciation
 from app.services.speech import extract_features
 
 
@@ -137,9 +138,16 @@ def build_phoneme_error_map(
     consonant_score: float,
     vowel_score: float,
     dtw_score: float,
+    *,
+    phonemes: list[dict[str, Any]] | None = None,
+    morae: list[dict[str, Any]] | None = None,
+    phoneme_match_score: float | None = None,
+    fluency_score: float | None = None,
+    recognizer: dict[str, Any] | None = None,
+    assessment_confidence: dict[str, Any] | None = None,
 ) -> dict:
     """
-    Builds a compact category summary for the frontend.
+    Builds the compact category summary plus exact sound-level details.
     """
     return {
         "mora_timing": {
@@ -161,6 +169,36 @@ def build_phoneme_error_map(
             "score": dtw_score,
             "error": dtw_score < 70,
             "label": "Overall Acoustic Match",
+        },
+        "phoneme_match": {
+            "score": phoneme_match_score if phoneme_match_score is not None else dtw_score,
+            "error": (phoneme_match_score if phoneme_match_score is not None else dtw_score) < 70,
+            "label": "Phoneme Match",
+        },
+        "fluency": {
+            "score": fluency_score if fluency_score is not None else mora_timing_score,
+            "error": (fluency_score if fluency_score is not None else mora_timing_score) < 70,
+            "label": "Fluency / Prosody",
+        },
+        "phonemes": phonemes or [],
+        "morae": morae or [],
+        "recognizer": recognizer,
+        "assessment_confidence": assessment_confidence
+        or {
+            "level": "medium",
+            "label": "Medium confidence",
+            "guidance": "Use this as practice feedback and compare with the reference audio.",
+            "reasons": [],
+        },
+        "calibration": {
+            "final_judge": "speaksmart_ai",
+            "teacher_ground_truth_used": False,
+            "calibration_sources": [
+                "native_reference_audio",
+                "japanese_mora_phoneme_rules",
+                "controlled_error_cases",
+                "optional_external_ai_benchmarks",
+            ],
         },
     }
 
@@ -224,64 +262,70 @@ def score_attempt(
     dtw_dist = dtw_distance(student_mfcc, reference_mfcc)
     dtw_score = dtw_to_score(dtw_dist)
 
-    chunk_analysis = _analyze_pronunciation_chunks(
+    phoneme_assessment = assess_pronunciation(
+        student_audio=student_audio,
         student_features=student_features,
         reference_features=reference_features,
         target_pronunciation=target_pronunciation,
         pronunciation_rules=pronunciation_rules,
+        overall_acoustic_score=dtw_score,
     )
 
-    chunk_average = _average(chunk_analysis["chunk_scores"], fallback=dtw_score)
-    weakest_chunk_score = min(chunk_analysis["chunk_scores"], default=dtw_score)
-    timing_focus = _average(
-        chunk_analysis["timing_scores"],
-        fallback=chunk_average,
+    target_pronunciation = phoneme_assessment["target_pronunciation"]
+    phoneme_match_score = float(phoneme_assessment["phoneme_match_score"])
+    mora_timing_score = float(phoneme_assessment["mora_timing_score"])
+    consonant_score = float(phoneme_assessment["consonant_score"])
+    vowel_score = float(phoneme_assessment["vowel_score"])
+    fluency_score = float(phoneme_assessment["fluency_score"])
+    category_score = (consonant_score + vowel_score) / 2.0
+    assessment_confidence = build_assessment_confidence(
+        phoneme_match_score=phoneme_match_score,
+        mora_timing_score=mora_timing_score,
+        consonant_score=consonant_score,
+        vowel_score=vowel_score,
+        fluency_score=fluency_score,
+        recognizer=phoneme_assessment["recognizer"],
     )
-
-    mora_timing_score = round(
-        (score_mora_timing(student_features["duration"], reference_features["duration"]) * 0.55)
-        + (timing_focus * 0.45),
-        2,
-    )
-    consonant_score = round(
-        _average(chunk_analysis["consonant_scores"], fallback=dtw_score),
-        2,
-    )
-    vowel_score = round(
-        _average(chunk_analysis["vowel_scores"], fallback=dtw_score),
-        2,
-    )
-
-    chunk_consistency_score = (chunk_average * 0.65) + (weakest_chunk_score * 0.35)
     issue_penalty = sum(
         max(0.0, 88.0 - float(item["score"])) * 0.08
-        for item in chunk_analysis["feedback"][:2]
+        for item in phoneme_assessment["feedback"][:2]
     )
     accuracy_score = round(
         max(
             0.0,
             (
-                (chunk_consistency_score * 0.30)
+                (phoneme_match_score * 0.45)
                 + (mora_timing_score * 0.25)
-                + (consonant_score * 0.20)
-                + (vowel_score * 0.15)
-                + (dtw_score * 0.10)
+                + (category_score * 0.20)
+                + (fluency_score * 0.10)
             ) - issue_penalty
         ),
         2,
     )
 
-    feedback_text = (
-        "Excellent pronunciation! You matched the target naturally and kept the phrase stable."
-        if accuracy_score >= 90 and not chunk_analysis["feedback"]
-        else summarize_pronunciation_feedback(chunk_analysis["feedback"])
-    )
+    if assessment_confidence["level"] == "low":
+        feedback_text = (
+            "Try again with clearer audio before trusting detailed pronunciation corrections. "
+            "Speak in one steady take, stay close to the microphone, and compare with the reference."
+        )
+    else:
+        feedback_text = (
+            "Excellent pronunciation! You matched the target naturally and kept the phrase stable."
+            if accuracy_score >= 90 and not phoneme_assessment["feedback"]
+            else summarize_pronunciation_feedback(phoneme_assessment["feedback"])
+        )
 
     phoneme_error_map = build_phoneme_error_map(
         mora_timing_score,
         consonant_score,
         vowel_score,
         dtw_score,
+        phonemes=phoneme_assessment["phonemes"],
+        morae=phoneme_assessment["morae"],
+        phoneme_match_score=phoneme_match_score,
+        fluency_score=fluency_score,
+        recognizer=phoneme_assessment["recognizer"],
+        assessment_confidence=assessment_confidence,
     )
 
     return {
@@ -292,7 +336,71 @@ def score_attempt(
         "phoneme_error_map": phoneme_error_map,
         "feedback_text": feedback_text,
         "target_pronunciation": target_pronunciation,
-        "pronunciation_feedback": chunk_analysis["feedback"],
+        "pronunciation_feedback": phoneme_assessment["feedback"],
+    }
+
+
+def build_assessment_confidence(
+    *,
+    phoneme_match_score: float,
+    mora_timing_score: float,
+    consonant_score: float,
+    vowel_score: float,
+    fluency_score: float,
+    recognizer: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """
+    Explains how strongly the app trusts the pronunciation diagnosis.
+    The score can still guide practice when confidence is medium or low, but
+    low confidence should not make strong claims about a student's ability.
+    """
+    recognizer = recognizer or {}
+    reasons: list[str] = []
+    ctc_enabled = bool(recognizer.get("ctc_enabled"))
+    fallback_used = bool(recognizer.get("fallback_used"))
+    recognizer_confidence = recognizer.get("confidence")
+    numeric_scores = [
+        phoneme_match_score,
+        mora_timing_score,
+        consonant_score,
+        vowel_score,
+        fluency_score,
+    ]
+    score_spread = max(numeric_scores) - min(numeric_scores)
+
+    if fallback_used or not ctc_enabled:
+        reasons.append("HF phoneme recognizer fallback was used.")
+    if recognizer.get("warning"):
+        reasons.append(str(recognizer["warning"]))
+    if recognizer_confidence is not None and float(recognizer_confidence) < 0.55:
+        reasons.append("The phoneme recognizer was not confident enough.")
+    if score_spread > 32:
+        reasons.append("Pronunciation signals disagreed, so the diagnosis is less certain.")
+    if fluency_score < 55:
+        reasons.append("The recording timing or speech density was unclear.")
+
+    if fallback_used or not ctc_enabled or len(reasons) >= 2:
+        level = "low"
+        label = "Low confidence"
+        guidance = (
+            "Try again with clearer audio before relying on detailed corrections."
+        )
+    elif reasons or (recognizer_confidence is not None and float(recognizer_confidence) < 0.75):
+        level = "medium"
+        label = "Medium confidence"
+        guidance = "Use this as practice feedback and compare with the reference audio."
+    else:
+        level = "high"
+        label = "High confidence"
+        guidance = "The phrase, recognizer, and scoring signals agree enough for focused practice."
+
+    return {
+        "level": level,
+        "label": label,
+        "guidance": guidance,
+        "reasons": reasons,
+        "recognizer_confidence": recognizer_confidence,
+        "score_spread": round(score_spread, 2),
     }
 
 

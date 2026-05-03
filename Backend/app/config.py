@@ -44,6 +44,20 @@ class Settings(BaseSettings):
     VERIFICATION_ACCEPTANCE_CONFIDENCE: float = 0.78
     VERIFICATION_WRONG_PHRASE_CONFIDENCE: float = 0.82
     VERIFICATION_MIN_MARGIN: float = 0.12
+    PHONEME_ASSESSMENT_PROVIDER: str = "hybrid_hf_ctc"
+    PHONEME_CTC_MODEL_ID: str = "sakasegawa/japanese-wav2vec2-large-hiragana-ctc"
+    PHONEME_CTC_BASE_MODEL_ID: str = "reazon-research/japanese-wav2vec2-large"
+    PHONEME_CTC_CHECKPOINT_FILENAME: str = "best-medium-ep5-inference.pt"
+    PHONEME_CTC_DEVICE: str = "auto"
+    PHONEME_CTC_CACHE_DIR: str = ".cache/hf-phoneme-ctc"
+    PHONEME_CTC_FALLBACK_ENABLED: bool = True
+    PRONUNCIATION_BENCHMARK_ENABLED: bool = True
+    PRONUNCIATION_BENCHMARK_MIN_CORRECT_SCORE: float = 85.0
+    PRONUNCIATION_BENCHMARK_MAX_ISSUE_SCORE: float = 82.0
+    SPEECHSUPER_APP_KEY: str | None = None
+    SPEECHSUPER_SECRET_KEY: str | None = None
+    AZURE_SPEECH_KEY: str | None = None
+    AZURE_SPEECH_REGION: str | None = None
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

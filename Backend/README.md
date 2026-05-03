@@ -201,6 +201,14 @@ OPENAI_WHISPER_MODEL=small
 OPENAI_WHISPER_DEVICE=auto
 OPENAI_WHISPER_LANGUAGE=ja
 OPENAI_WHISPER_CACHE_DIR=.cache/openai-whisper
+
+PHONEME_ASSESSMENT_PROVIDER=hybrid_hf_ctc
+PHONEME_CTC_MODEL_ID=sakasegawa/japanese-wav2vec2-large-hiragana-ctc
+PHONEME_CTC_BASE_MODEL_ID=reazon-research/japanese-wav2vec2-large
+PHONEME_CTC_CHECKPOINT_FILENAME=best-medium-ep5-inference.pt
+PHONEME_CTC_DEVICE=auto
+PHONEME_CTC_CACHE_DIR=.cache/hf-phoneme-ctc
+PHONEME_CTC_FALLBACK_ENABLED=true
 ```
 
 Notes:
@@ -558,7 +566,40 @@ Run from the Backend folder:
 uv run python scripts/test_scoring.py
 ```
 
-## 13. Connect the Frontend
+## 13. Run Objective Pronunciation Benchmarks
+
+SpeakSmart uses AI as the pronunciation judge. Teachers do not need to label pronunciation correctness. To tune accuracy, create a JSON file with native/reference audio and controlled error recordings:
+
+```json
+[
+  {
+    "case_id": "missing-small-tsu-01",
+    "target_text": "きって",
+    "reference_audio_path": "benchmark_audio/kitte_reference.wav",
+    "student_audio_path": "benchmark_audio/kitte_missing_small_tsu.wav",
+    "expected_issue": "small_tsu"
+  }
+]
+```
+
+Run from the Backend folder:
+
+```powershell
+uv run python scripts/run_pronunciation_benchmark.py .\benchmark_cases.json
+```
+
+Optional external AI benchmark credentials can be added later:
+
+```env
+SPEECHSUPER_APP_KEY=
+SPEECHSUPER_SECRET_KEY=
+AZURE_SPEECH_KEY=
+AZURE_SPEECH_REGION=
+```
+
+These services are benchmark references only. Production scoring still uses SpeakSmart's local AI pipeline.
+
+## 14. Connect the Frontend
 
 Start the backend first.
 

@@ -38,11 +38,46 @@ export interface PhonemeError {
   label: string
 }
 
+export type AssessmentConfidenceLevel = 'high' | 'medium' | 'low'
+
+export interface AssessmentConfidence {
+  level: AssessmentConfidenceLevel
+  label: string
+  guidance: string
+  reasons: string[]
+  recognizer_confidence?: number | null
+  score_spread?: number
+}
+
 export interface PhonemeErrorMap {
   mora_timing: PhonemeError
   consonants: PhonemeError
   vowels: PhonemeError
   overall_acoustic: PhonemeError
+  phoneme_match?: PhonemeError
+  fluency?: PhonemeError
+  phonemes?: DetailedPhonemeError[]
+  morae?: MoraError[]
+  recognizer?: {
+    provider: string
+    ctc_model_id?: string
+    ctc_enabled?: boolean
+    fallback_used?: boolean
+    warning?: string | null
+    device?: string
+    recognized_kana?: string
+    recognized_phonemes?: string[]
+    raw_phonemes?: string[]
+    confidence?: number
+    elapsed_ms?: number
+    note?: string
+  } | null
+  assessment_confidence?: AssessmentConfidence
+  calibration?: {
+    final_judge: string
+    teacher_ground_truth_used: boolean
+    calibration_sources: string[]
+  }
 }
 
 export interface PronunciationChunk {
@@ -52,23 +87,97 @@ export interface PronunciationChunk {
   romaji: string
 }
 
-export interface TargetPronunciation {
+export interface PronunciationPhoneme {
+  index: number
+  symbol: string
+  label: string
+  type: 'vowel' | 'consonant' | 'glide' | 'nasal' | 'pause'
+  mora_index: number
+  chunk_index: number
   kana: string
   romaji: string
-  chunks: PronunciationChunk[]
+  issue_type: string
+  weight?: number
 }
 
-export interface PronunciationFeedbackItem {
+export interface PronunciationMora {
+  index: number
   chunk_index: number
   display_text: string
   kana: string
   romaji: string
+  phoneme_indexes: number[]
+  phonemes: string[]
+  issue_type: string
+}
+
+export interface TargetPronunciation {
+  kana: string
+  romaji: string
+  chunks: PronunciationChunk[]
+  morae?: PronunciationMora[]
+  phonemes?: PronunciationPhoneme[]
+}
+
+export interface DetailedPhonemeError {
+  index: number
+  mora_index: number | null
+  chunk_index: number | null
+  kana: string
+  romaji: string
+  expected_phoneme: string | null
+  expected_label: string
+  heard_phoneme: string | null
+  heard_label: string
+  type: PronunciationPhoneme['type']
+  issue_type: string
+  operation: 'match' | 'substitution' | 'deletion' | 'insertion' | 'duration_error'
+  score: number
+  error: boolean
+  ctc_confidence?: number
+  duration_score: number
+  student_duration_ms: number
+  reference_duration_ms: number
+}
+
+export interface MoraError {
+  index: number
+  chunk_index: number
+  display_text: string
+  kana: string
+  romaji: string
+  phoneme_indexes: number[]
+  expected_phonemes: string[]
+  heard_phonemes: string[]
+  issue_type: string
+  score: number
+  duration_score: number
+  error: boolean
+  threshold: number
+  fix_tip: string
+}
+
+export interface PronunciationFeedbackItem {
+  chunk_index: number
+  mora_index?: number
+  phoneme_index?: number
+  display_text: string
+  kana: string
+  romaji: string
+  expected_phoneme?: string | null
+  expected_label?: string
+  heard_phoneme?: string | null
+  heard_label?: string
   issue_type: string
   severity: 'low' | 'medium' | 'high'
   score: number
   expected_note: string
   heard_note: string
   fix_tip: string
+  sound_to_improve?: string
+  what_happened?: string
+  how_to_fix?: string
+  try_slowly?: string
 }
 
 export interface Attempt {
@@ -124,6 +233,7 @@ export interface WeeklyAccuracy {
   week_start: string
   average_accuracy: number
   attempt_count: number
+  active_students?: number
 }
 
 export interface StudentDashboard {
@@ -175,6 +285,12 @@ export interface ClassSummary {
   joined_at: string | null
   student_count: number
   is_owner: boolean
+}
+
+export interface ClassStudent {
+  uid: string
+  display_name: string
+  joined_at: string
 }
 
 export interface JoinCodeResponse {

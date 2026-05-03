@@ -58,11 +58,14 @@ def build_target_pronunciation(
         chunk.romaji for chunk in chunks
     )
 
-    return {
+    payload = {
         "kana": kana,
         "romaji": romaji,
         "chunks": [chunk.to_payload() for chunk in chunks],
     }
+    from app.services.phoneme_assessment import enrich_target_pronunciation
+
+    return enrich_target_pronunciation(payload)
 
 
 def build_pronunciation_rules(

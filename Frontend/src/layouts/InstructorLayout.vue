@@ -51,6 +51,18 @@
           </nav>
 
           <div class="border-t border-border/70 p-3">
+            <div
+              v-if="!sidebarCollapsed"
+              class="mb-3 rounded-xl border border-border/70 bg-card/75 px-3 py-3"
+            >
+              <p class="truncate text-sm font-semibold text-(--color-heading)">
+                {{ instructorName }}
+              </p>
+              <p class="truncate text-xs text-muted-foreground">
+                {{ instructorEmail }}
+              </p>
+            </div>
+
             <Button
               variant="outline"
               :class="desktopNavButtonClass"
@@ -129,6 +141,15 @@
                   </nav>
 
                   <div class="border-t border-border/70 p-3">
+                    <div class="mb-3 rounded-xl border border-border/70 bg-background/75 px-3 py-3">
+                      <p class="truncate text-sm font-semibold text-(--color-heading)">
+                        {{ instructorName }}
+                      </p>
+                      <p class="truncate text-xs text-muted-foreground">
+                        {{ instructorEmail }}
+                      </p>
+                    </div>
+
                     <Button
                       variant="outline"
                       class="h-11 w-full justify-start rounded-xl px-3"
@@ -347,6 +368,12 @@ const currentPage = computed(
 )
 const currentTitle = computed(() => currentPage.value.title)
 const currentDescription = computed(() => currentPage.value.description)
+const instructorName = computed(
+  () => authStore.profile?.display_name?.trim() || authStore.firebaseUser?.displayName?.trim() || 'Instructor',
+)
+const instructorEmail = computed(
+  () => authStore.profile?.email || authStore.firebaseUser?.email || 'Signed in',
+)
 const classSelectLabel = computed(() => {
   if (classesStore.loading) return 'Loading classes...'
   if (classesStore.classes.length) return 'Select a class'

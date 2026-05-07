@@ -336,7 +336,7 @@ const navItems: NavItem[] = [
   { name: 'instructor-overview', label: 'Overview', icon: LayoutDashboard, to: '/instructor' },
   { name: 'instructor-students', label: 'Students', icon: Users, to: '/instructor/students' },
   { name: 'instructor-heatmap', label: 'Heatmap', icon: BookMarked, to: '/instructor/heatmap' },
-  { name: 'instructor-exercises', label: 'Exercises', icon: ClipboardList, to: '/instructor/exercises' },
+  { name: 'instructor-exercises', label: 'Assignments', icon: ClipboardList, to: '/instructor/exercises' },
   { name: 'classes', label: 'Classes', icon: School, to: '/classes' },
 ]
 

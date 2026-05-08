@@ -89,14 +89,14 @@
             <div class="overflow-x-auto">
               <Table class="min-w-[1120px] table-fixed">
                 <colgroup>
-                  <col class="w-[24%]">
+                  <col class="w-[15%]">
+                  <col class="w-[12%]">
                   <col class="w-[11%]">
-                  <col class="w-[8%]">
-                  <col class="w-[10%]">
+                  <col class="w-[11%]">
                   <col class="w-[15%]">
                   <col class="w-[10%]">
                   <col class="w-[10%]">
-                  <col class="w-[12%]">
+                  <col class="w-[15%]">
                 </colgroup>
                 <TableHeader class="bg-muted/20">
                   <TableRow class="hover:bg-transparent">

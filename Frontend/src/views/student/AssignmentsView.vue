@@ -105,7 +105,17 @@
                     </Badge>
                   </div>
 
-                  <div :class="dueDateClass(assignment)">
+                  <div
+                    v-if="assignmentOverallScore(assignment) != null"
+                    class="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold tabular-nums text-emerald-950"
+                  >
+                    <span>Overall score</span>
+                    <span>{{ assignmentOverallScore(assignment) }}%</span>
+                  </div>
+                  <div
+                    v-else-if="assignmentStatus(assignment) !== 'submitted'"
+                    :class="dueDateClass(assignment)"
+                  >
                     <CalendarClock class="size-3.5" aria-hidden="true" />
                     <span>{{ dueDateLabel(assignment) }}</span>
                   </div>
@@ -390,18 +400,11 @@ const selectedFeedbackPhrases = computed(() => selectedFeedbackAssignment.value?
 const selectedReleasedFeedbackCount = computed(() =>
   selectedFeedbackPhrases.value.filter((phrase) => phrase.released_at).length,
 )
-const selectedScoredReleasedPhrases = computed(() =>
-  selectedFeedbackPhrases.value.filter((phrase) =>
-    phrase.released_at && phrase.teacher_accuracy_score != null,
-  ),
+const selectedOverallScore = computed(() =>
+  selectedFeedbackAssignment.value
+    ? assignmentOverallScore(selectedFeedbackAssignment.value)
+    : null,
 )
-const selectedOverallScore = computed(() => {
-  const scoredPhrases = selectedScoredReleasedPhrases.value
-  if (!scoredPhrases.length) return null
-
-  const totalScore = scoredPhrases.reduce((total, phrase) => total + (phrase.teacher_accuracy_score ?? 0), 0)
-  return Math.round(totalScore / scoredPhrases.length)
-})
 
 onMounted(async () => {
   const uid = authStore.uid
@@ -497,6 +500,16 @@ function updateAssignmentFilter(value: unknown) {
 function assignmentCompletion(assignment: StudentAssignment) {
   if (!assignment.phrases.length) return 0
   return (submittedPhraseCount(assignment) / assignment.phrases.length) * 100
+}
+
+function assignmentOverallScore(assignment: StudentAssignment) {
+  const scoredPhrases = assignment.phrases.filter((phrase) =>
+    phrase.released_at && phrase.teacher_accuracy_score != null,
+  )
+  if (!scoredPhrases.length) return null
+
+  const totalScore = scoredPhrases.reduce((total, phrase) => total + (phrase.teacher_accuracy_score ?? 0), 0)
+  return Math.round(totalScore / scoredPhrases.length)
 }
 
 function assignmentStatusClass(assignment: StudentAssignment) {

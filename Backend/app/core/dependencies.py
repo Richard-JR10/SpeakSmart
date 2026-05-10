@@ -17,6 +17,7 @@ from app.core.exceptions import (
 
 bearer_scheme = HTTPBearer()
 
+
 async def get_current_claims(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> Mapping[str, object]:

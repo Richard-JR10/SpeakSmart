@@ -14,16 +14,16 @@
                 </Badge>
               </div>
               <CardTitle class="mt-3 font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
-                Exercise grading queue
+                Assignment grading queue
               </CardTitle>
               <CardDescription class="mt-1 max-w-3xl text-sm">
-                Scan assignment progress, open one exercise queue, and grade submissions without filling the page with audio players.
+                Scan assignment progress, open one assignment queue, and grade submissions without filling the page with audio players.
               </CardDescription>
             </div>
 
             <Button @click="showForm = true">
               <Plus data-icon="inline-start" />
-              <span>New exercise</span>
+              <span>New assignment</span>
             </Button>
           </div>
 
@@ -50,18 +50,18 @@
       <LoadingSpinner
         v-if="loading && !exercises.length"
         full-screen
-        message="Loading exercises..."
+        message="Loading assignments..."
       />
 
       <Alert v-else-if="error" variant="destructive">
         <TriangleAlert />
-        <AlertTitle>Exercises unavailable</AlertTitle>
+        <AlertTitle>Assignments unavailable</AlertTitle>
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
 
       <Alert v-else-if="!exercises.length">
         <ClipboardList />
-        <AlertTitle>No exercises yet</AlertTitle>
+        <AlertTitle>No assignments yet</AlertTitle>
         <AlertDescription>
           Create your first assignment to send phrase work to the active class and review submissions here.
         </AlertDescription>
@@ -76,11 +76,11 @@
                   Assignment sets
                 </CardTitle>
                 <CardDescription class="mt-1 text-sm">
-                  Pick an exercise to load its focused grading queue.
+                  Pick an assignment to load its focused grading queue.
                 </CardDescription>
               </div>
               <Badge variant="outline" class="rounded-full px-3 py-1">
-                {{ selectedExercise?.title ?? 'No exercise selected' }}
+                {{ selectedExercise?.title ?? 'No assignment selected' }}
               </Badge>
             </div>
           </CardHeader>
@@ -100,7 +100,7 @@
                 </colgroup>
                 <TableHeader class="bg-muted/20">
                   <TableRow class="hover:bg-transparent">
-                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Exercise</TableHead>
+                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Assignment</TableHead>
                     <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Due</TableHead>
                     <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Phrases</TableHead>
                     <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Students</TableHead>
@@ -189,7 +189,7 @@
                           @click="handleDelete(exercise.exercise_id)"
                         >
                           <Trash2 />
-                          <span class="sr-only">Delete exercise</span>
+                          <span class="sr-only">Delete assignment</span>
                         </Button>
                       </div>
                     </TableCell>
@@ -213,7 +213,7 @@
                   </Badge>
                 </div>
                 <CardTitle class="mt-2 font-(--font-display) text-xl leading-none text-(--color-heading)">
-                  {{ selectedExercise?.title ?? 'Select an exercise' }}
+                  {{ selectedExercise?.title ?? 'Select an assignment' }}
                 </CardTitle>
                 <CardDescription class="mt-1 text-sm">
                   Suggested backend scores stay hidden until you submit a grade.
@@ -497,7 +497,7 @@
 
               <Button variant="outline" size="icon" class="rounded-xl" @click="showForm = false">
                 <X />
-                <span class="sr-only">Close exercise form</span>
+                <span class="sr-only">Close assignment form</span>
               </Button>
             </div>
 
@@ -505,18 +505,18 @@
               <div class="flex flex-col gap-5">
                 <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
                   <div class="flex flex-col gap-2">
-                    <Label for="exercise-title">Title</Label>
+                    <Label for="assignment-title">Title</Label>
                     <Input
-                      id="exercise-title"
+                      id="assignment-title"
                       v-model="form.title"
                       placeholder="Greetings drill set"
                     />
                   </div>
 
                   <div class="flex flex-col gap-2">
-                    <Label for="exercise-due-date">Due date</Label>
+                    <Label for="assignment-due-date">Due date</Label>
                     <Input
-                      id="exercise-due-date"
+                      id="assignment-due-date"
                       v-model="form.due_date"
                       type="datetime-local"
                     />
@@ -782,7 +782,7 @@ const paginationEnd = computed(() => Math.min(submissionPage.value * PAGE_SIZE, 
 
 const summaryCards = computed(() => [
   {
-    label: 'Exercises',
+    label: 'Assignments',
     value: `${exercises.value.length}`,
     icon: ClipboardList,
   },
@@ -984,7 +984,7 @@ async function submitGrade(submission: InstructorAssignmentSubmission) {
 async function handleCreate() {
   const classId = classesStore.activeClassId
   if (!classId) {
-    formError.value = 'Select a class before creating an exercise.'
+    formError.value = 'Select a class before creating an assignment.'
     return
   }
 
@@ -1008,14 +1008,14 @@ async function handleCreate() {
     await loadExerciseSubmissions(created.exercise_id)
     selectExercise(created.exercise_id)
   } catch (errorValue: any) {
-    formError.value = errorValue.response?.data?.detail ?? 'Failed to create exercise.'
+    formError.value = errorValue.response?.data?.detail ?? 'Failed to create assignment.'
   } finally {
     submitting.value = false
   }
 }
 
 async function handleDelete(exerciseId: string) {
-  if (!window.confirm('Delete this exercise and all assignments?')) return
+  if (!window.confirm('Delete this assignment and all submissions?')) return
 
   try {
     const deletedSubmissionIds = submissionsForExercise(exerciseId).map((submission) => submission.submission_id)
@@ -1049,7 +1049,7 @@ async function handleDelete(exerciseId: string) {
       selectDefaultExercise()
     }
   } catch {
-    error.value = 'Failed to delete exercise.'
+    error.value = 'Failed to delete assignment.'
   }
 }
 
@@ -1068,7 +1068,7 @@ async function loadExercises(classId: string | null) {
   reviewSaving.value = {}
 
   if (!classId) {
-    error.value = 'Create or select a class from Classes to manage exercises.'
+    error.value = 'Create or select a class from Classes to manage assignments.'
     return
   }
 
@@ -1079,7 +1079,7 @@ async function loadExercises(classId: string | null) {
     await Promise.all(exercises.value.map((exercise) => loadExerciseSubmissions(exercise.exercise_id)))
     selectDefaultExercise()
   } catch {
-    error.value = 'Failed to load exercises.'
+    error.value = 'Failed to load assignments.'
   } finally {
     loading.value = false
   }

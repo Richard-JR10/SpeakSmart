@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LoaderCircle, Send, TriangleAlert, X } from 'lucide-vue-next'
+import { ChevronDown, LoaderCircle, Send, TriangleAlert, X } from 'lucide-vue-next'
 import {
   DialogContent,
   DialogDescription,
@@ -174,13 +174,18 @@ function onFeedbackInput(submissionId: string, event: Event) {
               class="group overflow-hidden rounded-2xl border border-border/70 bg-background/80"
             >
               <summary class="flex cursor-pointer list-none flex-col gap-2 px-4 py-3 transition hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between">
-                <div class="min-w-0">
+                <div class="flex min-w-0 items-start gap-3">
+                  <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted/35 text-muted-foreground transition group-open:rotate-180 group-open:border-primary/30 group-open:bg-secondary group-open:text-primary">
+                    <ChevronDown class="size-4" />
+                  </span>
+                  <div class="min-w-0">
                   <p class="truncate font-semibold text-(--color-heading)">
                     {{ phraseDisplayLabel(phrase) }}
                   </p>
                   <p v-if="phrase.phrase" class="truncate text-sm text-muted-foreground">
                     {{ phrase.phrase.english_translation }}
                   </p>
+                  </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                   <Badge v-if="phrase.submission" variant="outline" class="rounded-full px-2.5 py-1">
@@ -198,20 +203,39 @@ function onFeedbackInput(submissionId: string, event: Event) {
                 </div>
               </summary>
 
-              <div class="border-t border-border/70 px-4 py-4">
-                <div v-if="phrase.submission" class="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-                  <div class="flex flex-col gap-3">
+              <div class="border-t border-border/70 bg-muted/10 px-4 py-4">
+                <div v-if="phrase.submission" class="grid gap-4 xl:grid-cols-[minmax(280px,0.9fr)_minmax(360px,1.1fr)]">
+                  <div class="flex min-w-0 flex-col gap-3">
                     <div class="rounded-2xl border border-border/70 bg-muted/25 p-4">
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        System suggestion
-                      </p>
-                      <p class="mt-2 font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                        {{ phrase.submission.suggested_accuracy_score.toFixed(0) }}%
-                      </p>
-                      <div class="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
-                        <span>Mora {{ phrase.submission.suggested_mora_timing_score.toFixed(0) }}%</span>
-                        <span>Consonants {{ phrase.submission.suggested_consonant_score.toFixed(0) }}%</span>
-                        <span>Vowels {{ phrase.submission.suggested_vowel_score.toFixed(0) }}%</span>
+                      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            System suggestion
+                          </p>
+                          <p class="mt-2 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                            {{ phrase.submission.suggested_accuracy_score.toFixed(0) }}%
+                          </p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground sm:min-w-56">
+                          <div class="rounded-xl border border-border/70 bg-background/70 px-2 py-2">
+                            <p class="font-semibold tabular-nums text-(--color-heading)">
+                              {{ phrase.submission.suggested_mora_timing_score.toFixed(0) }}%
+                            </p>
+                            <p>Mora</p>
+                          </div>
+                          <div class="rounded-xl border border-border/70 bg-background/70 px-2 py-2">
+                            <p class="font-semibold tabular-nums text-(--color-heading)">
+                              {{ phrase.submission.suggested_consonant_score.toFixed(0) }}%
+                            </p>
+                            <p>Consonants</p>
+                          </div>
+                          <div class="rounded-xl border border-border/70 bg-background/70 px-2 py-2">
+                            <p class="font-semibold tabular-nums text-(--color-heading)">
+                              {{ phrase.submission.suggested_vowel_score.toFixed(0) }}%
+                            </p>
+                            <p>Vowels</p>
+                          </div>
+                        </div>
                       </div>
                       <div class="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
                         <span>Verification: {{ phrase.submission.verification_status.replaceAll('_', ' ') }}</span>
@@ -225,19 +249,10 @@ function onFeedbackInput(submissionId: string, event: Event) {
                       controls
                       preload="metadata"
                     />
-
-                    <div class="rounded-2xl border border-border/70 bg-muted/25 p-4">
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Suggested feedback
-                      </p>
-                      <p class="mt-2 text-sm leading-6 text-foreground/85">
-                        {{ phrase.submission.suggested_feedback_text || 'No suggested feedback was generated for this phrase.' }}
-                      </p>
-                    </div>
                   </div>
 
-                  <div class="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
-                    <div class="flex flex-col gap-2">
+                  <div class="grid min-w-0 gap-4 rounded-2xl border border-border/70 bg-background/70 p-4 lg:grid-cols-[160px_minmax(0,1fr)]">
+                    <div class="flex flex-col gap-2 lg:sticky lg:top-0 lg:self-start">
                       <Label :for="`score-${phrase.submission.submission_id}`">Teacher score</Label>
                       <Input
                         :id="`score-${phrase.submission.submission_id}`"
@@ -249,13 +264,13 @@ function onFeedbackInput(submissionId: string, event: Event) {
                       />
                     </div>
 
-                    <div class="flex flex-col gap-2">
+                    <div class="flex min-w-0 flex-col gap-2">
                       <Label :for="`feedback-${phrase.submission.submission_id}`">Teacher feedback</Label>
                       <textarea
                         :id="`feedback-${phrase.submission.submission_id}`"
                         :value="draftFor(phrase.submission.submission_id).teacher_feedback_text"
-                        rows="8"
-                        class="min-h-40 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                        rows="9"
+                        class="min-h-56 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 text-foreground shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                         @input="onFeedbackInput(phrase.submission.submission_id, $event)"
                       />
                     </div>

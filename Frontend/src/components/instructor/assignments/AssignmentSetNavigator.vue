@@ -192,34 +192,48 @@ function handleFilterUpdate(value: unknown) {
             v-for="item in items"
             :key="item.exerciseId"
             class="relative grid grid-cols-[minmax(0,1fr)_2rem] gap-2 px-3 py-2.5 transition"
-            :class="selectedExerciseId === item.exerciseId ? 'bg-primary/5' : 'hover:bg-muted/20'"
+            :class="selectedExerciseId === item.exerciseId ? 'bg-secondary/80 ring-2 ring-inset ring-primary/25' : 'hover:bg-muted/20'"
           >
             <span
               aria-hidden="true"
               class="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-r-full"
               :class="selectedExerciseId === item.exerciseId ? 'bg-primary' : assignmentStatusTone(item.status).rail"
             />
+            <span
+              v-if="selectedExerciseId === item.exerciseId"
+              aria-hidden="true"
+              class="absolute left-2 top-2 z-10 flex size-6 items-center justify-center rounded-full border border-primary/25 bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+            >
+              <Check class="size-3.5" />
+            </span>
             <button
               type="button"
-              class="min-w-0 rounded-xl py-1 pl-2 pr-1 text-left focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+              class="min-w-0 rounded-xl py-1 pr-1 text-left focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+              :class="selectedExerciseId === item.exerciseId ? 'pl-8' : 'pl-2'"
+              :aria-current="selectedExerciseId === item.exerciseId ? 'true' : undefined"
               @click="emit('selectAssignment', item.exerciseId)"
             >
               <div class="flex min-w-0 items-start justify-between gap-2">
                 <div class="min-w-0">
-                  <p class="truncate font-semibold text-(--color-heading)">
+                  <p
+                    class="truncate font-semibold"
+                    :class="selectedExerciseId === item.exerciseId ? 'text-primary' : 'text-(--color-heading)'"
+                  >
                     {{ item.title }}
                   </p>
                   <p class="mt-0.5 truncate text-xs text-muted-foreground tabular-nums">
                     {{ item.submittedCount }} submissions · {{ item.phraseCount }} phrases · {{ item.studentCount }} students
                   </p>
                 </div>
-                <Badge
-                  variant="outline"
-                  class="shrink-0 rounded-full px-2 py-0.5 text-[11px]"
-                  :class="assignmentStatusTone(item.status).badge"
-                >
-                  {{ statusLabel(item.status) }}
-                </Badge>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                  <Badge
+                    variant="outline"
+                    class="rounded-full px-2 py-0.5 text-[11px]"
+                    :class="assignmentStatusTone(item.status).badge"
+                  >
+                    {{ statusLabel(item.status) }}
+                  </Badge>
+                </div>
               </div>
 
               <div class="mt-2.5 flex flex-wrap items-center gap-1.5">

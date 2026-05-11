@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { SquarePen } from 'lucide-vue-next'
 
 import {
@@ -19,13 +20,29 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-defineProps<{
+const props = defineProps<{
   groups: AssignmentReviewGroup[]
+  selectedKeys: string[]
+  selectableKeys: string[]
+  bulkDisabled: boolean
 }>()
 
 const emit = defineEmits<{
   reviewStudent: [group: AssignmentReviewGroup]
+  toggleGroup: [group: AssignmentReviewGroup]
+  toggleAllEligible: []
 }>()
+
+const selectedKeySet = computed(() => new Set(props.selectedKeys))
+const selectableKeySet = computed(() => new Set(props.selectableKeys))
+const allEligibleSelected = computed(() => (
+  props.selectableKeys.length > 0
+  && props.selectableKeys.every((key) => selectedKeySet.value.has(key))
+))
+const someEligibleSelected = computed(() => (
+  props.selectedKeys.some((key) => selectableKeySet.value.has(key))
+  && !allEligibleSelected.value
+))
 
 function statusLabel(status: AssignmentReviewStatus) {
   if (status === 'ready') return 'Ready to grade'
@@ -46,21 +63,39 @@ function teacherScoreTone(group: AssignmentReviewGroup) {
     ? 'border-amber-300/60 bg-amber-50/75 text-amber-900'
     : 'border-emerald-300/60 bg-emerald-50/75 text-emerald-900'
 }
+
+function isSelectable(group: AssignmentReviewGroup) {
+  return selectableKeySet.value.has(group.key)
+}
 </script>
 
 <template>
   <div class="overflow-x-auto">
-    <Table class="min-w-[900px] table-fixed">
+    <Table class="min-w-[960px] table-fixed">
       <colgroup>
-        <col class="w-[26%]">
-        <col class="w-[16%]">
-        <col class="w-[16%]">
-        <col class="w-[16%]">
-        <col class="w-[16%]">
+        <col class="w-[5%]">
+        <col class="w-[25%]">
+        <col class="w-[15%]">
+        <col class="w-[15%]">
+        <col class="w-[15%]">
+        <col class="w-[15%]">
         <col class="w-[10%]">
       </colgroup>
       <TableHeader class="bg-muted/20">
         <TableRow class="hover:bg-transparent">
+          <TableHead class="px-4 py-2 text-left">
+            <label class="inline-flex size-5 items-center justify-center">
+              <input
+                type="checkbox"
+                class="size-4 rounded border-border accent-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                :checked="allEligibleSelected"
+                :indeterminate.prop="someEligibleSelected"
+                :disabled="props.bulkDisabled || !props.selectableKeys.length"
+                @change="emit('toggleAllEligible')"
+              >
+              <span class="sr-only">Select all ready students</span>
+            </label>
+          </TableHead>
           <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Student</TableHead>
           <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Submitted</TableHead>
           <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Suggested</TableHead>
@@ -74,7 +109,20 @@ function teacherScoreTone(group: AssignmentReviewGroup) {
           v-for="group in groups"
           :key="group.key"
           class="transition hover:bg-muted/25"
+          :class="selectedKeySet.has(group.key) ? 'bg-primary/5' : ''"
         >
+          <TableCell class="px-4 py-3 align-middle">
+            <label class="inline-flex size-5 items-center justify-center">
+              <input
+                type="checkbox"
+                class="size-4 rounded border-border accent-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+                :checked="selectedKeySet.has(group.key)"
+                :disabled="props.bulkDisabled || !isSelectable(group)"
+                @change="emit('toggleGroup', group)"
+              >
+              <span class="sr-only">Select {{ group.studentDisplayName }}</span>
+            </label>
+          </TableCell>
           <TableCell class="px-4 py-3 align-middle">
             <p class="truncate font-semibold text-(--color-heading)">
               {{ group.studentDisplayName }}

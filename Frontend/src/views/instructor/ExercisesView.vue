@@ -203,8 +203,52 @@
 
             <template v-else-if="selectedExercise">
               <template v-if="paginatedReviewGroups.length">
+                <div
+                  v-if="bulkGradeableGroups.length || bulkReviewError"
+                  class="flex flex-col gap-3 border-b border-border/70 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between"
+                >
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-(--color-heading)">
+                      Bulk suggested grades
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                      {{ selectedBulkReviewGroups.length }} selected - {{ selectedBulkPhraseCount }} phrase grades to release
+                    </p>
+                    <p v-if="bulkReviewProgress" class="mt-1 text-xs font-medium text-primary">
+                      {{ bulkReviewProgress }}
+                    </p>
+                    <p v-if="bulkReviewError" class="mt-1 text-xs font-medium text-destructive">
+                      {{ bulkReviewError }}
+                    </p>
+                  </div>
+
+                  <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :disabled="bulkReviewSaving || !selectedBulkReviewKeys.length"
+                      @click="clearBulkReviewSelection"
+                    >
+                      Clear selection
+                    </Button>
+                    <Button
+                      size="sm"
+                      :disabled="bulkReviewSaving || !selectedBulkReviewGroups.length"
+                      @click="openBulkReviewConfirm"
+                    >
+                      <LoaderCircle v-if="bulkReviewSaving" class="animate-spin" data-icon="inline-start" />
+                      <span>{{ bulkReviewSaving ? 'Submitting...' : 'Submit grades' }}</span>
+                    </Button>
+                  </div>
+                </div>
+
                 <AssignmentStudentQueueTable
                   :groups="paginatedReviewGroups"
+                  :selected-keys="selectedBulkReviewKeys"
+                  :selectable-keys="bulkGradeableKeys"
+                  :bulk-disabled="bulkReviewSaving"
+                  @toggle-group="toggleBulkReviewGroup"
+                  @toggle-all-eligible="toggleAllBulkReviewGroups"
                   @review-student="openReviewModal"
                 />
 
@@ -275,6 +319,75 @@
         @update-draft="updateReviewDraft"
         @submit="submitStudentGrades"
       />
+
+      <DialogRoot v-model:open="bulkReviewConfirmOpen">
+        <DialogPortal>
+          <DialogOverlay class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
+          <DialogContent
+            class="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border border-border/80 bg-card shadow-lg"
+          >
+            <div class="border-b border-border/70 px-6 py-5">
+              <DialogTitle class="font-(--font-display) text-2xl leading-none text-(--color-heading)">
+                Submit suggested grades?
+              </DialogTitle>
+              <DialogDescription class="mt-2 text-sm leading-6 text-muted-foreground">
+                The system suggested scores and feedback will be released to students as-is.
+              </DialogDescription>
+            </div>
+
+            <div class="flex flex-col gap-4 px-6 py-5">
+              <div class="grid gap-2 sm:grid-cols-2">
+                <div class="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Students
+                  </p>
+                  <p class="mt-1 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                    {{ selectedBulkReviewGroups.length }}
+                  </p>
+                </div>
+                <div class="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Phrase grades
+                  </p>
+                  <p class="mt-1 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                    {{ selectedBulkPhraseCount }}
+                  </p>
+                </div>
+              </div>
+
+              <Alert v-if="bulkReviewError" variant="destructive">
+                <TriangleAlert />
+                <AlertTitle>Bulk submit stopped</AlertTitle>
+                <AlertDescription>{{ bulkReviewError }}</AlertDescription>
+              </Alert>
+
+              <Alert v-if="bulkReviewProgress">
+                <LoaderCircle class="animate-spin" />
+                <AlertTitle>Submitting grades</AlertTitle>
+                <AlertDescription>{{ bulkReviewProgress }}</AlertDescription>
+              </Alert>
+            </div>
+
+            <div class="flex flex-col gap-2 border-t border-border/70 px-6 py-4 sm:flex-row sm:justify-end">
+              <Button
+                variant="outline"
+                :disabled="bulkReviewSaving"
+                @click="bulkReviewConfirmOpen = false"
+              >
+                Cancel
+              </Button>
+              <Button
+                :disabled="bulkReviewSaving || !selectedBulkReviewGroups.length"
+                @click="submitSuggestedGradesForGroups"
+              >
+                <LoaderCircle v-if="bulkReviewSaving" class="animate-spin" data-icon="inline-start" />
+                <CheckCheck v-else data-icon="inline-start" />
+                <span>{{ bulkReviewSaving ? 'Submitting...' : 'Submit suggested grades' }}</span>
+              </Button>
+            </div>
+          </DialogContent>
+        </DialogPortal>
+      </DialogRoot>
 
       <DialogRoot v-model:open="showForm">
         <DialogPortal>
@@ -480,6 +593,9 @@ import {
   assignmentGroupStatus,
   buildAssignmentReviewGroups,
   gradeableSubmissions,
+  isBulkSuggestedGradeableGroup,
+  phraseDisplayLabel,
+  unreleasedGradeableSubmissions,
   type AssignmentPhraseReviewDraft,
   type AssignmentReviewGroup,
 } from '@/components/instructor/assignments/assignmentReview'
@@ -551,6 +667,11 @@ const assignmentSearch = ref('')
 const assignmentFilter = ref<AssignmentSetFilter>('all')
 const batchReviewError = ref<string | null>(null)
 const batchReviewProgress = ref<string | null>(null)
+const selectedBulkReviewKeys = ref<string[]>([])
+const bulkReviewConfirmOpen = ref(false)
+const bulkReviewSaving = ref(false)
+const bulkReviewProgress = ref<string | null>(null)
+const bulkReviewError = ref<string | null>(null)
 
 const form = ref({
   title: '',
@@ -590,6 +711,19 @@ const selectedExerciseReviewGroups = computed(() => {
 const selectedReviewGroup = computed(
   () => selectedExerciseReviewGroups.value.find((group) => group.studentUid === selectedReviewStudentUid.value) ?? null,
 )
+
+const bulkGradeableGroups = computed(() => selectedExerciseReviewGroups.value.filter(isBulkSuggestedGradeableGroup))
+const bulkGradeableKeys = computed(() => bulkGradeableGroups.value.map((group) => group.key))
+const bulkGradeableKeySet = computed(() => new Set(bulkGradeableKeys.value))
+const selectedBulkReviewGroups = computed(() => (
+  bulkGradeableGroups.value.filter((group) => selectedBulkReviewKeys.value.includes(group.key))
+))
+const selectedBulkPhraseCount = computed(() => (
+  selectedBulkReviewGroups.value.reduce(
+    (total, group) => total + unreleasedGradeableSubmissions(group).length,
+    0,
+  )
+))
 
 const filteredReviewGroups = computed(() => {
   const query = submissionSearch.value.trim().toLowerCase()
@@ -850,17 +984,58 @@ function handleSubmissionFilterUpdate(value: unknown) {
   setSubmissionFilter((typeof value === 'string' ? value : 'all') as SubmissionFilter)
 }
 
+function clearBulkReviewSelection() {
+  selectedBulkReviewKeys.value = []
+  bulkReviewError.value = null
+}
+
+function resetBulkReviewState() {
+  selectedBulkReviewKeys.value = []
+  bulkReviewConfirmOpen.value = false
+  bulkReviewProgress.value = null
+  bulkReviewError.value = null
+}
+
+function pruneBulkReviewSelection() {
+  selectedBulkReviewKeys.value = selectedBulkReviewKeys.value.filter((key) => bulkGradeableKeySet.value.has(key))
+}
+
+function toggleBulkReviewGroup(group: AssignmentReviewGroup) {
+  if (bulkReviewSaving.value || !bulkGradeableKeySet.value.has(group.key)) return
+
+  bulkReviewError.value = null
+  selectedBulkReviewKeys.value = selectedBulkReviewKeys.value.includes(group.key)
+    ? selectedBulkReviewKeys.value.filter((key) => key !== group.key)
+    : [...selectedBulkReviewKeys.value, group.key]
+}
+
+function toggleAllBulkReviewGroups() {
+  if (bulkReviewSaving.value || !bulkGradeableKeys.value.length) return
+
+  bulkReviewError.value = null
+  const allSelected = bulkGradeableKeys.value.every((key) => selectedBulkReviewKeys.value.includes(key))
+  selectedBulkReviewKeys.value = allSelected ? [] : [...bulkGradeableKeys.value]
+}
+
+function openBulkReviewConfirm() {
+  if (!selectedBulkReviewGroups.value.length || bulkReviewSaving.value) return
+  bulkReviewError.value = null
+  bulkReviewConfirmOpen.value = true
+}
+
 function selectExercise(exerciseId: string) {
   selectedExerciseId.value = exerciseId
   submissionFilter.value = 'all'
   submissionSearch.value = ''
   submissionPage.value = 1
+  resetBulkReviewState()
 }
 
 function selectDefaultExercise() {
   const pendingExercise = exercises.value.find((exercise) => pendingGradeCount(exercise.exercise_id) > 0)
   selectedExerciseId.value = pendingExercise?.exercise_id ?? exercises.value[0]?.exercise_id ?? null
   submissionPage.value = 1
+  resetBulkReviewState()
 }
 
 function openReviewModal(group: AssignmentReviewGroup) {
@@ -995,6 +1170,49 @@ async function submitStudentGrades() {
   }
 }
 
+async function submitSuggestedGradesForGroups() {
+  const groups = selectedBulkReviewGroups.value
+  if (!groups.length || bulkReviewSaving.value) return
+
+  bulkReviewSaving.value = true
+  bulkReviewError.value = null
+  let failedGroup: AssignmentReviewGroup | null = null
+  let failedSubmission: InstructorAssignmentSubmission | null = null
+
+  try {
+    for (const [studentIndex, group] of groups.entries()) {
+      failedGroup = group
+      const submissions = unreleasedGradeableSubmissions(group)
+
+      for (const [phraseIndex, submission] of submissions.entries()) {
+        failedSubmission = submission
+        bulkReviewProgress.value = `Submitting student ${studentIndex + 1} of ${groups.length}, phrase ${phraseIndex + 1} of ${submissions.length}`
+
+        await reviewAssignmentSubmission(submission.submission_id, {
+          teacher_accuracy_score: Math.round(submission.suggested_accuracy_score),
+          teacher_feedback_text: submission.suggested_feedback_text ?? '',
+          release_to_student: true,
+        })
+      }
+    }
+
+    if (selectedExerciseId.value) {
+      await loadExerciseSubmissions(selectedExerciseId.value)
+    }
+    resetBulkReviewState()
+  } catch (errorValue: any) {
+    const detail = errorValue.response?.data?.detail ?? errorValue.message ?? 'Failed to submit suggested grades.'
+    const failedPhrase = failedGroup?.phrases.find((phrase) => phrase.submission?.submission_id === failedSubmission?.submission_id)
+    const failedPhraseLabel = failedPhrase ? phraseDisplayLabel(failedPhrase) : failedSubmission?.phrase_id
+    bulkReviewError.value = failedGroup && failedPhraseLabel
+      ? `Failed on ${failedGroup.studentDisplayName}, ${failedPhraseLabel}: ${detail}`
+      : detail
+  } finally {
+    bulkReviewProgress.value = null
+    bulkReviewSaving.value = false
+  }
+}
+
 async function handleCreate() {
   const classId = classesStore.activeClassId
   if (!classId) {
@@ -1060,6 +1278,12 @@ async function handleDelete(exerciseId: string) {
     }
 
     if (selectedExerciseId.value === exerciseId) {
+      resetBulkReviewState()
+    } else {
+      pruneBulkReviewSelection()
+    }
+
+    if (selectedExerciseId.value === exerciseId) {
       selectDefaultExercise()
     }
   } catch {
@@ -1075,6 +1299,7 @@ async function loadExercises(classId: string | null) {
   reviewModalOpen.value = false
   batchReviewError.value = null
   batchReviewProgress.value = null
+  resetBulkReviewState()
   error.value = null
   form.value = { title: '', phrase_ids: [], student_uids: [], due_date: '' }
   exerciseSubmissions.value = {}
@@ -1135,5 +1360,9 @@ watch(filteredReviewGroups, () => {
   if (submissionPage.value > submissionPageCount.value) {
     submissionPage.value = submissionPageCount.value
   }
+})
+
+watch(bulkGradeableKeys, () => {
+  pruneBulkReviewSelection()
 })
 </script>

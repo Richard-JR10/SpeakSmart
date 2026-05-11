@@ -68,181 +68,123 @@
       </Alert>
 
       <template v-else>
-        <Card class="gap-0 overflow-hidden border-border/80 bg-card/95 py-0 shadow-sm shadow-rose-900/5">
-          <CardHeader class="border-b border-border/70 p-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <CardTitle class="font-(--font-display) text-xl leading-none text-(--color-heading)">
-                  Assignment sets
-                </CardTitle>
-                <CardDescription class="mt-1 text-sm">
-                  Pick an assignment to load its focused grading queue.
-                </CardDescription>
-              </div>
-              <Badge variant="outline" class="rounded-full px-3 py-1">
-                {{ selectedExercise?.title ?? 'No assignment selected' }}
-              </Badge>
-            </div>
-          </CardHeader>
+        <div class="grid gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
+          <AssignmentSetNavigator
+            v-model:search="assignmentSearch"
+            v-model:filter="assignmentFilter"
+            :items="sortedAssignmentItems"
+            :selected-exercise-id="selectedExerciseId"
+            :filter-options="assignmentFilterOptions"
+            @select-assignment="selectExercise"
+            @delete-assignment="handleDelete"
+          />
 
-          <CardContent class="p-0">
-            <div class="overflow-x-auto">
-              <Table class="min-w-[1120px] table-fixed">
-                <colgroup>
-                  <col class="w-[15%]">
-                  <col class="w-[12%]">
-                  <col class="w-[11%]">
-                  <col class="w-[11%]">
-                  <col class="w-[15%]">
-                  <col class="w-[10%]">
-                  <col class="w-[10%]">
-                  <col class="w-[15%]">
-                </colgroup>
-                <TableHeader class="bg-muted/20">
-                  <TableRow class="hover:bg-transparent">
-                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Assignment</TableHead>
-                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Due</TableHead>
-                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Phrases</TableHead>
-                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Students</TableHead>
-                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Completion</TableHead>
-                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Submitted</TableHead>
-                    <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Grade</TableHead>
-                    <TableHead class="px-4 py-2 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow
-                    v-for="exercise in exercises"
-                    :key="exercise.exercise_id"
-                    class="transition hover:bg-muted/25"
-                    :class="selectedExerciseId === exercise.exercise_id ? 'bg-primary/5' : ''"
+          <Card class="gap-0 overflow-hidden border-border/80 bg-card/95 py-0 shadow-sm shadow-rose-900/5">
+          <CardHeader class="border-b border-border/70 p-4">
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-end 2xl:justify-between">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                      Student review queue
+                    </Badge>
+                    <Badge variant="outline" class="rounded-full px-3 py-1">
+                      {{ filteredReviewGroups.length }} visible
+                    </Badge>
+                    <Badge
+                      v-if="selectedAssignmentItem"
+                      variant="outline"
+                      class="rounded-full px-3 py-1"
+                      :class="assignmentStatusTone(selectedAssignmentItem.status)"
+                    >
+                      {{ assignmentStatusLabel(selectedAssignmentItem.status) }}
+                    </Badge>
+                  </div>
+                  <CardTitle class="mt-2 font-(--font-display) text-xl leading-none text-(--color-heading)">
+                    {{ selectedExercise?.title ?? 'Select an assignment' }}
+                  </CardTitle>
+                </div>
+
+                <div class="grid w-full grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-2 md:max-w-84 2xl:w-auto">
+                  <div class="flex h-10 min-w-0 items-center gap-2 rounded-xl border border-border bg-background px-3">
+                    <Search class="size-4 text-muted-foreground" />
+                    <Input
+                      v-model="submissionSearch"
+                      class="h-8 rounded-none border-0 bg-transparent px-0 text-sm shadow-none ring-0 outline-none focus-visible:!border-transparent focus-visible:!shadow-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!outline-none"
+                      placeholder="Search student"
+                    />
+                  </div>
+
+                  <SelectRoot
+                    :model-value="submissionFilter"
+                    @update:model-value="handleSubmissionFilterUpdate"
                   >
-                    <TableCell class="px-4 py-3 align-middle">
-                      <div class="min-w-0">
-                        <p class="truncate font-semibold text-(--color-heading)">
-                          {{ exercise.title }}
-                        </p>
-                        <p class="truncate text-xs text-muted-foreground">
-                          {{ completedCount(exercise) }}/{{ exercise.assignments.length }} students complete
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell class="px-4 py-3 align-middle">
-                      <Badge
-                        v-if="exercise.due_date"
-                        :variant="isOverdue(exercise.due_date) ? 'destructive' : 'outline'"
-                        class="rounded-full px-2.5 py-1"
+                    <SelectTrigger
+                      aria-label="Filter student review queue"
+                      class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 bg-secondary text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
+                    >
+                      <Funnel class="size-4 shrink-0" />
+                    </SelectTrigger>
+
+                    <SelectPortal>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="end"
+                        :side-offset="8"
+                        :align-offset="0"
+                        :collision-padding="12"
+                        class="z-50 min-w-56 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-lg data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
                       >
-                        {{ formatDate(exercise.due_date) }}
-                      </Badge>
-                      <span v-else class="text-sm text-muted-foreground">No due date</span>
-                    </TableCell>
-                    <TableCell class="px-4 py-3 text-sm font-semibold text-(--color-heading) align-middle">
-                      {{ exercise.phrases.length }}
-                    </TableCell>
-                    <TableCell class="px-4 py-3 text-sm font-semibold text-(--color-heading) align-middle">
-                      {{ exercise.assignments.length }}
-                    </TableCell>
-                    <TableCell class="px-4 py-3 align-middle">
-                      <div class="grid grid-cols-[minmax(80px,1fr)_2.5rem] items-center gap-2">
-                        <div class="h-1.5 overflow-hidden rounded-full bg-border/70">
-                          <div
-                            class="h-full rounded-full bg-primary transition-[width] duration-300"
-                            :style="{ width: `${completionPercent(exercise)}%` }"
-                          />
-                        </div>
-                        <span class="text-xs font-semibold tabular-nums text-(--color-heading)">
-                          {{ completionPercent(exercise).toFixed(0) }}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell class="px-4 py-3 text-sm font-semibold text-(--color-heading) align-middle">
-                      {{ submissionsForExercise(exercise.exercise_id).length }}
-                    </TableCell>
-                    <TableCell class="px-4 py-3 align-middle">
-                      <div class="flex flex-wrap gap-1.5">
-                        <Badge
-                          :variant="pendingGradeCount(exercise.exercise_id) ? 'destructive' : 'outline'"
-                          class="rounded-full px-2.5 py-1"
-                        >
-                          {{ pendingGradeCount(exercise.exercise_id) }} pending
-                        </Badge>
-                        <Badge variant="secondary" class="rounded-full px-2.5 py-1">
-                          {{ gradedCount(exercise.exercise_id) }} graded
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell class="px-4 py-3 align-middle">
-                      <div class="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          @click="selectExercise(exercise.exercise_id)"
-                        >
-                          <ClipboardList data-icon="inline-start" />
-                          <span>Grade queue</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          class="size-9 rounded-xl"
-                          @click="handleDelete(exercise.exercise_id)"
-                        >
-                          <Trash2 />
-                          <span class="sr-only">Delete assignment</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card class="gap-0 overflow-hidden border-border/80 bg-card/95 py-0 shadow-sm shadow-rose-900/5">
-          <CardHeader class="border-b border-border/70 p-4">
-            <div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                    Submission queue
-                  </Badge>
-                  <Badge variant="outline" class="rounded-full px-3 py-1">
-                    {{ filteredSubmissions.length }} visible
-                  </Badge>
+                        <SelectViewport class="p-1">
+                          <SelectItem
+                            v-for="option in submissionFilterOptions"
+                            :key="option.value"
+                            :value="option.value"
+                            class="group relative flex cursor-default select-none items-center rounded-lg py-2 pr-9 pl-3 text-sm outline-none transition-colors focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! data-[highlighted]:bg-muted data-[highlighted]:outline-none data-[highlighted]:ring-0 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                          >
+                            <SelectItemText>
+                              <span class="flex min-w-0 items-center gap-2">
+                                <span class="truncate">{{ option.label }}</span>
+                                <span class="rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums text-primary group-data-[state=checked]:border-primary-foreground/35 group-data-[state=checked]:bg-primary-foreground/20 group-data-[state=checked]:text-primary-foreground">
+                                  {{ option.count }}
+                                </span>
+                              </span>
+                            </SelectItemText>
+                            <SelectItemIndicator class="absolute right-2 flex size-4 items-center justify-center">
+                              <Check class="size-4" />
+                            </SelectItemIndicator>
+                          </SelectItem>
+                        </SelectViewport>
+                      </SelectContent>
+                    </SelectPortal>
+                  </SelectRoot>
                 </div>
-                <CardTitle class="mt-2 font-(--font-display) text-xl leading-none text-(--color-heading)">
-                  {{ selectedExercise?.title ?? 'Select an assignment' }}
-                </CardTitle>
-                <CardDescription class="mt-1 text-sm">
-                  Suggested backend scores stay hidden until you submit a grade.
-                </CardDescription>
               </div>
 
-              <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div class="flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3">
-                  <Search class="size-4 text-muted-foreground" />
-                  <Input
-                    v-model="submissionSearch"
-                    class="h-8 rounded-none border-0 bg-transparent px-0 text-sm shadow-none ring-0 outline-none focus-visible:!border-transparent focus-visible:!shadow-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!outline-none"
-                    placeholder="Search student or phrase"
-                  />
-                </div>
-
-                <div class="flex rounded-xl border border-border bg-muted/20 p-1">
-                  <button
-                    v-for="option in submissionFilterOptions"
-                    :key="option.value"
-                    type="button"
-                    data-slot="submission-filter"
-                    class="rounded-lg px-3 py-1.5 text-sm font-semibold transition"
-                    :class="submissionFilter === option.value ? '!bg-primary !text-primary-foreground shadow-sm shadow-primary/15' : 'text-muted-foreground hover:bg-background hover:text-foreground'"
-                    @click="setSubmissionFilter(option.value)"
+              <div
+                v-if="selectedAssignmentItem"
+                class="grid gap-2 rounded-2xl border border-border/70 bg-muted/20 p-2 sm:grid-cols-2 xl:grid-cols-5"
+              >
+                <div
+                  v-for="item in selectedAssignmentSummaryCards"
+                  :key="item.label"
+                  class="flex min-w-0 items-center gap-3 rounded-xl bg-background/60 px-3 py-2.5"
+                >
+                  <div
+                    class="flex size-9 shrink-0 items-center justify-center rounded-xl"
+                    :class="item.tone"
                   >
-                    {{ option.label }}
-                    <span class="ml-1 text-xs opacity-80">{{ option.count }}</span>
-                  </button>
+                    <component :is="item.icon" class="size-4" />
+                  </div>
+                  <div class="min-w-0">
+                    <p class="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      {{ item.label }}
+                    </p>
+                    <p class="truncate text-sm font-semibold tabular-nums text-(--color-heading)">
+                      {{ item.value }}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -260,72 +202,15 @@
             </div>
 
             <template v-else-if="selectedExercise">
-              <template v-if="paginatedSubmissions.length">
-                <div class="overflow-x-auto">
-                  <Table class="min-w-[900px] table-fixed">
-                    <colgroup>
-                      <col class="w-[24%]">
-                      <col class="w-[28%]">
-                      <col class="w-[14%]">
-                      <col class="w-[12%]">
-                      <col class="w-[12%]">
-                      <col class="w-[10%]">
-                    </colgroup>
-                    <TableHeader class="bg-muted/20">
-                      <TableRow class="hover:bg-transparent">
-                        <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Student</TableHead>
-                        <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Phrase</TableHead>
-                        <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Submitted</TableHead>
-                        <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Score</TableHead>
-                        <TableHead class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Status</TableHead>
-                        <TableHead class="px-4 py-2 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow
-                        v-for="submission in paginatedSubmissions"
-                        :key="submission.submission_id"
-                        class="transition hover:bg-muted/25"
-                      >
-                        <TableCell class="px-4 py-3 align-middle">
-                          <p class="truncate font-semibold text-(--color-heading)">
-                            {{ submission.student_display_name }}
-                          </p>
-                        </TableCell>
-                        <TableCell class="px-4 py-3 align-middle">
-                          <p class="truncate text-sm text-muted-foreground">
-                            {{ phraseLabel(submission.phrase_id) }}
-                          </p>
-                        </TableCell>
-                        <TableCell class="px-4 py-3 text-sm text-muted-foreground align-middle">
-                          {{ formatDate(submission.submitted_at) }}
-                        </TableCell>
-                        <TableCell class="px-4 py-3 align-middle">
-                          <Badge variant="outline" class="rounded-full px-2.5 py-1">
-                            {{ submission.suggested_accuracy_score.toFixed(0) }}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell class="px-4 py-3 align-middle">
-                          <Badge :variant="submissionStatusVariant(submission)" class="rounded-full px-2.5 py-1">
-                            {{ submissionStatusLabel(submission) }}
-                          </Badge>
-                        </TableCell>
-                        <TableCell class="px-4 py-3 align-middle">
-                          <div class="flex justify-end">
-                            <Button size="sm" @click="openReviewModal(submission)">
-                              <SquarePen data-icon="inline-start" />
-                              <span>{{ submission.released_at ? 'Edit' : 'Grade' }}</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
+              <template v-if="paginatedReviewGroups.length">
+                <AssignmentStudentQueueTable
+                  :groups="paginatedReviewGroups"
+                  @review-student="openReviewModal"
+                />
 
                 <div class="flex flex-col gap-2 border-t border-border/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p class="text-sm text-muted-foreground">
-                    Showing {{ paginationStart }}-{{ paginationEnd }} of {{ filteredSubmissions.length }} submissions
+                    Showing {{ paginationStart }}-{{ paginationEnd }} of {{ filteredReviewGroups.length }} students
                   </p>
                   <div class="flex items-center gap-2">
                     <Button
@@ -355,129 +240,41 @@
 
               <div v-else class="p-4">
                 <Alert>
-                  <AudioLines />
-                  <AlertTitle>{{ selectedExerciseSubmissions.length ? 'No matching submissions' : 'No student submissions yet' }}</AlertTitle>
+                  <Users />
+                  <AlertTitle>{{ selectedExerciseReviewGroups.length ? 'No matching students' : 'No assigned students yet' }}</AlertTitle>
                   <AlertDescription>
-                    {{ selectedExerciseSubmissions.length ? 'Adjust the filter or search to see more submissions.' : 'Assigned phrases will appear here after students record their work.' }}
+                    {{ selectedExerciseReviewGroups.length ? 'Adjust the filter or search to see more students.' : 'Assigned students will appear here after you create an assignment.' }}
                   </AlertDescription>
                 </Alert>
               </div>
             </template>
+
+            <div v-else class="p-4">
+              <Alert>
+                <ClipboardList />
+                <AlertTitle>Select an assignment</AlertTitle>
+                <AlertDescription>
+                  Choose an assignment set from the navigator to load its student review queue.
+                </AlertDescription>
+              </Alert>
+            </div>
           </CardContent>
         </Card>
+        </div>
       </template>
 
-      <DialogRoot v-model:open="reviewModalOpen">
-        <DialogPortal>
-          <DialogOverlay class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
-          <DialogContent
-            class="fixed top-1/2 left-1/2 z-50 flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-lg"
-          >
-            <div class="flex items-start justify-between gap-3 border-b border-border/70 px-5 py-4">
-              <div class="min-w-0">
-                <Badge v-if="selectedSubmission" :variant="submissionStatusVariant(selectedSubmission)" class="w-fit rounded-full px-3 py-1">
-                  {{ submissionStatusLabel(selectedSubmission) }}
-                </Badge>
-                <DialogTitle class="mt-2 font-(--font-display) text-2xl leading-none text-(--color-heading)">
-                  {{ selectedSubmission?.released_at ? 'Edit grade' : 'Grade submission' }}
-                </DialogTitle>
-                <DialogDescription v-if="selectedSubmission" class="mt-1 text-sm text-muted-foreground">
-                  {{ selectedSubmission.student_display_name }} - {{ phraseLabel(selectedSubmission.phrase_id) }} - submitted {{ formatDate(selectedSubmission.submitted_at) }}
-                </DialogDescription>
-              </div>
-
-              <Button variant="outline" size="icon" class="rounded-xl" @click="reviewModalOpen = false">
-                <X />
-                <span class="sr-only">Close grade modal</span>
-              </Button>
-            </div>
-
-            <div v-if="selectedSubmission" class="flex-1 overflow-y-auto px-5 py-4">
-              <div class="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-                <div class="flex flex-col gap-3">
-                  <div class="rounded-2xl border border-border/70 bg-muted/25 p-4">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Suggested score
-                    </p>
-                    <p class="mt-2 font-(--font-display) text-4xl leading-none text-(--color-heading)">
-                      {{ selectedSubmission.suggested_accuracy_score.toFixed(0) }}%
-                    </p>
-                    <div class="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
-                      <span>Mora {{ selectedSubmission.suggested_mora_timing_score.toFixed(0) }}%</span>
-                      <span>Consonants {{ selectedSubmission.suggested_consonant_score.toFixed(0) }}%</span>
-                      <span>Vowels {{ selectedSubmission.suggested_vowel_score.toFixed(0) }}%</span>
-                    </div>
-                  </div>
-
-                  <audio
-                    class="w-full"
-                    :src="selectedSubmission.audio_file_url"
-                    controls
-                    preload="metadata"
-                  />
-
-                  <div class="rounded-2xl border border-border/70 bg-background/80 p-4">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Suggested feedback
-                    </p>
-                    <p class="mt-2 text-sm leading-6 text-foreground/85">
-                      {{ selectedSubmission.suggested_feedback_text || 'No suggested feedback was generated for this submission.' }}
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex flex-col gap-4">
-                  <div class="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
-                    <div class="flex flex-col gap-2">
-                      <Label :for="`score-${selectedSubmission.submission_id}`">Teacher score</Label>
-                      <Input
-                        :id="`score-${selectedSubmission.submission_id}`"
-                        v-model="reviewForms[selectedSubmission.submission_id].teacher_accuracy_score"
-                        type="number"
-                        min="0"
-                        max="100"
-                      />
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                      <Label :for="`feedback-${selectedSubmission.submission_id}`">Teacher feedback</Label>
-                      <textarea
-                        :id="`feedback-${selectedSubmission.submission_id}`"
-                        v-model="reviewForms[selectedSubmission.submission_id].teacher_feedback_text"
-                        rows="7"
-                        class="min-h-40 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                      />
-                    </div>
-                  </div>
-
-                  <Alert v-if="submissionErrors[selectedSubmission.exercise_id]" variant="destructive">
-                    <TriangleAlert />
-                    <AlertTitle>Grade update failed</AlertTitle>
-                    <AlertDescription>{{ submissionErrors[selectedSubmission.exercise_id] }}</AlertDescription>
-                  </Alert>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="selectedSubmission" class="border-t border-border/70 px-5 py-4">
-              <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                <Button
-                  :disabled="reviewSaving[selectedSubmission.submission_id]"
-                  @click="submitGrade(selectedSubmission)"
-                >
-                  <LoaderCircle
-                    v-if="reviewSaving[selectedSubmission.submission_id]"
-                    class="animate-spin"
-                    data-icon="inline-start"
-                  />
-                  <Send v-else data-icon="inline-start" />
-                  <span>{{ selectedSubmission.released_at ? 'Update grade' : 'Submit grade' }}</span>
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </DialogPortal>
-      </DialogRoot>
+      <AssignmentStudentReviewDialog
+        :open="reviewModalOpen"
+        :assignment-title="selectedExercise?.title ?? null"
+        :group="selectedReviewGroup"
+        :drafts="reviewForms"
+        :saving="selectedReviewGroup ? Boolean(reviewSaving[selectedReviewGroup.key]) : false"
+        :error="batchReviewError"
+        :save-progress="batchReviewProgress"
+        @update:open="handleReviewModalOpenChange"
+        @update-draft="updateReviewDraft"
+        @submit="submitStudentGrades"
+      />
 
       <DialogRoot v-model:open="showForm">
         <DialogPortal>
@@ -643,19 +440,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import {
-  AudioLines,
   BookMarked,
+  Check,
+  CalendarClock,
   CheckCheck,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   LoaderCircle,
   Plus,
+  Funnel,
   Search,
-  Send,
-  SquarePen,
   TriangleAlert,
-  Trash2,
   Users,
   X,
 } from 'lucide-vue-next'
@@ -666,9 +462,27 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
+  SelectContent,
+  SelectItem,
+  SelectItemIndicator,
+  SelectItemText,
+  SelectPortal,
+  SelectRoot,
+  SelectTrigger,
+  SelectViewport,
 } from 'reka-ui'
 
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
+import AssignmentSetNavigator from '@/components/instructor/assignments/AssignmentSetNavigator.vue'
+import AssignmentStudentQueueTable from '@/components/instructor/assignments/AssignmentStudentQueueTable.vue'
+import AssignmentStudentReviewDialog from '@/components/instructor/assignments/AssignmentStudentReviewDialog.vue'
+import {
+  assignmentGroupStatus,
+  buildAssignmentReviewGroups,
+  gradeableSubmissions,
+  type AssignmentPhraseReviewDraft,
+  type AssignmentReviewGroup,
+} from '@/components/instructor/assignments/assignmentReview'
 import {
   getExerciseSubmissions,
   reviewAssignmentSubmission,
@@ -687,20 +501,28 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
 import { useClassesStore } from '@/stores/classes'
 import { useModulesStore } from '@/stores/modules'
-import type { Exercise, InstructorAssignmentSubmission, StudentStat } from '@/types'
+import type { Exercise, InstructorAssignmentSubmission, Phrase, StudentStat } from '@/types'
 
 type SubmissionFilter = 'all' | 'pending' | 'graded'
+type AssignmentSetFilter = 'needs-grading' | 'active' | 'completed' | 'all'
+type AssignmentSetStatus = 'needs-grading' | 'active' | 'completed'
+
+interface AssignmentSetNavigatorItem {
+  exerciseId: string
+  title: string
+  dueDate: string | null
+  phraseCount: number
+  studentCount: number
+  submittedCount: number
+  completionPercent: number
+  pendingCount: number
+  gradedCount: number
+  status: AssignmentSetStatus
+  createdAt: string
+}
 
 const PAGE_SIZE = 12
 
@@ -718,16 +540,17 @@ const exerciseSubmissions = ref<Record<string, InstructorAssignmentSubmission[]>
 const submissionsLoading = ref<Record<string, boolean>>({})
 const submissionErrors = ref<Record<string, string | null>>({})
 const reviewSaving = ref<Record<string, boolean>>({})
-const reviewForms = ref<Record<string, {
-  teacher_accuracy_score: string
-  teacher_feedback_text: string
-}>>({})
+const reviewForms = ref<Record<string, AssignmentPhraseReviewDraft>>({})
 const selectedExerciseId = ref<string | null>(null)
-const selectedSubmissionId = ref<string | null>(null)
+const selectedReviewStudentUid = ref<string | null>(null)
 const reviewModalOpen = ref(false)
 const submissionFilter = ref<SubmissionFilter>('all')
 const submissionSearch = ref('')
 const submissionPage = ref(1)
+const assignmentSearch = ref('')
+const assignmentFilter = ref<AssignmentSetFilter>('all')
+const batchReviewError = ref<string | null>(null)
+const batchReviewProgress = ref<string | null>(null)
 
 const form = ref({
   title: '',
@@ -736,49 +559,64 @@ const form = ref({
   due_date: '',
 })
 
-const allSubmissions = computed(() => Object.values(exerciseSubmissions.value).flat())
-
 const selectedExercise = computed(
   () => exercises.value.find((exercise) => exercise.exercise_id === selectedExerciseId.value) ?? null,
 )
 
-const selectedExerciseSubmissions = computed(() => {
-  if (!selectedExerciseId.value) return []
-  return submissionsForExercise(selectedExerciseId.value)
+const phraseById = computed<Record<string, Phrase>>(() => {
+  const phrases: Record<string, Phrase> = {}
+  for (const module of modulesStore.modules) {
+    for (const phrase of modulesStore.getPhrasesForModule(module.module_id)) {
+      phrases[phrase.phrase_id] = phrase
+    }
+  }
+  return phrases
 })
 
-const selectedSubmission = computed(
-  () => allSubmissions.value.find((submission) => submission.submission_id === selectedSubmissionId.value) ?? null,
+const allReviewGroups = computed(() => exercises.value.flatMap((exercise) => (
+  buildAssignmentReviewGroups(
+    exercise,
+    students.value,
+    submissionsForExercise(exercise.exercise_id),
+    phraseById.value,
+  )
+)))
+
+const selectedExerciseReviewGroups = computed(() => {
+  if (!selectedExerciseId.value) return []
+  return allReviewGroups.value.filter((group) => group.exerciseId === selectedExerciseId.value)
+})
+
+const selectedReviewGroup = computed(
+  () => selectedExerciseReviewGroups.value.find((group) => group.studentUid === selectedReviewStudentUid.value) ?? null,
 )
 
-const filteredSubmissions = computed(() => {
+const filteredReviewGroups = computed(() => {
   const query = submissionSearch.value.trim().toLowerCase()
 
-  return selectedExerciseSubmissions.value.filter((submission) => {
-    const matchesFilter = submissionMatchesFilter(submission, submissionFilter.value)
-    const label = phraseLabel(submission.phrase_id).toLowerCase()
+  return selectedExerciseReviewGroups.value.filter((group) => {
+    const matchesFilter = groupMatchesFilter(group, submissionFilter.value)
     const matchesSearch = !query
-      || submission.student_display_name.toLowerCase().includes(query)
-      || label.includes(query)
-      || submission.phrase_id.toLowerCase().includes(query)
+      || group.studentDisplayName.toLowerCase().includes(query)
+      || group.studentUid.toLowerCase().includes(query)
 
     return matchesFilter && matchesSearch
   })
 })
 
-const submissionPageCount = computed(() => Math.max(1, Math.ceil(filteredSubmissions.value.length / PAGE_SIZE)))
+const submissionPageCount = computed(() => Math.max(1, Math.ceil(filteredReviewGroups.value.length / PAGE_SIZE)))
 
-const paginatedSubmissions = computed(() => {
+const paginatedReviewGroups = computed(() => {
   const start = (submissionPage.value - 1) * PAGE_SIZE
-  return filteredSubmissions.value.slice(start, start + PAGE_SIZE)
+  return filteredReviewGroups.value.slice(start, start + PAGE_SIZE)
 })
 
 const paginationStart = computed(() => {
-  if (!filteredSubmissions.value.length) return 0
+  if (!filteredReviewGroups.value.length) return 0
   return (submissionPage.value - 1) * PAGE_SIZE + 1
 })
 
-const paginationEnd = computed(() => Math.min(submissionPage.value * PAGE_SIZE, filteredSubmissions.value.length))
+const paginationEnd = computed(() => Math.min(submissionPage.value * PAGE_SIZE, filteredReviewGroups.value.length))
 
 const summaryCards = computed(() => [
   {
@@ -793,45 +631,141 @@ const summaryCards = computed(() => [
   },
   {
     label: 'Pending grade',
-    value: `${allSubmissions.value.filter((submission) => !submission.released_at).length}`,
+    value: `${allReviewGroups.value.filter((group) => ['ready', 'partial'].includes(assignmentGroupStatus(group))).length}`,
     icon: TriangleAlert,
   },
   {
     label: 'Graded',
-    value: `${allSubmissions.value.filter((submission) => submission.released_at).length}`,
+    value: `${allReviewGroups.value.filter((group) => assignmentGroupStatus(group) === 'graded').length}`,
     icon: CheckCheck,
   },
 ])
+
+const assignmentItems = computed<AssignmentSetNavigatorItem[]>(() => exercises.value.map((exercise) => ({
+  exerciseId: exercise.exercise_id,
+  title: exercise.title,
+  dueDate: exercise.due_date,
+  phraseCount: exercise.phrases.length,
+  studentCount: exercise.assignments.length,
+  submittedCount: submissionsForExercise(exercise.exercise_id).length,
+  completionPercent: completionPercent(exercise),
+  pendingCount: pendingGradeCount(exercise.exercise_id),
+  gradedCount: gradedCount(exercise.exercise_id),
+  status: assignmentStatus(exercise),
+  createdAt: exercise.created_at,
+})))
+
+const assignmentFilterOptions = computed(() => [
+  {
+    value: 'needs-grading' as const,
+    label: 'Needs grading',
+    count: assignmentItems.value.filter((item) => item.status === 'needs-grading').length,
+  },
+  {
+    value: 'active' as const,
+    label: 'Active',
+    count: assignmentItems.value.filter((item) => item.status === 'active').length,
+  },
+  {
+    value: 'completed' as const,
+    label: 'Completed',
+    count: assignmentItems.value.filter((item) => item.status === 'completed').length,
+  },
+  {
+    value: 'all' as const,
+    label: 'All',
+    count: assignmentItems.value.length,
+  },
+])
+
+const sortedAssignmentItems = computed(() => {
+  const query = assignmentSearch.value.trim().toLowerCase()
+
+  return assignmentItems.value
+    .filter((item) => {
+      const matchesSearch = !query || item.title.toLowerCase().includes(query)
+      const matchesFilter = assignmentFilter.value === 'all' || item.status === assignmentFilter.value
+      return matchesSearch && matchesFilter
+    })
+    .sort((left, right) => {
+      const statusRank = assignmentStatusRank(left.status) - assignmentStatusRank(right.status)
+      if (statusRank !== 0) return statusRank
+
+      const leftDue = left.dueDate ? new Date(left.dueDate).getTime() : Number.POSITIVE_INFINITY
+      const rightDue = right.dueDate ? new Date(right.dueDate).getTime() : Number.POSITIVE_INFINITY
+      if (leftDue !== rightDue) return leftDue - rightDue
+
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+    })
+})
+
+const selectedAssignmentItem = computed(
+  () => assignmentItems.value.find((item) => item.exerciseId === selectedExerciseId.value) ?? null,
+)
+
+const selectedAssignmentSummaryCards = computed(() => {
+  const item = selectedAssignmentItem.value
+  if (!item) return []
+
+  return [
+    {
+      label: 'Due',
+      value: item.dueDate ? `${isAssignmentOverdue(item) ? 'Overdue ' : ''}${formatAssignmentDate(item.dueDate)}` : 'No due date',
+      icon: CalendarClock,
+      tone: isAssignmentOverdue(item)
+        ? 'bg-red-50 text-red-700'
+        : 'bg-sky-50 text-sky-700',
+    },
+    {
+      label: 'Complete',
+      value: `${item.completionPercent.toFixed(0)}%`,
+      icon: Users,
+      tone: item.status === 'completed'
+        ? 'bg-emerald-50 text-emerald-700'
+        : 'bg-sky-50 text-sky-700',
+    },
+    {
+      label: 'Submissions',
+      value: `${item.submittedCount}`,
+      icon: ClipboardList,
+      tone: 'bg-muted text-muted-foreground',
+    },
+    {
+      label: 'Pending',
+      value: `${item.pendingCount}`,
+      icon: TriangleAlert,
+      tone: item.pendingCount > 0
+        ? 'bg-amber-50 text-amber-800'
+        : 'bg-muted text-muted-foreground',
+    },
+    {
+      label: 'Graded',
+      value: `${item.gradedCount}`,
+      icon: CheckCheck,
+      tone: item.gradedCount > 0
+        ? 'bg-emerald-50 text-emerald-800'
+        : 'bg-muted text-muted-foreground',
+    },
+  ]
+})
 
 const submissionFilterOptions = computed(() => [
   {
     value: 'all' as const,
     label: 'All',
-    count: selectedExerciseSubmissions.value.length,
+    count: selectedExerciseReviewGroups.value.length,
   },
   {
     value: 'pending' as const,
     label: 'Pending',
-    count: selectedExerciseSubmissions.value.filter((submission) => submissionMatchesFilter(submission, 'pending')).length,
+    count: selectedExerciseReviewGroups.value.filter((group) => groupMatchesFilter(group, 'pending')).length,
   },
   {
     value: 'graded' as const,
     label: 'Graded',
-    count: selectedExerciseSubmissions.value.filter((submission) => submissionMatchesFilter(submission, 'graded')).length,
+    count: selectedExerciseReviewGroups.value.filter((group) => groupMatchesFilter(group, 'graded')).length,
   },
 ])
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-function isOverdue(dateStr: string) {
-  return new Date(dateStr).getTime() < Date.now()
-}
 
 function completedCount(exercise: Exercise) {
   return exercise.assignments.filter((assignment) => assignment.completed_at).length
@@ -847,47 +781,73 @@ function submissionsForExercise(exerciseId: string) {
 }
 
 function pendingGradeCount(exerciseId: string) {
-  return submissionsForExercise(exerciseId).filter((submission) => !submission.released_at).length
+  return allReviewGroups.value.filter((group) => (
+    group.exerciseId === exerciseId
+    && ['ready', 'partial'].includes(assignmentGroupStatus(group))
+  )).length
 }
 
 function gradedCount(exerciseId: string) {
-  return submissionsForExercise(exerciseId).filter((submission) => submission.released_at).length
+  return allReviewGroups.value.filter((group) => (
+    group.exerciseId === exerciseId
+    && assignmentGroupStatus(group) === 'graded'
+  )).length
 }
 
-function phraseLabel(phraseId: string) {
-  for (const module of modulesStore.modules) {
-    const phrase = modulesStore.getPhrasesForModule(module.module_id).find((item) => item.phrase_id === phraseId)
-    if (phrase) {
-      return `${phrase.japanese_text} - ${phrase.romaji}`
-    }
+function assignmentStatusLabel(status: AssignmentSetStatus) {
+  if (status === 'needs-grading') return 'Needs grading'
+  if (status === 'completed') return 'Completed'
+  return 'Active'
+}
+
+function assignmentStatusTone(status: AssignmentSetStatus) {
+  if (status === 'needs-grading') return 'border-amber-300/70 bg-amber-100/80 text-amber-900'
+  if (status === 'completed') return 'border-emerald-300/70 bg-emerald-100/80 text-emerald-900'
+  return 'border-sky-300/70 bg-sky-100/80 text-sky-900'
+}
+
+function formatAssignmentDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+function isAssignmentOverdue(item: AssignmentSetNavigatorItem) {
+  return Boolean(item.dueDate && item.status !== 'completed' && new Date(item.dueDate).getTime() < Date.now())
+}
+
+function assignmentStatus(exercise: Exercise): AssignmentSetStatus {
+  if (pendingGradeCount(exercise.exercise_id) > 0) return 'needs-grading'
+  if (exercise.assignments.length > 0 && completedCount(exercise) === exercise.assignments.length) {
+    return 'completed'
   }
-  return phraseId
+  return 'active'
 }
 
-function submissionMatchesFilter(
-  submission: InstructorAssignmentSubmission,
+function assignmentStatusRank(status: AssignmentSetStatus) {
+  if (status === 'needs-grading') return 0
+  if (status === 'active') return 1
+  return 2
+}
+
+function groupMatchesFilter(
+  group: AssignmentReviewGroup,
   filter: SubmissionFilter,
 ) {
-  if (filter === 'pending') return !submission.released_at
-  if (filter === 'graded') return Boolean(submission.released_at)
+  const status = assignmentGroupStatus(group)
+  if (filter === 'pending') return status !== 'graded'
+  if (filter === 'graded') return status === 'graded'
   return true
-}
-
-function submissionStatusLabel(submission: InstructorAssignmentSubmission) {
-  if (submission.released_at) return 'Graded'
-  return 'Pending grade'
-}
-
-function submissionStatusVariant(
-  submission: InstructorAssignmentSubmission,
-): 'default' | 'secondary' | 'outline' | 'destructive' {
-  if (submission.released_at) return 'default'
-  return 'destructive'
 }
 
 function setSubmissionFilter(filter: SubmissionFilter) {
   submissionFilter.value = filter
   submissionPage.value = 1
+}
+
+function handleSubmissionFilterUpdate(value: unknown) {
+  setSubmissionFilter((typeof value === 'string' ? value : 'all') as SubmissionFilter)
 }
 
 function selectExercise(exerciseId: string) {
@@ -903,10 +863,24 @@ function selectDefaultExercise() {
   submissionPage.value = 1
 }
 
-function openReviewModal(submission: InstructorAssignmentSubmission) {
-  ensureReviewForm(submission)
-  selectedSubmissionId.value = submission.submission_id
+function openReviewModal(group: AssignmentReviewGroup) {
+  for (const submission of gradeableSubmissions(group)) {
+    ensureReviewForm(submission)
+  }
+  selectedReviewStudentUid.value = group.studentUid
+  batchReviewError.value = null
+  batchReviewProgress.value = null
   reviewModalOpen.value = true
+}
+
+function handleReviewModalOpenChange(open: boolean) {
+  if (selectedReviewGroup.value && reviewSaving.value[selectedReviewGroup.value.key]) return
+  reviewModalOpen.value = open
+  if (open) return
+
+  selectedReviewStudentUid.value = null
+  batchReviewError.value = null
+  batchReviewProgress.value = null
 }
 
 function ensureReviewForm(submission: InstructorAssignmentSubmission) {
@@ -952,31 +926,71 @@ async function loadExerciseSubmissions(exerciseId: string) {
   }
 }
 
-async function submitGrade(submission: InstructorAssignmentSubmission) {
-  ensureReviewForm(submission)
+function updateReviewDraft(
+  submissionId: string,
+  field: keyof AssignmentPhraseReviewDraft,
+  value: string,
+) {
+  reviewForms.value = {
+    ...reviewForms.value,
+    [submissionId]: {
+      ...(reviewForms.value[submissionId] ?? {
+        teacher_accuracy_score: '',
+        teacher_feedback_text: '',
+      }),
+      [field]: value,
+    },
+  }
+}
 
-  const reviewForm = reviewForms.value[submission.submission_id]
+async function submitStudentGrades() {
+  const group = selectedReviewGroup.value
+  if (!group) return
+  if (group.submittedCount < group.requiredCount) return
+
+  const submissions = gradeableSubmissions(group)
+  if (!submissions.length) return
+
   reviewSaving.value = {
     ...reviewSaving.value,
-    [submission.submission_id]: true,
+    [group.key]: true,
   }
+  batchReviewError.value = null
+  let failedSubmission: InstructorAssignmentSubmission | null = null
 
   try {
-    await reviewAssignmentSubmission(submission.submission_id, {
-      teacher_accuracy_score: Number(reviewForm.teacher_accuracy_score),
-      teacher_feedback_text: reviewForm.teacher_feedback_text.trim(),
-      release_to_student: true,
-    })
-    await loadExerciseSubmissions(submission.exercise_id)
-  } catch (errorValue: any) {
-    submissionErrors.value = {
-      ...submissionErrors.value,
-      [submission.exercise_id]: errorValue.response?.data?.detail ?? 'Failed to submit grade.',
+    for (const [index, submission] of submissions.entries()) {
+      failedSubmission = submission
+      ensureReviewForm(submission)
+      const reviewForm = reviewForms.value[submission.submission_id]
+      const teacherScore = Number(reviewForm.teacher_accuracy_score)
+
+      if (!Number.isFinite(teacherScore)) {
+        throw new Error(`Add a valid score for phrase ${submission.phrase_id}.`)
+      }
+
+      batchReviewProgress.value = `Submitting ${index + 1} of ${submissions.length}`
+      await reviewAssignmentSubmission(submission.submission_id, {
+        teacher_accuracy_score: teacherScore,
+        teacher_feedback_text: reviewForm.teacher_feedback_text.trim(),
+        release_to_student: true,
+      })
     }
+
+    await loadExerciseSubmissions(group.exerciseId)
+    reviewModalOpen.value = false
+    selectedReviewStudentUid.value = null
+    batchReviewError.value = null
+  } catch (errorValue: any) {
+    const detail = errorValue.response?.data?.detail ?? errorValue.message ?? 'Failed to submit grades.'
+    batchReviewError.value = failedSubmission
+      ? `Failed on phrase ${failedSubmission.phrase_id}: ${detail}`
+      : detail
   } finally {
+    batchReviewProgress.value = null
     reviewSaving.value = {
       ...reviewSaving.value,
-      [submission.submission_id]: false,
+      [group.key]: false,
     }
   }
 }
@@ -1040,8 +1054,8 @@ async function handleDelete(exerciseId: string) {
     }
     reviewForms.value = nextReviewForms
 
-    if (selectedSubmissionId.value && deletedSubmissionIds.includes(selectedSubmissionId.value)) {
-      selectedSubmissionId.value = null
+    if (selectedReviewGroup.value?.exerciseId === exerciseId) {
+      selectedReviewStudentUid.value = null
       reviewModalOpen.value = false
     }
 
@@ -1057,8 +1071,10 @@ async function loadExercises(classId: string | null) {
   exercises.value = []
   students.value = []
   selectedExerciseId.value = null
-  selectedSubmissionId.value = null
+  selectedReviewStudentUid.value = null
   reviewModalOpen.value = false
+  batchReviewError.value = null
+  batchReviewProgress.value = null
   error.value = null
   form.value = { title: '', phrase_ids: [], student_uids: [], due_date: '' }
   exerciseSubmissions.value = {}
@@ -1115,7 +1131,7 @@ watch([submissionSearch, selectedExerciseId], () => {
   submissionPage.value = 1
 })
 
-watch(filteredSubmissions, () => {
+watch(filteredReviewGroups, () => {
   if (submissionPage.value > submissionPageCount.value) {
     submissionPage.value = submissionPageCount.value
   }

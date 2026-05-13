@@ -8,9 +8,6 @@ from typing import Any
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from app.config import settings
-
-
 logger = logging.getLogger("speaksmart.phoneme_assessment")
 
 VOWELS = frozenset("aeiou")
@@ -212,7 +209,6 @@ def assess_pronunciation(
     enriched_target = _apply_rule_issue_types(enriched_target, pronunciation_rules)
     phoneme_targets = enriched_target.get("phonemes", [])
     mora_targets = enriched_target.get("morae", [])
-    recognizer_metadata = _recognizer_metadata()
 
     if not phoneme_targets:
         return {
@@ -228,7 +224,7 @@ def assess_pronunciation(
             "phonemes": [],
             "morae": [],
             "feedback": [],
-            "recognizer": recognizer_metadata,
+            "recognizer": _dtw_recognizer_metadata(),
         }
 
     student_mfcc = student_features["mfcc"]
@@ -255,20 +251,6 @@ def assess_pronunciation(
             reference_range=reference_range,
         )
         phone_details.append(detail)
-
-    recognition, ctc_warning = _run_ctc_recognition(student_audio)
-    if recognition is not None:
-        phone_details = _apply_ctc_alignment(
-            phone_details=phone_details,
-            recognition=recognition,
-        )
-        recognizer_metadata = _recognizer_metadata(recognition=recognition)
-    elif _uses_hf_ctc_provider():
-        recognizer_metadata = _recognizer_metadata(
-            warning=ctc_warning
-            or "HF CTC recognizer was unavailable; used reference-aligned acoustic scoring.",
-            fallback_used=True,
-        )
 
     mora_details = _score_morae(
         mora_targets=mora_targets,
@@ -316,7 +298,7 @@ def assess_pronunciation(
         "phonemes": phone_details,
         "morae": mora_details,
         "feedback": feedback,
-        "recognizer": recognizer_metadata,
+        "recognizer": _dtw_recognizer_metadata(),
     }
 
 
@@ -361,234 +343,6 @@ def _rule_applies_to_phone(rule_issue: str | None, phone: dict[str, Any]) -> boo
     if rule_issue in {LONG_VOWEL_ISSUE, DEVOICING_ISSUE}:
         return phone_type == "vowel"
     return True
-
-
-def _run_ctc_recognition(student_audio: bytes | None) -> tuple[Any | None, str | None]:
-    if not _uses_hf_ctc_provider() or student_audio is None:
-        return None, None
-
-    try:
-        from app.services.hf_phoneme_recognizer import recognize_pronunciation_audio
-
-        recognition = recognize_pronunciation_audio(student_audio)
-        if not recognition.recognized_phonemes:
-            raise RuntimeError("HF CTC recognizer returned no phonemes")
-        return recognition, None
-    except Exception as error:
-        if not settings.PHONEME_CTC_FALLBACK_ENABLED:
-            raise RuntimeError(f"HF CTC phoneme recognition failed: {error}") from error
-        logger.warning("HF CTC phoneme recognition fallback: %s", error)
-        return (
-            None,
-            "HF CTC recognizer was unavailable; used reference-aligned acoustic scoring. "
-            f"Reason: {error}",
-        )
-
-
-def _uses_hf_ctc_provider() -> bool:
-    return settings.PHONEME_ASSESSMENT_PROVIDER.strip().lower() in {
-        "hybrid_hf_ctc",
-        "hf_ctc",
-    }
-
-
-def _apply_ctc_alignment(
-    *,
-    phone_details: list[dict[str, Any]],
-    recognition: Any,
-) -> list[dict[str, Any]]:
-    expected = [str(item.get("expected_phoneme", "")) for item in phone_details]
-    spoken = [str(item) for item in recognition.recognized_phonemes]
-    alignment = align_phoneme_sequences(expected, spoken)
-    confidence_by_spoken_index = {
-        int(item.get("position", index)): float(item.get("confidence", recognition.confidence))
-        for index, item in enumerate(getattr(recognition, "token_confidences", []))
-    }
-
-    updated_by_expected: dict[int, dict[str, Any]] = {
-        int(item["index"]): dict(item) for item in phone_details
-    }
-    inserted: list[dict[str, Any]] = []
-
-    for item in alignment:
-        operation = str(item["operation"])
-        expected_index = item.get("expected_index")
-        spoken_index = item.get("spoken_index")
-        confidence = confidence_by_spoken_index.get(
-            int(spoken_index) if spoken_index is not None else -1,
-            float(getattr(recognition, "confidence", 0.0)),
-        )
-
-        if expected_index is None:
-            inserted.append(
-                _build_inserted_phone_detail(
-                    alignment_item=item,
-                    phone_details=phone_details,
-                    confidence=confidence,
-                )
-            )
-            continue
-
-        expected_index = int(expected_index)
-        detail = updated_by_expected.get(expected_index)
-        if detail is None:
-            continue
-
-        operation = _relax_ctc_operation(detail, operation, item)
-        ctc_score = _ctc_operation_score(operation, confidence)
-        acoustic_score = float(detail.get("score", 0.0))
-        combined_score = (ctc_score * 0.70) + (acoustic_score * 0.30)
-        if operation == "match" and detail.get("operation") == "duration_error":
-            operation = "duration_error"
-            combined_score = min(combined_score, float(detail.get("duration_score", combined_score)))
-
-        heard_phoneme = str(item.get("heard_phoneme", "unclear"))
-        detail["operation"] = operation
-        detail["heard_phoneme"] = heard_phoneme
-        detail["heard_label"] = _heard_label_for_ctc(heard_phoneme, operation)
-        detail["score"] = round(max(0.0, min(combined_score, 100.0)), 2)
-        detail["error"] = detail["score"] < 78.0 or operation not in {"match"}
-        detail["issue_type"] = _ctc_issue_type(detail, operation)
-        detail["ctc_confidence"] = round(confidence, 4)
-        updated_by_expected[expected_index] = detail
-
-    updated = [updated_by_expected[int(item["index"])] for item in phone_details]
-    updated.extend(inserted)
-    updated.sort(key=lambda item: (int(item.get("mora_index", 0)), int(item.get("index", 0))))
-    return updated
-
-
-def _phonemes_equivalent(expected: str, spoken: str) -> bool:
-    if expected == spoken:
-        return True
-    if expected == "N" and spoken in {"n", "m", "ng"}:
-        return True
-    return False
-
-
-def _relax_ctc_operation(
-    detail: dict[str, Any],
-    operation: str,
-    alignment_item: dict[str, Any],
-) -> str:
-    if operation == "match":
-        return operation
-
-    expected = str(detail.get("expected_phoneme", ""))
-    heard = str(alignment_item.get("heard_phoneme", ""))
-    target_issue = str(detail.get("target_issue_type", ""))
-    kana = str(detail.get("kana", ""))
-    romaji = str(detail.get("romaji", ""))
-
-    if expected == "N" and heard in {"n", "m", "ng"}:
-        return "match"
-
-    # The HF CTC model often omits the light /w/ glide in sentence-final
-    # particle は even when the vowel is correctly spoken as "wa". Do not turn
-    # that recognizer artifact into learner feedback; literal "ha" remains an
-    # error because heard "h" is not relaxed here.
-    if (
-        target_issue == "particle_pronunciation"
-        and kana == "\u306f"
-        and romaji == "wa"
-        and expected == "w"
-        and operation == "deletion"
-    ):
-        return "match"
-
-    return operation
-
-
-def _build_inserted_phone_detail(
-    *,
-    alignment_item: dict[str, Any],
-    phone_details: list[dict[str, Any]],
-    confidence: float,
-) -> dict[str, Any]:
-    spoken_index = alignment_item.get("spoken_index")
-    expected_neighbors = [
-        phone for phone in phone_details if int(phone.get("index", 0)) <= int(spoken_index or 0)
-    ]
-    anchor = expected_neighbors[-1] if expected_neighbors else (phone_details[0] if phone_details else {})
-    heard_phoneme = str(alignment_item.get("heard_phoneme", "unclear"))
-
-    return {
-        "index": len(phone_details) + int(spoken_index or 0),
-        "mora_index": int(anchor.get("mora_index", 0)),
-        "chunk_index": int(anchor.get("chunk_index", 0)),
-        "kana": str(anchor.get("kana", "")),
-        "romaji": str(anchor.get("romaji", "")),
-        "expected_phoneme": None,
-        "expected_label": "No extra sound expected",
-        "heard_phoneme": heard_phoneme,
-        "heard_label": _heard_label_for_ctc(heard_phoneme, "insertion"),
-        "type": "consonant",
-        "issue_type": "insertion",
-        "operation": "insertion",
-        "score": round(_ctc_operation_score("insertion", confidence), 2),
-        "error": True,
-        "weight": 0.55,
-        "duration_score": 70.0,
-        "student_duration_ms": 0.0,
-        "reference_duration_ms": 0.0,
-        "reference_frame_start": int(anchor.get("reference_frame_start", 0)),
-        "reference_frame_end": int(anchor.get("reference_frame_end", 0)),
-        "student_frame_start": int(anchor.get("student_frame_start", 0)),
-        "student_frame_end": int(anchor.get("student_frame_end", 0)),
-        "ctc_confidence": round(confidence, 4),
-    }
-
-
-def _ctc_operation_score(operation: str, confidence: float) -> float:
-    confidence = max(0.0, min(float(confidence), 1.0))
-    if operation == "match":
-        return 84.0 + (confidence * 16.0)
-    if operation == "substitution":
-        return 48.0 - (confidence * 12.0)
-    if operation == "insertion":
-        return 42.0 - (confidence * 10.0)
-    if operation == "deletion":
-        return 22.0
-    return 58.0
-
-
-def _heard_label_for_ctc(phoneme: str, operation: str) -> str:
-    if operation == "deletion":
-        return "omitted or clipped"
-    if operation == "insertion":
-        return f"extra {phoneme} sound"
-    if phoneme == "unclear":
-        return "unclear sound"
-    return _phoneme_label(phoneme, "vowel" if phoneme in VOWELS else "consonant")
-
-
-def _ctc_issue_type(detail: dict[str, Any], operation: str) -> str:
-    if operation == "match":
-        return "match"
-    if operation in {"substitution", "deletion", "insertion"}:
-        original_issue = str(detail.get("issue_type", ""))
-        target_issue = str(detail.get("target_issue_type", ""))
-        expected_phoneme = str(detail.get("expected_phoneme", ""))
-        if target_issue == GEMINATE_ISSUE or expected_phoneme == "Q":
-            return "geminate_issue"
-        if target_issue == NASAL_ISSUE or expected_phoneme == "N":
-            return "nasal_issue"
-        if target_issue == LONG_VOWEL_ISSUE:
-            return "long_vowel_issue"
-        if original_issue in {
-            "long_vowel_issue",
-            "geminate_issue",
-            "nasal_issue",
-            "r_flap_issue",
-            "devoicing_issue",
-        }:
-            return original_issue
-        if str(detail.get("expected_phoneme", "")).startswith("r"):
-            return "r_flap_issue"
-        if str(detail.get("type")) == "vowel":
-            return "vowel_drift"
-        return operation
-    return str(detail.get("issue_type", operation))
 
 
 def _score_phoneme(
@@ -705,7 +459,16 @@ def _score_morae(
             [float(phone["score"]) for phone in phones],
             default=phone_score,
         )
-        score = (phone_score * 0.55) + (weakest_phone_score * 0.25) + (duration_score * 0.20)
+        # Particle mora (は→wa, etc.): the trailing vowel is naturally clipped in
+        # natural Japanese speech, so Azure reliably scores it near 0 even for
+        # correct pronunciation. Score only the onset (w, h, …) to avoid
+        # penalising students who are pronouncing the particle correctly.
+        if issue_type == "particle_pronunciation":
+            onset_phones = [p for p in phones if p["type"] in {"consonant", "glide"}]
+            onset_score = float(onset_phones[0]["score"]) if onset_phones else phone_score
+            score = (onset_score * 0.75) + (duration_score * 0.25)
+        else:
+            score = (phone_score * 0.55) + (weakest_phone_score * 0.25) + (duration_score * 0.20)
         threshold = float(getattr(rule, "threshold", 80.0))
 
         details.append(
@@ -862,6 +625,10 @@ def _student_guidance(
         "contracted_sound": (
             "The blended sound was separated too much.",
             "Say the small-y sound smoothly in one beat.",
+        ),
+        "pitch_accent_error": (
+            "The pitch pattern went the wrong way on this mora.",
+            "Listen for where the pitch rises and falls in the reference audio, then match that shape.",
         ),
     }
     what_happened, how_to_fix = guidance_by_issue.get(
@@ -1456,30 +1223,15 @@ def _weighted_average(
     return float(sum(value * weight for value, weight in zip(values, weights, strict=False)) / total_weight)
 
 
-def _recognizer_metadata(
+def _dtw_recognizer_metadata(
     *,
-    recognition: Any | None = None,
     warning: str | None = None,
-    fallback_used: bool = False,
 ) -> dict[str, Any]:
-    if recognition is not None:
-        return recognition.to_metadata()
-
-    if _uses_hf_ctc_provider():
-        return {
-            "provider": "hybrid_hf_ctc",
-            "ctc_model_id": settings.PHONEME_CTC_MODEL_ID,
-            "ctc_enabled": False,
-            "fallback_used": fallback_used,
-            "warning": warning,
-            "note": "HF CTC phoneme recognition was requested; reference-aligned timing/acoustic scoring is carrying this result.",
-        }
-
     return {
         "provider": "reference_aligned_phoneme_dtw",
-        "ctc_model_id": settings.PHONEME_CTC_MODEL_ID,
         "ctc_enabled": False,
         "fallback_used": False,
         "warning": warning,
-        "note": "Reference-aligned phoneme scoring is active.",
+        "confidence": None,
+        "elapsed_ms": None,
     }

@@ -56,6 +56,7 @@ export interface PhonemeErrorMap {
   overall_acoustic: PhonemeError
   phoneme_match?: PhonemeError
   fluency?: PhonemeError
+  pitch_accent?: { score: number | null; error: boolean; label: string }
   phonemes?: DetailedPhonemeError[]
   morae?: MoraError[]
   recognizer?: {

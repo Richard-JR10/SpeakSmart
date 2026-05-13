@@ -15,6 +15,11 @@ from app.services.phoneme_assessment import assess_pronunciation
 from app.services.speech import extract_features
 
 
+def _azure_available() -> bool:
+    from app.config import settings
+    return bool(settings.AZURE_SPEECH_KEY and settings.AZURE_SPEECH_REGION)
+
+
 def normalize_feature_sequence(seq: np.ndarray) -> np.ndarray:
     """
     Normalize each MFCC coefficient to zero mean and unit variance so the
@@ -143,6 +148,7 @@ def build_phoneme_error_map(
     morae: list[dict[str, Any]] | None = None,
     phoneme_match_score: float | None = None,
     fluency_score: float | None = None,
+    pitch_accent_score: float | None = None,
     recognizer: dict[str, Any] | None = None,
     assessment_confidence: dict[str, Any] | None = None,
 ) -> dict:
@@ -179,6 +185,11 @@ def build_phoneme_error_map(
             "score": fluency_score if fluency_score is not None else mora_timing_score,
             "error": (fluency_score if fluency_score is not None else mora_timing_score) < 70,
             "label": "Fluency / Prosody",
+        },
+        "pitch_accent": {
+            "score": pitch_accent_score,
+            "error": pitch_accent_score is not None and pitch_accent_score < 70,
+            "label": "Pitch Accent",
         },
         "phonemes": phonemes or [],
         "morae": morae or [],
@@ -262,14 +273,24 @@ def score_attempt(
     dtw_dist = dtw_distance(student_mfcc, reference_mfcc)
     dtw_score = dtw_to_score(dtw_dist)
 
-    phoneme_assessment = assess_pronunciation(
-        student_audio=student_audio,
-        student_features=student_features,
-        reference_features=reference_features,
-        target_pronunciation=target_pronunciation,
-        pronunciation_rules=pronunciation_rules,
-        overall_acoustic_score=dtw_score,
-    )
+    if _azure_available():
+        from app.services.azure_pronunciation import score_attempt_azure
+        phoneme_assessment = score_attempt_azure(
+            student_audio,
+            reference_audio,
+            target_text=target_text or str(target_pronunciation.get("reading", "")),
+            target_pronunciation=target_pronunciation,
+            pronunciation_rules=pronunciation_rules,
+        )
+    else:
+        phoneme_assessment = assess_pronunciation(
+            student_audio=student_audio,
+            student_features=student_features,
+            reference_features=reference_features,
+            target_pronunciation=target_pronunciation,
+            pronunciation_rules=pronunciation_rules,
+            overall_acoustic_score=dtw_score,
+        )
 
     target_pronunciation = phoneme_assessment["target_pronunciation"]
     phoneme_match_score = float(phoneme_assessment["phoneme_match_score"])
@@ -277,6 +298,8 @@ def score_attempt(
     consonant_score = float(phoneme_assessment["consonant_score"])
     vowel_score = float(phoneme_assessment["vowel_score"])
     fluency_score = float(phoneme_assessment["fluency_score"])
+    pitch_accent_score_raw = phoneme_assessment.get("pitch_accent_score")
+    pitch_accent_score = float(pitch_accent_score_raw) if pitch_accent_score_raw is not None else None
     category_score = (consonant_score + vowel_score) / 2.0
     assessment_confidence = build_assessment_confidence(
         phoneme_match_score=phoneme_match_score,
@@ -290,18 +313,34 @@ def score_attempt(
         max(0.0, 88.0 - float(item["score"])) * 0.08
         for item in phoneme_assessment["feedback"][:2]
     )
-    accuracy_score = round(
-        max(
-            0.0,
-            (
-                (phoneme_match_score * 0.45)
-                + (mora_timing_score * 0.25)
-                + (category_score * 0.20)
-                + (fluency_score * 0.10)
-            ) - issue_penalty
-        ),
-        2,
-    )
+    if pitch_accent_score is not None:
+        # Include pitch accent when available: redistribute weights to make room.
+        accuracy_score = round(
+            max(
+                0.0,
+                (
+                    (phoneme_match_score * 0.40)
+                    + (mora_timing_score  * 0.20)
+                    + (category_score     * 0.15)
+                    + (pitch_accent_score * 0.15)
+                    + (fluency_score      * 0.10)
+                ) - issue_penalty
+            ),
+            2,
+        )
+    else:
+        accuracy_score = round(
+            max(
+                0.0,
+                (
+                    (phoneme_match_score * 0.45)
+                    + (mora_timing_score * 0.25)
+                    + (category_score * 0.20)
+                    + (fluency_score * 0.10)
+                ) - issue_penalty
+            ),
+            2,
+        )
 
     if assessment_confidence["level"] == "low":
         feedback_text = (
@@ -324,6 +363,7 @@ def score_attempt(
         morae=phoneme_assessment["morae"],
         phoneme_match_score=phoneme_match_score,
         fluency_score=fluency_score,
+        pitch_accent_score=pitch_accent_score,
         recognizer=phoneme_assessment["recognizer"],
         assessment_confidence=assessment_confidence,
     )
@@ -356,7 +396,7 @@ def build_assessment_confidence(
     """
     recognizer = recognizer or {}
     reasons: list[str] = []
-    ctc_enabled = bool(recognizer.get("ctc_enabled"))
+    provider = str(recognizer.get("provider", ""))
     fallback_used = bool(recognizer.get("fallback_used"))
     recognizer_confidence = recognizer.get("confidence")
     numeric_scores = [
@@ -367,25 +407,33 @@ def build_assessment_confidence(
         fluency_score,
     ]
     score_spread = max(numeric_scores) - min(numeric_scores)
+    is_azure_confident = (
+        provider == "azure_pronunciation_assessment"
+        and recognizer_confidence is not None
+        and float(recognizer_confidence) >= 0.85
+    )
+    is_dtw_only = provider == "reference_aligned_phoneme_dtw"
 
-    if fallback_used or not ctc_enabled:
-        reasons.append("HF phoneme recognizer fallback was used.")
+    if is_dtw_only:
+        reasons.append("Using acoustic DTW scoring (cloud assessment unavailable).")
+    if fallback_used:
+        reasons.append("A scoring fallback was used.")
     if recognizer.get("warning"):
         reasons.append(str(recognizer["warning"]))
     if recognizer_confidence is not None and float(recognizer_confidence) < 0.55:
         reasons.append("The phoneme recognizer was not confident enough.")
-    if score_spread > 32:
+    spread_threshold = 50 if is_azure_confident else 32
+    if score_spread > spread_threshold:
         reasons.append("Pronunciation signals disagreed, so the diagnosis is less certain.")
     if fluency_score < 55:
         reasons.append("The recording timing or speech density was unclear.")
-
-    if fallback_used or not ctc_enabled or len(reasons) >= 2:
+    if fallback_used or len(reasons) >= 2:
         level = "low"
         label = "Low confidence"
         guidance = (
             "Try again with clearer audio before relying on detailed corrections."
         )
-    elif reasons or (recognizer_confidence is not None and float(recognizer_confidence) < 0.75):
+    elif reasons or (not is_azure_confident and recognizer_confidence is not None and float(recognizer_confidence) < 0.75):
         level = "medium"
         label = "Medium confidence"
         guidance = "Use this as practice feedback and compare with the reference audio."

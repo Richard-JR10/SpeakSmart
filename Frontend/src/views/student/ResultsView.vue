@@ -26,6 +26,7 @@
       </Card>
 
       <template v-else>
+        <!-- Header card: score + phrase + feedback -->
         <Card class="border-border/80 bg-card/95">
           <CardHeader class="gap-4">
             <div class="flex flex-wrap items-center gap-2">
@@ -68,7 +69,10 @@
 
               <div class="flex justify-start lg:justify-end">
                 <div class="grid w-full lg:max-w-55 gap-3 rounded-3xl border border-border/70 bg-muted/35 p-4 text-center">
-                  <div class="mx-auto flex size-28 items-center justify-center rounded-full border-8 border-primary/15 bg-background shadow-sm">
+                  <div
+                    class="mx-auto flex size-28 items-center justify-center rounded-full border-8 bg-background shadow-sm"
+                    :class="scoreRingClass"
+                  >
                     <div class="flex flex-col items-center gap-1">
                       <span class="font-(--font-display) text-4xl leading-none text-(--color-heading)">
                         {{ accuracyScoreText }}
@@ -101,6 +105,32 @@
               </div>
             </div>
           </CardHeader>
+
+          <!-- Phrase at-a-glance: colored mora chips -->
+          <CardContent
+            v-if="attempt.verification_status === 'accepted' && scoredMorae.length"
+            class="pt-0"
+          >
+            <div class="rounded-3xl border border-border/70 bg-muted/25 p-4">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Phrase overview
+              </p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <div
+                  v-for="mora in scoredMorae"
+                  :key="mora.index"
+                  class="flex flex-col items-center gap-1 rounded-2xl border px-3 py-2 transition-colors"
+                  :class="moraChipClass(mora.score)"
+                >
+                  <span class="text-2xl font-semibold leading-none">{{ mora.kana }}</span>
+                  <span class="text-xs font-medium text-muted-foreground">{{ mora.romaji }}</span>
+                  <span class="text-[11px] font-bold" :class="moraScoreTextClass(mora.score)">
+                    {{ mora.score.toFixed(0) }}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
 
           <CardContent class="grid gap-3 sm:grid-cols-3">
             <div class="rounded-2xl border border-border/70 bg-muted/35 p-4">
@@ -151,6 +181,7 @@
         </Card>
 
         <div class="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+          <!-- How to Say It -->
           <Card class="border-border/80 bg-card/95">
             <CardHeader class="gap-3">
               <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
@@ -160,7 +191,7 @@
                 Correct Pronunciation Target
               </CardTitle>
               <CardDescription>
-                Use this kana and romaji guide as the model for your next try. Highlighted chunks are the ones that need the most attention.
+                Use this kana and romaji guide as the model for your next try. Red mora need the most attention.
               </CardDescription>
             </CardHeader>
 
@@ -200,18 +231,27 @@
                     v-for="(mora, index) in pronunciationMorae"
                     :key="`${mora.kana}-${index}`"
                     class="rounded-2xl border p-3 transition-colors"
-                    :class="highlightedMoraIndexes.has(mora.index) ? 'border-destructive/40 bg-destructive/5' : 'border-border/70 bg-muted/25'"
+                    :class="scoredMoraBorderClass(mora.index)"
                   >
                     <div class="flex items-center justify-between gap-2">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         Mora {{ index + 1 }}
                       </p>
-                      <Badge
-                        :variant="highlightedMoraIndexes.has(mora.index) ? 'destructive' : 'outline'"
-                        class="rounded-full px-2 py-0.5"
-                      >
-                        {{ highlightedMoraIndexes.has(mora.index) ? 'Focus' : 'Stable' }}
-                      </Badge>
+                      <div class="flex items-center gap-1.5">
+                        <span
+                          v-if="getMoraScore(mora.index) !== null"
+                          class="text-[11px] font-bold"
+                          :class="moraScoreTextClass(getMoraScore(mora.index)!)"
+                        >
+                          {{ getMoraScore(mora.index)!.toFixed(0) }}%
+                        </span>
+                        <Badge
+                          :variant="highlightedMoraIndexes.has(mora.index) ? 'destructive' : 'outline'"
+                          class="rounded-full px-2 py-0.5"
+                        >
+                          {{ highlightedMoraIndexes.has(mora.index) ? 'Fix This' : 'Stable' }}
+                        </Badge>
+                      </div>
                     </div>
                     <p class="mt-3 text-2xl font-semibold leading-none text-(--color-heading)">
                       {{ mora.kana }}
@@ -225,6 +265,7 @@
             </CardContent>
           </Card>
 
+          <!-- What to Fix coaching -->
           <Card class="border-border/80 bg-card/95">
             <CardHeader class="gap-3">
               <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
@@ -308,18 +349,19 @@
                 <div
                   v-for="item in topPronunciationIssues"
                   :key="`${item.mora_index ?? item.chunk_index}-${item.phoneme_index ?? item.issue_type}-${item.issue_type}`"
-                  class="rounded-3xl border border-border/70 bg-muted/25 p-4"
+                  class="rounded-3xl border border-destructive/30 bg-destructive/5 p-4"
                 >
+                  <!-- Issue header -->
                   <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         Sound to improve
                       </p>
-                      <p class="mt-2 text-xl font-semibold leading-none text-(--color-heading)">
+                      <p class="mt-2 text-3xl font-semibold leading-none text-(--color-heading)">
                         {{ item.sound_to_improve ?? item.kana }}
                       </p>
                       <p class="mt-1 text-sm font-medium text-primary">
-                        Try: {{ item.try_slowly ?? item.romaji }}
+                        {{ item.romaji }}
                       </p>
                     </div>
 
@@ -327,47 +369,49 @@
                       <Badge :variant="issueBadgeVariant(item.severity)" class="rounded-full px-2.5 py-1">
                         {{ issueSeverityLabel(item.severity) }}
                       </Badge>
-                      <Badge variant="outline" class="rounded-full px-2.5 py-1">
+                      <Badge variant="destructive" class="rounded-full px-2.5 py-1">
                         {{ item.score.toFixed(0) }}%
                       </Badge>
                     </div>
                   </div>
 
+                  <!-- Expected vs heard -->
                   <div
                     v-if="item.expected_phoneme || item.heard_phoneme"
-                    class="mt-4 grid gap-3 sm:grid-cols-2"
+                    class="mt-4 grid gap-2 sm:grid-cols-2"
                   >
                     <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Expected sound
+                        Target sound
                       </p>
                       <p class="mt-2 text-lg font-semibold text-(--color-heading)">
                         {{ item.expected_phoneme ?? 'target' }}
                       </p>
-                      <p class="mt-1 text-sm text-muted-foreground">
+                      <p class="mt-1 text-xs text-muted-foreground">
                         {{ item.expected_label ?? 'Target sound' }}
                       </p>
                     </div>
 
-                    <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
+                    <div class="rounded-2xl border border-destructive/30 bg-destructive/5 p-3">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Heard sound
+                        What we heard
                       </p>
                       <p class="mt-2 text-lg font-semibold text-(--color-heading)">
                         {{ item.heard_phoneme ?? 'unclear' }}
                       </p>
-                      <p class="mt-1 text-sm text-muted-foreground">
+                      <p class="mt-1 text-xs text-muted-foreground">
                         {{ item.heard_label ?? 'Unclear sound' }}
                       </p>
                     </div>
                   </div>
 
-                  <div class="mt-4 grid gap-3">
+                  <!-- What happened + how to fix -->
+                  <div class="mt-3 grid gap-2">
                     <div class="rounded-2xl border border-border/70 bg-background/80 p-3">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         What happened
                       </p>
-                      <p class="mt-2 text-sm leading-7 text-foreground/85">
+                      <p class="mt-1.5 text-sm leading-6 text-foreground/85">
                         {{ item.what_happened ?? item.heard_note }}
                       </p>
                     </div>
@@ -376,7 +420,7 @@
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         How to fix it
                       </p>
-                      <p class="mt-2 text-sm leading-7 text-foreground/85">
+                      <p class="mt-1.5 text-sm leading-6 text-foreground/85">
                         {{ item.how_to_fix ?? item.fix_tip }}
                       </p>
                     </div>
@@ -385,7 +429,7 @@
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                         Try slowly
                       </p>
-                      <p class="mt-2 text-sm leading-7 text-foreground/85">
+                      <p class="mt-1.5 text-sm font-semibold text-foreground">
                         {{ item.try_slowly ?? item.romaji }}
                       </p>
                     </div>
@@ -405,6 +449,7 @@
         </div>
 
         <div class="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+          <!-- Acoustic Breakdown -->
           <Card class="border-border/80 bg-card/95">
             <CardHeader class="gap-3">
               <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
@@ -453,21 +498,22 @@
             </CardContent>
           </Card>
 
+          <!-- Sound Analysis — errors + correct sounds -->
           <Card class="border-border/80 bg-card/95">
             <CardHeader class="gap-3">
               <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                 Sound Analysis
               </Badge>
               <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                Breakdown By Sound
+                Sound-by-Sound
               </CardTitle>
               <CardDescription>
-                Expected and heard sounds come from the aligned Japanese phoneme and mora assessment.
+                Every phoneme scored. Errors are shown first with coaching tips; stable sounds are shown below.
               </CardDescription>
             </CardHeader>
 
             <CardContent>
-              <Alert v-if="!detailedPhonemeItems.length && !phonemeItems.length">
+              <Alert v-if="!detailedPhonemeItems.length">
                 <CircleAlert aria-hidden="true" />
                 <AlertTitle>No detailed phoneme data</AlertTitle>
                 <AlertDescription>
@@ -475,44 +521,44 @@
                 </AlertDescription>
               </Alert>
 
-              <div v-else class="grid gap-3">
+              <div v-else class="grid gap-4">
                 <Alert v-if="recognizerWarning">
                   <CircleAlert aria-hidden="true" />
                   <AlertTitle>Phoneme recognizer fallback</AlertTitle>
-                  <AlertDescription>
-                    {{ recognizerWarning }}
-                  </AlertDescription>
+                  <AlertDescription>{{ recognizerWarning }}</AlertDescription>
                 </Alert>
 
-                <div
-                  v-for="item in detailedPhonemeItems"
-                  :key="item.key"
-                  class="rounded-2xl border bg-muted/25 p-4"
-                  :class="item.error ? 'border-destructive/30' : 'border-border/70'"
-                >
-                  <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="min-w-0">
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Sound {{ item.index + 1 }} / {{ item.kana }} / {{ item.romaji }}
-                      </p>
-                      <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" class="rounded-full px-2.5 py-1">
-                          Expected {{ item.expectedSound }}
-                        </Badge>
-                        <Badge :variant="item.error ? 'destructive' : 'secondary'" class="rounded-full px-2.5 py-1">
-                          Heard {{ item.heardSound }}
-                        </Badge>
+                <!-- Error phonemes: detailed cards -->
+                <div v-if="errorPhonemeItems.length" class="grid gap-2">
+                  <p class="text-xs font-semibold uppercase tracking-[0.16em] text-destructive">
+                    Needs attention ({{ errorPhonemeItems.length }})
+                  </p>
+                  <div
+                    v-for="item in errorPhonemeItems"
+                    :key="item.key"
+                    class="rounded-2xl border border-destructive/30 bg-destructive/5 p-4"
+                  >
+                    <div class="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {{ item.kana }} / {{ item.romaji }}
+                        </p>
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" class="rounded-full px-2.5 py-1 text-xs">
+                            Expected: {{ item.expectedSound }}
+                          </Badge>
+                          <Badge variant="destructive" class="rounded-full px-2.5 py-1 text-xs">
+                            Heard: {{ item.heardSound }}
+                          </Badge>
+                        </div>
                       </div>
+                      <Badge variant="destructive" class="rounded-full px-2.5 py-1 shrink-0">
+                        {{ item.score.toFixed(0) }}%
+                      </Badge>
                     </div>
 
-                    <Badge :variant="scoreVariant(item.score)" class="rounded-full px-2.5 py-1">
-                      {{ item.score.toFixed(0) }}%
-                    </Badge>
-                  </div>
-
-                  <div class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                    <div>
-                      <p class="font-semibold text-(--color-heading)">
+                    <div class="mt-3">
+                      <p class="text-sm font-semibold text-(--color-heading)">
                         {{ item.issueLabel }}
                       </p>
                       <p class="mt-1 text-sm leading-6 text-muted-foreground">
@@ -520,49 +566,31 @@
                       </p>
                     </div>
 
-                    <Badge variant="outline" class="w-fit rounded-full px-2.5 py-1">
-                      {{ item.operationLabel }}
-                    </Badge>
+                    <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-border/70">
+                      <div
+                        class="h-full rounded-full bg-destructive transition-[width] duration-300 ease-out"
+                        :style="{ width: `${item.score}%` }"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div
-                  v-for="item in phonemeItems"
-                  :key="item.key"
-                  class="rounded-2xl border bg-muted/25 p-4"
-                  :class="item.error ? 'border-destructive/30' : 'border-border/70'"
-                >
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="flex min-w-0 items-center gap-2">
-                      <component :is="item.icon" aria-hidden="true" class="shrink-0 text-primary" />
-                      <div class="min-w-0">
-                        <p class="font-semibold text-(--color-heading)">
-                          {{ item.label }}
-                        </p>
-                        <p class="text-sm leading-6 text-muted-foreground">
-                          {{ item.description }}
-                        </p>
-                      </div>
-                    </div>
-
-                    <Badge
-                      :variant="item.error ? 'destructive' : 'secondary'"
-                      class="rounded-full px-2.5 py-1"
+                <!-- Correct phonemes: compact chip grid -->
+                <div v-if="correctPhonemeItems.length" class="grid gap-2">
+                  <p class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Stable sounds ({{ correctPhonemeItems.length }})
+                  </p>
+                  <div class="flex flex-wrap gap-2">
+                    <div
+                      v-for="item in correctPhonemeItems"
+                      :key="item.key"
+                      class="flex items-center gap-2 rounded-full border border-border/70 bg-muted/25 px-3 py-1.5"
                     >
-                      {{ item.error ? 'Needs Work' : 'Stable' }}
-                    </Badge>
-                  </div>
-
-                  <div class="mt-4 flex items-center justify-between gap-3">
-                    <p class="text-sm font-semibold text-(--color-heading)">
-                      {{ item.score.toFixed(0) }}%
-                    </p>
-                    <div class="h-2 w-28 overflow-hidden rounded-full bg-border/70">
-                      <div
-                        class="h-full rounded-full transition-[width] duration-300 ease-out"
-                        :class="scoreBarClass(item.score)"
-                        :style="{ width: `${item.score}%` }"
-                      />
+                      <span class="text-sm font-semibold text-(--color-heading)">{{ item.kana }}</span>
+                      <span class="text-xs text-muted-foreground">{{ item.expectedSound }}</span>
+                      <Badge variant="secondary" class="rounded-full px-2 py-0 text-[11px]">
+                        {{ item.score.toFixed(0) }}%
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -571,6 +599,7 @@
           </Card>
         </div>
 
+        <!-- Audio playback -->
         <div class="grid gap-4 lg:grid-cols-2">
           <Card
             v-if="submittedAudioUrl"
@@ -683,6 +712,7 @@
           </Card>
         </div>
 
+        <!-- Actions -->
         <div class="grid gap-3 md:grid-cols-2">
           <Button variant="outline" size="lg" class="w-full" @click="tryAgain">
             <RotateCcw aria-hidden="true" data-icon="inline-start" />
@@ -714,6 +744,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Activity,
+  ArrowUpDown,
   AudioLines,
   BookOpen,
   CircleAlert,
@@ -750,15 +781,6 @@ type BreakdownItem = {
   icon: Component
 }
 
-type PhonemeItem = {
-  key: string
-  label: string
-  score: number
-  error: boolean
-  description: string
-  icon: Component
-}
-
 type DetailedPhonemeItem = DetailedPhonemeError & {
   key: string
   expectedSound: string
@@ -766,6 +788,14 @@ type DetailedPhonemeItem = DetailedPhonemeError & {
   issueLabel: string
   operationLabel: string
   fixTip: string
+}
+
+type ScoredMora = {
+  index: number
+  kana: string
+  romaji: string
+  score: number
+  error: boolean
 }
 
 const route = useRoute()
@@ -885,6 +915,29 @@ const pronunciationMorae = computed(() => {
   }))
 })
 
+// Scored morae from phoneme_error_map (has actual scores)
+const moraScoreMap = computed<Map<number, { score: number; error: boolean }>>(() => {
+  const map = new Map<number, { score: number; error: boolean }>()
+  for (const mora of (attempt.value?.phoneme_error_map?.morae ?? [])) {
+    map.set(mora.index, { score: mora.score, error: mora.error })
+  }
+  return map
+})
+
+const scoredMorae = computed<ScoredMora[]>(() => {
+  return pronunciationMorae.value
+    .map((mora) => {
+      const scored = moraScoreMap.value.get(mora.index)
+      return {
+        index: mora.index,
+        kana: mora.kana,
+        romaji: mora.romaji,
+        score: scored?.score ?? 100,
+        error: scored?.error ?? false,
+      }
+    })
+})
+
 const targetPracticeText = computed(() => {
   const moraText = pronunciationMorae.value
     .map((item) => item.kana)
@@ -921,6 +974,9 @@ const detailedPhonemeItems = computed<DetailedPhonemeItem[]>(() => {
       fixTip: phonemeFixTip(item),
     }))
 })
+
+const errorPhonemeItems = computed(() => detailedPhonemeItems.value.filter((item) => item.error))
+const correctPhonemeItems = computed(() => detailedPhonemeItems.value.filter((item) => !item.error))
 
 const recognizerWarning = computed(() =>
   attempt.value?.phoneme_error_map?.recognizer?.warning ?? '',
@@ -1068,6 +1124,13 @@ const confidenceBadgeVariant = computed(() => {
   return 'secondary'
 })
 
+const scoreRingClass = computed(() => {
+  const score = attempt.value?.accuracy_score ?? 0
+  if (score >= 85) return 'border-green-500/40'
+  if (score >= 60) return 'border-yellow-500/40'
+  return 'border-destructive/40'
+})
+
 const breakdownItems = computed<BreakdownItem[]>(() => {
   if (!attempt.value) return []
 
@@ -1090,73 +1153,27 @@ const breakdownItems = computed<BreakdownItem[]>(() => {
       description: 'How stable and accurate the vowel shapes sounded.',
       icon: Volume2,
     },
-  ]
-})
-
-const phonemeItems = computed<PhonemeItem[]>(() => {
-  const map = attempt.value?.phoneme_error_map
-  if (!map) return []
-
-  const items: PhonemeItem[] = []
-
-  if (map.phoneme_match) {
-    items.push({
-      key: 'phoneme_match',
-      label: map.phoneme_match.label,
-      score: map.phoneme_match.score,
-      error: map.phoneme_match.error,
+    {
+      label: 'Phoneme Match',
+      score: attempt.value.phoneme_error_map?.phoneme_match?.score ?? attempt.value.accuracy_score,
       description: 'How closely expected Japanese phonemes matched the aligned audio.',
       icon: Mic,
-    })
-  }
-
-  items.push(
+    },
     {
-      key: 'overall_acoustic',
-      label: map.overall_acoustic.label,
-      score: map.overall_acoustic.score,
-      error: map.overall_acoustic.error,
-      description: 'Overall speech signal and pronunciation stability.',
+      label: 'Fluency / Prosody',
+      score: attempt.value.phoneme_error_map?.fluency?.score ?? attempt.value.mora_timing_score,
+      description: 'Pause density, speaking rate, and prosody stability.',
       icon: Activity,
     },
-    {
-      key: 'mora_timing',
-      label: map.mora_timing.label,
-      score: map.mora_timing.score,
-      error: map.mora_timing.error,
-      description: 'Timing control across the phrase rhythm.',
-      icon: Clock3,
-    },
-    {
-      key: 'consonants',
-      label: map.consonants.label,
-      score: map.consonants.score,
-      error: map.consonants.error,
-      description: 'Consonant clarity and articulation consistency.',
-      icon: TrendingUp,
-    },
-    {
-      key: 'vowels',
-      label: map.vowels.label,
-      score: map.vowels.score,
-      error: map.vowels.error,
-      description: 'Vowel shape accuracy and stability.',
-      icon: Volume2,
-    },
-  )
-
-  if (map.fluency) {
-    items.push({
-      key: 'fluency',
-      label: map.fluency.label,
-      score: map.fluency.score,
-      error: map.fluency.error,
-      description: 'Pause density, speaking rate, and prosody stability.',
-      icon: AudioLines,
-    })
-  }
-
-  return items
+    ...(attempt.value.phoneme_error_map?.pitch_accent?.score != null
+      ? [{
+          label: 'Pitch Accent',
+          score: attempt.value.phoneme_error_map.pitch_accent.score as number,
+          description: 'How closely the H/L pitch pattern matched native Japanese intonation.',
+          icon: ArrowUpDown,
+        }]
+      : []),
+  ]
 })
 
 const nextActionLabel = computed(() =>
@@ -1170,6 +1187,29 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   stopReferenceAudio()
 })
+
+function getMoraScore(moraIndex: number): number | null {
+  const entry = moraScoreMap.value.get(moraIndex)
+  return entry ? entry.score : null
+}
+
+function moraChipClass(score: number): string {
+  if (score >= 80) return 'border-green-500/30 bg-green-500/5'
+  if (score >= 60) return 'border-yellow-500/30 bg-yellow-500/5'
+  return 'border-destructive/40 bg-destructive/5'
+}
+
+function moraScoreTextClass(score: number): string {
+  if (score >= 80) return 'text-green-600 dark:text-green-400'
+  if (score >= 60) return 'text-yellow-600 dark:text-yellow-400'
+  return 'text-destructive'
+}
+
+function scoredMoraBorderClass(moraIndex: number): string {
+  const entry = moraScoreMap.value.get(moraIndex)
+  if (!entry) return 'border-border/70 bg-muted/25'
+  return moraChipClass(entry.score)
+}
 
 function scoreVariant(score: number): 'default' | 'secondary' | 'outline' | 'destructive' {
   if (score >= 90) return 'default'

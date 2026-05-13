@@ -1,4 +1,5 @@
 # app/api/v1/endpoints/attempts.py
+import asyncio
 import logging
 import uuid
 from fastapi import APIRouter, Depends, UploadFile, File, Form
@@ -74,7 +75,7 @@ async def submit_attempt(
     # 3. Download reference audio from R2 into memory
     try:
         ref_object_key = get_object_key_from_url(phrase.reference_audio_url)
-        reference_audio = download_audio(ref_object_key)
+        reference_audio = await asyncio.to_thread(download_audio, ref_object_key)
     except RuntimeError as e:
         raise BadRequestException(f"Could not fetch reference audio: {e}")
 
@@ -90,7 +91,8 @@ async def submit_attempt(
     ]
 
     try:
-        verification = verify_phrase_audio(
+        verification = await asyncio.to_thread(
+            verify_phrase_audio,
             audio_bytes=audio_bytes,
             target_phrase_id=phrase.phrase_id,
             target_text=phrase.japanese_text,
@@ -116,7 +118,8 @@ async def submit_attempt(
     # 4. Run scoring pipeline for accepted phrases only
     try:
         if verification.status == VERIFICATION_ACCEPTED:
-            scores = score_attempt(
+            scores = await asyncio.to_thread(
+                score_attempt,
                 audio_bytes,
                 reference_audio,
                 target_text=phrase.japanese_text,
@@ -153,7 +156,7 @@ async def submit_attempt(
     student_object_key = f"student-audio/{current_user.uid}/{attempt_id}.wav"
 
     try:
-        audio_url = upload_audio(audio_bytes, student_object_key)
+        audio_url = await asyncio.to_thread(upload_audio, audio_bytes, student_object_key)
     except RuntimeError as e:
         raise BadRequestException(f"Audio upload failed: {e}")
 

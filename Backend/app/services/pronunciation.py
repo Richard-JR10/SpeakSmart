@@ -297,7 +297,7 @@ def _build_rule_for_chunk(
             issue_type="particle_pronunciation",
             expected_note=f"This chunk is written as {chunk.kana} but spoken as {spoken}.",
             fix_tip=f"Say {spoken} here instead of the literal written sound.",
-            threshold=88.0,
+            threshold=82.0,
         )
 
     if chunk.kana == "っ":

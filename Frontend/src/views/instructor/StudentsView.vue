@@ -54,7 +54,7 @@
                     align="end"
                     :side-offset="8"
                     :collision-padding="12"
-                    class="z-50 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-rose-200 bg-popover p-3 text-popover-foreground shadow-lg shadow-rose-950/10 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                    class="z-50 flex max-h-[calc(100svh-6rem)] w-76 flex-col overflow-y-auto rounded-2xl border border-rose-200 bg-popover p-2.5 text-popover-foreground shadow-lg shadow-rose-950/10 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
                   >
                     <div class="flex items-center justify-between gap-3">
                       <div>
@@ -72,52 +72,98 @@
                       </Button>
                     </div>
 
-                    <Separator class="my-3" />
+                    <Separator class="my-2" />
 
-                    <div class="flex flex-col gap-4">
-                      <div>
-                        <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Status
-                        </p>
-                        <div class="grid gap-1.5">
-                          <button
-                            v-for="option in statusFilterOptions"
-                            :key="option.value"
-                            type="button"
-                            class="flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            :class="studentStatusFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading)'"
-                            @click="studentStatusFilter = option.value"
-                          >
-                            <span>{{ option.label }}</span>
-                            <span class="flex items-center gap-2">
+                    <div class="flex flex-col gap-2">
+                      <!-- Status + Activity side by side -->
+                      <div class="grid grid-cols-2 gap-1.5">
+                        <div>
+                          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            Status
+                          </p>
+                          <div class="grid gap-0.5">
+                            <button
+                              v-for="option in statusFilterOptions"
+                              :key="option.value"
+                              type="button"
+                              data-slot="filter-option"
+                              class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                              :class="studentStatusFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
+                              @click="studentStatusFilter = option.value"
+                            >
+                              <span class="flex min-w-0 items-center gap-1.5">
+                                <span
+                                  class="size-1.5 shrink-0 rounded-full"
+                                  :class="studentStatusFilter === option.value ? 'bg-primary-foreground/70' : option.value === 'needs-review' ? 'bg-red-500' : option.value === 'on-track' ? 'bg-emerald-500' : 'bg-muted-foreground/40'"
+                                />
+                                <span class="truncate">{{ option.label }}</span>
+                              </span>
                               <span
-                                class="rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums"
+                                class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums"
                                 :class="studentStatusFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
                               >
                                 {{ option.count }}
                               </span>
-                              <Check v-if="studentStatusFilter === option.value" class="size-4" />
-                            </span>
-                          </button>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            Activity
+                          </p>
+                          <div class="grid gap-0.5">
+                            <button
+                              v-for="option in activityFilterOptions"
+                              :key="option.value"
+                              type="button"
+                              data-slot="filter-option"
+                              class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                              :class="activityFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
+                              @click="activityFilter = option.value"
+                            >
+                              <span class="flex min-w-0 items-center gap-1.5">
+                                <span
+                                  class="size-1.5 shrink-0 rounded-full"
+                                  :class="activityFilter === option.value ? 'bg-primary-foreground/70' : option.value === 'active' ? 'bg-sky-500' : option.value === 'no-attempts' ? 'bg-rose-400' : 'bg-muted-foreground/40'"
+                                />
+                                <span class="truncate">{{ option.label }}</span>
+                              </span>
+                              <span
+                                class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums"
+                                :class="activityFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
+                              >
+                                {{ option.count }}
+                              </span>
+                            </button>
+                          </div>
                         </div>
                       </div>
 
+                      <!-- Score in 2-col grid -->
                       <div>
-                        <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Score
                         </p>
-                        <div class="grid grid-cols-2 gap-1.5">
+                        <div class="grid grid-cols-2 gap-0.5">
                           <button
                             v-for="option in scoreFilterOptions"
                             :key="option.value"
                             type="button"
-                            class="flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            :class="scoreBandFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading)'"
+                            data-slot="filter-option"
+                            class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            :class="scoreBandFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
                             @click="scoreBandFilter = option.value"
                           >
-                            <span>{{ option.label }}</span>
+                            <span class="flex min-w-0 items-center gap-1.5">
+                              <span
+                                class="size-1.5 shrink-0 rounded-full"
+                                :class="scoreBandDotClass(option.value, scoreBandFilter === option.value)"
+                              />
+                              <span class="truncate">{{ option.label }}</span>
+                            </span>
                             <span
-                              class="rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums"
+                              class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums"
                               :class="scoreBandFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
                             >
                               {{ option.count }}
@@ -126,45 +172,23 @@
                         </div>
                       </div>
 
+                      <!-- Sort in 2-col grid -->
                       <div>
-                        <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Activity
-                        </p>
-                        <div class="grid gap-1.5">
-                          <button
-                            v-for="option in activityFilterOptions"
-                            :key="option.value"
-                            type="button"
-                            class="flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            :class="activityFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading)'"
-                            @click="activityFilter = option.value"
-                          >
-                            <span>{{ option.label }}</span>
-                            <span
-                              class="rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums"
-                              :class="activityFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
-                            >
-                              {{ option.count }}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Sort
                         </p>
-                        <div class="grid gap-1.5">
+                        <div class="grid grid-cols-2 gap-0.5">
                           <button
                             v-for="option in sortOptions"
                             :key="option.value"
                             type="button"
-                            class="flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            :class="studentSort === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading)'"
+                            data-slot="filter-option"
+                            class="flex items-center justify-between gap-1 rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            :class="studentSort === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
                             @click="studentSort = option.value"
                           >
-                            <span>{{ option.label }}</span>
-                            <Check v-if="studentSort === option.value" class="size-4" />
+                            <span class="truncate">{{ option.label }}</span>
+                            <Check v-if="studentSort === option.value" class="size-3 shrink-0" />
                           </button>
                         </div>
                       </div>
@@ -732,6 +756,15 @@ const phonemeRows = computed(() => {
     { label: 'Vowel purity', value: drilldown.value.phoneme_breakdown.vowel_avg },
   ]
 })
+
+function scoreBandDotClass(band: ScoreBandFilter, active: boolean): string {
+  if (active) return 'bg-primary-foreground/70'
+  if (band === 'high') return 'bg-emerald-500'
+  if (band === 'steady') return 'bg-sky-500'
+  if (band === 'watch') return 'bg-amber-500'
+  if (band === 'at-risk') return 'bg-red-500'
+  return 'bg-muted-foreground/40'
+}
 
 function scoreBand(student: StudentStat): Exclude<ScoreBandFilter, 'all'> {
   if (student.overall_average >= 85) return 'high'

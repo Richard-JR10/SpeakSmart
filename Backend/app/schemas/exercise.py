@@ -1,14 +1,14 @@
 # app/schemas/exercise.py
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 
 class ExerciseCreateRequest(BaseModel):
-    exercise_id: str
-    class_id: str
-    title: str
-    phrase_ids: list[str]
-    student_uids: list[str]
+    exercise_id:  str = Field(min_length=1, max_length=128)
+    class_id:     str = Field(min_length=1, max_length=128)
+    title:        str = Field(min_length=1, max_length=255)
+    phrase_ids:   list[str] = Field(min_length=1, max_length=50)
+    student_uids: list[str] = Field(max_length=500)
     due_date: datetime | None = None
 
 

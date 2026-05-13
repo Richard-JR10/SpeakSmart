@@ -31,8 +31,9 @@ export const useAttemptsStore = defineStore('attempts', () => {
         URL.revokeObjectURL(lastSubmittedAudioUrl.value)
         lastSubmittedAudioUrl.value = null
       }
-      error.value =
-        e.response?.data?.detail ?? 'Submission failed. Please try again.'
+      error.value = e?.rateLimited
+        ? (e.rateLimitMessage ?? 'Too many submissions. Please wait before trying again.')
+        : (e.response?.data?.detail ?? 'Submission failed. Please try again.')
       throw e
     } finally {
       submitting.value = false

@@ -2,7 +2,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -45,6 +45,7 @@ from app.services.verification import (
     verify_phrase_audio,
 )
 from app.config import settings
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
 logger = logging.getLogger("speaksmart.exercises")
@@ -301,7 +302,9 @@ async def get_student_assignments(
 
 
 @router.post("/{exercise_id}/submissions", response_model=AssignmentSubmissionResponse, status_code=201)
+@limiter.limit(settings.RATE_LIMIT_EXERCISE_SUBMISSION)
 async def submit_assignment_phrase(
+    request: Request,
     exercise_id: str,
     phrase_id: str = Form(...),
     audio_file: UploadFile = File(...),
@@ -542,6 +545,15 @@ async def review_assignment_submission(
     db.add(submission)
     await db.commit()
     await db.refresh(submission)
+
+    logger.info(
+        "audit grade_change instructor=%s submission=%s student=%s score=%.2f released=%s",
+        current_user.uid,
+        submission_id,
+        submission.student_uid,
+        body.teacher_accuracy_score,
+        body.release_to_student,
+    )
 
     student_result = await db.execute(select(User.display_name).where(User.uid == submission.student_uid))
     student_display_name = student_result.scalar_one_or_none() or submission.student_uid

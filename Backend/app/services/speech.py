@@ -4,6 +4,30 @@ import librosa
 import numpy as np
 
 
+# Magic-byte signatures for accepted audio container formats
+_AUDIO_MAGIC: list[tuple[bytes, str]] = [
+    (b"RIFF",             "wav"),
+    (b"OggS",             "ogg"),
+    (b"\x1a\x45\xdf\xa3", "webm"),
+    (b"\xff\xfb",         "mp3"),
+    (b"\xff\xf3",         "mp3"),
+    (b"\xff\xf2",         "mp3"),
+    (b"ID3",              "mp3"),
+]
+
+
+def _is_valid_audio_mime(data: bytes) -> bool:
+    if len(data) < 12:
+        return False
+    for magic, _ in _AUDIO_MAGIC:
+        if data.startswith(magic):
+            return True
+    # MP4 / M4A: 'ftyp' box starts at byte offset 4
+    if data[4:8] == b"ftyp":
+        return True
+    return False
+
+
 def load_audio_from_bytes(audio_bytes, sr: int = 16000) -> tuple[np.ndarray, int]:
     """
     Loads raw audio bytes into a numpy array.
@@ -106,6 +130,11 @@ def validate_audio(audio_bytes: bytes, max_size_mb: int = 10) -> None:
 
     if len(audio_bytes) < 1000:
         raise ValueError("Audio file is too short or empty.")
+
+    if not _is_valid_audio_mime(audio_bytes):
+        raise ValueError(
+            "Unsupported audio format. Please upload a WAV, WebM, OGG, or MP4 file."
+        )
 
     try:
         y, sr = load_audio_from_bytes(audio_bytes)

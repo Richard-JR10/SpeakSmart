@@ -1,12 +1,14 @@
 from collections.abc import Mapping
 from datetime import datetime, timezone, timedelta
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.dependencies import get_current_claims, get_current_user, get_db
 from app.core.exceptions import NotFoundException
+from app.core.limiter import ip_limiter
 from app.db.models.user import User
 from app.schemas.user import UserRegisterRequest, UserResponse
 
@@ -14,7 +16,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserResponse)
+@ip_limiter.limit(settings.RATE_LIMIT_AUTH_REGISTER)
 async def register_user(
+    request: Request,
     body: UserRegisterRequest,
     claims: Mapping[str, object] = Depends(get_current_claims),
     db: AsyncSession = Depends(get_db),

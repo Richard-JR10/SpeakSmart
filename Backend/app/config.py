@@ -65,6 +65,20 @@ class Settings(BaseSettings):
         "http://127.0.0.1:4173",
     ]
 
+    # Redis — optional; in-memory storage used when unset (fine for single-worker dev/prod)
+    REDIS_URL: str | None = None
+
+    # Rate limits expressed as slowapi "count/period" strings; override in .env without code changes
+    RATE_LIMIT_AUDIO_SUBMISSION:  str = "60/hour"   # Tier 1 — practice attempts (Whisper + Azure pipeline)
+    RATE_LIMIT_EXERCISE_SUBMISSION: str = "30/hour" # Tier 1 — graded assignment submissions
+    RATE_LIMIT_AUTH_REGISTER:     str = "5/hour"    # Tier 2 — IP-keyed account creation
+    RATE_LIMIT_CLASS_JOIN:        str = "20/hour"   # Tier 2 — join code attempts
+    RATE_LIMIT_JOIN_CODE_REGEN:   str = "10/hour"   # Tier 2 — join code regeneration
+    RATE_LIMIT_ANALYTICS:         str = "60/minute" # Tier 3 — instructor analytics queries
+    RATE_LIMIT_PROGRESS:          str = "60/minute" # Tier 3 — student progress reads
+    RATE_LIMIT_ATTEMPTS_READ:     str = "60/minute" # Tier 3 — attempt history reads
+    RATE_LIMIT_PUBLIC:            str = "30/minute" # Tier 4 — IP-keyed health/root endpoints
+
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> object:

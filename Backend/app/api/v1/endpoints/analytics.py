@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,13 +24,21 @@ from app.schemas.analytics import (
     WeeklyClassAccuracy,
 )
 
+from app.config import settings
+from app.core.limiter import limiter
+
+import logging
+
 router = APIRouter(prefix="/analytics", tags=["analytics"])
+logger = logging.getLogger("speaksmart.analytics")
 
 DEFAULT_FLAG_THRESHOLD = 60.0
 
 
 @router.get("/class/{class_id}", response_model=ClassOverview)
+@limiter.limit(settings.RATE_LIMIT_ANALYTICS)
 async def get_class_overview(
+    request: Request,
     class_id: str,
     flag_threshold: float = Query(default=DEFAULT_FLAG_THRESHOLD),
     current_user: User = Depends(require_instructor),
@@ -79,7 +87,9 @@ async def get_class_overview(
 
 
 @router.get("/students/{class_id}", response_model=list[StudentStat])
+@limiter.limit(settings.RATE_LIMIT_ANALYTICS)
 async def get_all_students(
+    request: Request,
     class_id: str,
     flag_threshold: float = Query(default=DEFAULT_FLAG_THRESHOLD),
     current_user: User = Depends(require_instructor),
@@ -93,12 +103,20 @@ async def get_all_students(
 
 
 @router.get("/student/{student_uid}", response_model=StudentDrillDown)
+@limiter.limit(settings.RATE_LIMIT_ANALYTICS)
 async def get_student_drilldown(
+    request: Request,
     student_uid: str,
     class_id: str = Query(...),
     current_user: User = Depends(require_instructor),
     db: AsyncSession = Depends(get_db),
 ):
+    logger.info(
+        "audit student_data_access instructor=%s student=%s class=%s",
+        current_user.uid,
+        student_uid,
+        class_id,
+    )
     await get_owned_class(db, class_id, current_user.uid)
     student_uids = await get_class_student_uids(db, class_id)
     if student_uid not in student_uids:
@@ -175,7 +193,9 @@ async def get_student_drilldown(
 
 
 @router.get("/heatmap/{class_id}")
+@limiter.limit(settings.RATE_LIMIT_ANALYTICS)
 async def get_phoneme_heatmap(
+    request: Request,
     class_id: str,
     current_user: User = Depends(require_instructor),
     db: AsyncSession = Depends(get_db),

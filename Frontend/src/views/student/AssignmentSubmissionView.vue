@@ -777,7 +777,9 @@ async function submitRecordedAssignment() {
     submitConfirmOpen.value = false
     await router.push('/assignments')
   } catch (err: any) {
-    error.value = err.response?.data?.detail ?? 'Failed to submit one of the recorded assignment phrases.'
+    error.value = err?.rateLimited
+      ? (err.rateLimitMessage ?? 'Too many submissions. Please wait before trying again.')
+      : (err.response?.data?.detail ?? 'Failed to submit one of the recorded assignment phrases.')
   } finally {
     submitting.value = false
     submitProgressCurrent.value = 0

@@ -2,10 +2,12 @@ import secrets
 import string
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
+from app.core.limiter import limiter
 from app.core.dependencies import (
     get_class_membership,
     get_class_student_uids,
@@ -155,7 +157,9 @@ async def create_class(
 
 
 @router.post("/join", response_model=ClassSummaryResponse, status_code=201)
+@limiter.limit(settings.RATE_LIMIT_CLASS_JOIN)
 async def join_class(
+    request: Request,
     body: JoinClassRequest,
     current_user: User = Depends(require_student),
     db: AsyncSession = Depends(get_db),
@@ -276,7 +280,9 @@ async def remove_student_from_class(
 
 
 @router.post("/{class_id}/join-code/regenerate", response_model=JoinCodeResponse)
+@limiter.limit(settings.RATE_LIMIT_JOIN_CODE_REGEN)
 async def regenerate_join_code(
+    request: Request,
     class_id: str,
     current_user: User = Depends(require_instructor),
     db: AsyncSession = Depends(get_db),

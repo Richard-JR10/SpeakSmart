@@ -1,11 +1,16 @@
 import logging
+import uuid as _uuid
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.config import settings
+from app.core.limiter import limiter, ip_limiter
 from app.db.base import init_db
 from app.api.v1.router import router
 from app.services.asr import initialize_asr
@@ -50,25 +55,56 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
     swagger_ui_parameters={
-        "persistAuthorization": True   # <--- This helps keep the token after reload
+        "persistAuthorization": True
     },
 )
 
-# Allow local frontend origins in development and configurable origins elsewhere.
+# --- Rate limiting ---
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+# --- CORS (hardened: explicit methods and headers only) ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
 )
 
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next) -> Response:
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "microphone=(self)"
+    if settings.APP_ENV == "production":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains; preload"
+        )
+    return response
+
+@app.middleware("http")
+async def attach_request_id(request: Request, call_next) -> Response:
+    rid = request.headers.get("X-Request-ID") or str(_uuid.uuid4())
+    request.state.request_id = rid
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = rid
+    return response
+
+
 @app.get("/")
-async def root():
+@ip_limiter.limit(settings.RATE_LIMIT_PUBLIC)
+async def root(request: Request):
     return {"message": "SpeakSmart Backend is running! 🚀"}
 
 @app.get("/health")
-async def health():
+@ip_limiter.limit(settings.RATE_LIMIT_PUBLIC)
+async def health(request: Request):
     return {"status": "healthy"}
 
 app.include_router(router)
@@ -95,7 +131,7 @@ def custom_openapi():
             if isinstance(operation, dict) and "responses" in operation:
                 operation["security"] = [{"BearerAuth": []}]
 
-    return schema   # Do NOT cache it manually
+    return schema
 
 
 app.openapi = custom_openapi

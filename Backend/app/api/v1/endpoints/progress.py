@@ -1,10 +1,12 @@
 # app/api/v1/endpoints/progress.py
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
+from app.config import settings
 from app.core.dependencies import authorize_student_access, get_current_user, get_db
+from app.core.limiter import limiter
 from app.db.models.user import User
 from app.db.models.attempt import Attempt
 from app.db.models.progress import ProgressSummary
@@ -19,7 +21,9 @@ router = APIRouter(prefix="/progress", tags=["progress"])
 
 
 @router.get("/{student_uid}", response_model=StudentDashboard)
+@limiter.limit(settings.RATE_LIMIT_PROGRESS)
 async def get_student_progress(
+    request: Request,
     student_uid: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -80,7 +84,9 @@ async def get_student_progress(
 
 
 @router.get("/{student_uid}/module/{module_id}", response_model=ProgressSummaryResponse)
+@limiter.limit(settings.RATE_LIMIT_PROGRESS)
 async def get_module_progress(
+    request: Request,
     student_uid: str,
     module_id: str,
     current_user: User = Depends(get_current_user),

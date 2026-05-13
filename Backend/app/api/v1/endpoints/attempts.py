@@ -2,12 +2,13 @@
 import asyncio
 import logging
 import uuid
-from fastapi import APIRouter, Depends, UploadFile, File, Form
+from fastapi import APIRouter, Depends, Query, Request, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.dependencies import authorize_student_access, get_current_user, get_db
 from app.core.exceptions import NotFoundException, BadRequestException
+from app.core.limiter import limiter
 from app.db.models.user import User
 from app.db.models.phrase import Phrase
 from app.db.models.attempt import Attempt
@@ -32,7 +33,9 @@ logger.setLevel(logging.INFO)
 
 
 @router.post("", response_model=AttemptResponse, status_code=201)
+@limiter.limit(settings.RATE_LIMIT_AUDIO_SUBMISSION)
 async def submit_attempt(
+    request: Request,
     phrase_id: str = Form(...),
     audio_file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
@@ -196,10 +199,12 @@ async def submit_attempt(
 
 
 @router.get("/{student_uid}", response_model=list[AttemptSummary])
+@limiter.limit(settings.RATE_LIMIT_ATTEMPTS_READ)
 async def get_attempts(
+    request: Request,
     student_uid: str,
     phrase_id: str | None = None,
-    limit: int = 20,
+    limit: int = Query(default=20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

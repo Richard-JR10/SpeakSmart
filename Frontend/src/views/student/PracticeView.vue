@@ -156,8 +156,8 @@
                 </div>
 
                 <div class="flex flex-1 flex-col gap-3 px-4 pb-4 lg:px-5">
-                  <Alert :variant="recorder.error.value || attemptsStore.error ? 'destructive' : 'default'">
-                    <TriangleAlert v-if="recorder.error.value || attemptsStore.error" />
+                  <Alert :variant="recorder.error.value || attemptsStore.error || recorder.hasSpeech.value === false ? 'destructive' : 'default'">
+                    <TriangleAlert v-if="recorder.error.value || attemptsStore.error || recorder.hasSpeech.value === false" />
                     <Mic v-else />
                     <AlertTitle>{{ recordingStateTitle }}</AlertTitle>
                     <AlertDescription>
@@ -242,7 +242,7 @@
                   <Button
                     size="sm"
                     class="w-full rounded-xl sm:w-auto"
-                    :disabled="!recorder.audioBlob.value || attemptsStore.submitting || recorder.isRecording.value"
+                    :disabled="!recorder.audioBlob.value || attemptsStore.submitting || recorder.isRecording.value || recorder.hasSpeech.value === false"
                     @click="submitAttempt"
                   >
                     <LoaderCircle v-if="attemptsStore.submitting" class="animate-spin" data-icon="inline-start" />
@@ -369,6 +369,10 @@ const recordingStateTitle = computed(() => {
     return 'Recording problem'
   }
 
+  if (recorder.hasSpeech.value === false) {
+    return 'No speech detected'
+  }
+
   if (attemptsStore.submitting) {
     return 'Submitting attempt'
   }
@@ -387,6 +391,10 @@ const recordingStateTitle = computed(() => {
 const recordingStateCopy = computed(() => {
   if (attemptsStore.submitting) {
     return 'Your pronunciation is being uploaded and analyzed now.'
+  }
+
+  if (recorder.hasSpeech.value === false) {
+    return 'The recording appears to be silent. Make sure your microphone is working and try again.'
   }
 
   if (recorder.isRecording.value) {

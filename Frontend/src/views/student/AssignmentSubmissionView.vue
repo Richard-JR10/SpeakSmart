@@ -170,12 +170,12 @@
                 </div>
 
                 <div class="flex flex-1 flex-col gap-3 px-4 pb-4 lg:px-5">
-                  <Alert :variant="recorder.error.value || error ? 'destructive' : 'default'">
-                    <TriangleAlert v-if="recorder.error.value || error" />
+                  <Alert :variant="recorder.error.value || error || recorder.hasSpeech.value === false ? 'destructive' : 'default'">
+                    <TriangleAlert v-if="recorder.error.value || error || recorder.hasSpeech.value === false" />
                     <Mic v-else />
                     <AlertTitle>{{ submissionStateTitle }}</AlertTitle>
                     <AlertDescription>
-                      {{ recorder.error.value ?? error ?? successMessage ?? submissionStateCopy }}
+                      {{ recorder.error.value ?? (recorder.hasSpeech.value === false ? 'No speech detected in this recording. Please record again so your teacher can score it.' : null) ?? error ?? successMessage ?? submissionStateCopy }}
                     </AlertDescription>
                   </Alert>
 
@@ -507,6 +507,7 @@ const recorderHint = computed(() => {
 })
 const submissionStateTitle = computed(() => {
   if (error.value || recorder.error.value) return 'Submission problem'
+  if (recorder.hasSpeech.value === false) return 'No speech detected'
   if (successMessage.value) return 'Submission sent'
   if (submitting.value) return submitProgressLabel.value
   if (allRequiredWorkComplete.value) return 'Assignment complete'

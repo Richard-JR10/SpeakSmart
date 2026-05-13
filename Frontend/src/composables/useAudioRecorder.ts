@@ -7,10 +7,32 @@ export function useAudioRecorder() {
   const audioUrl = ref<string | null>(null)
   const error = ref<string | null>(null)
   const duration = ref(0)
+  // null = not yet analyzed, true = speech detected, false = silence/no speech
+  const hasSpeech = ref<boolean | null>(null)
 
   let mediaRecorder: MediaRecorder | null = null
   let chunks: BlobPart[] = []
   let durationTimer: ReturnType<typeof setInterval> | null = null
+
+  async function _analyzeSpeech(blob: Blob): Promise<void> {
+    try {
+      const arrayBuffer = await blob.arrayBuffer()
+      const audioCtx = new AudioContext()
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer)
+      audioCtx.close()
+
+      const channelData = audioBuffer.getChannelData(0)
+      let sum = 0
+      for (let i = 0; i < channelData.length; i++) {
+        sum += channelData[i] * channelData[i]
+      }
+      const rms = Math.sqrt(sum / channelData.length)
+      hasSpeech.value = rms > 0.01
+    } catch {
+      // If analysis fails for any reason, allow submission — backend validates too
+      hasSpeech.value = true
+    }
+  }
 
   async function startRecording() {
     error.value = null
@@ -47,6 +69,9 @@ export function useAudioRecorder() {
 
         // Stop all microphone tracks
         stream.getTracks().forEach((track) => track.stop())
+
+        // Analyze immediately so the Submit button reflects speech detection before the user clicks
+        _analyzeSpeech(blob)
       }
 
       mediaRecorder.start(100) // collect data every 100ms
@@ -87,6 +112,7 @@ export function useAudioRecorder() {
     }
     duration.value = 0
     error.value = null
+    hasSpeech.value = null
   }
 
   return {
@@ -95,6 +121,7 @@ export function useAudioRecorder() {
     audioUrl,
     duration,
     error,
+    hasSpeech,
     startRecording,
     stopRecording,
     clearRecording,

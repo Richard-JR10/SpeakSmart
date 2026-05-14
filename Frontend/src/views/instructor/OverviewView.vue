@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <InstructorLayout>
     <div class="flex flex-col gap-5">
       <LoadingSpinner
@@ -251,7 +251,7 @@
                 Hardest modules this class
               </CardTitle>
               <CardDescription>
-                Ranked by overall class accuracy — weakest modules surface first so you know where to focus your next coaching session.
+                Ranked by overall class accuracy â€” weakest modules surface first so you know where to focus your next coaching session.
               </CardDescription>
             </CardHeader>
 
@@ -333,8 +333,8 @@
                     v-for="student in overview.flagged_students"
                     :key="student.uid"
                     type="button"
-                    class="flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:border-primary/30 hover:bg-muted/50"
-                    @click="router.push('/instructor/students')"
+                    class="group flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:cursor-pointer hover:border-rose-200/80! hover:bg-rose-50/70! active:scale-[0.99]"
+                    @click="openStudentDetail(student.uid)"
                   >
                     <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-destructive/10 font-semibold text-destructive">
                       {{ student.display_name.slice(0, 1).toUpperCase() }}
@@ -352,9 +352,12 @@
                       </p>
                     </div>
 
-                    <Badge variant="destructive" class="shrink-0 rounded-full px-3 py-1">
-                      {{ student.overall_average.toFixed(0) }}%
-                    </Badge>
+                    <div class="flex shrink-0 items-center gap-2">
+                      <Badge variant="destructive" class="rounded-full px-3 py-1">
+                        {{ student.overall_average.toFixed(0) }}%
+                      </Badge>
+                      <ChevronRight class="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </div>
                   </button>
                 </template>
 
@@ -392,8 +395,8 @@
                     v-for="student in topPerformers"
                     :key="student.uid"
                     type="button"
-                    class="flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:border-primary/30 hover:bg-muted/50"
-                    @click="router.push('/instructor/students')"
+                    class="group flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:cursor-pointer hover:border-emerald-200/80! hover:bg-emerald-50/70! active:scale-[0.99]"
+                    @click="openStudentDetail(student.uid)"
                   >
                     <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 font-semibold text-emerald-700">
                       {{ student.display_name.slice(0, 1).toUpperCase() }}
@@ -407,16 +410,19 @@
                         {{ student.email }}
                       </p>
                       <p class="mt-0.5 text-xs text-muted-foreground">
-                        {{ student.total_attempts }} attempts · {{ student.streak_days }}d streak
+                        {{ student.total_attempts }} attempts Â· {{ student.streak_days }}d streak
                       </p>
                     </div>
 
-                    <Badge
-                      variant="outline"
-                      class="shrink-0 rounded-full border-emerald-300/70 bg-emerald-100 px-3 py-1 text-emerald-800"
-                    >
-                      {{ student.overall_average.toFixed(0) }}%
-                    </Badge>
+                    <div class="flex shrink-0 items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        class="rounded-full border-emerald-300/70 bg-emerald-100 px-3 py-1 text-emerald-800"
+                      >
+                        {{ student.overall_average.toFixed(0) }}%
+                      </Badge>
+                      <ChevronRight class="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </div>
                   </button>
                 </template>
 
@@ -433,6 +439,13 @@
         </template>
       </template>
     </div>
+
+    <StudentDetailDialog
+      v-model:open="detailModalOpen"
+      :student="selectedStudent"
+      :drilldown="drilldown"
+      :loading="drilldownLoading"
+    />
   </InstructorLayout>
 </template>
 
@@ -444,6 +457,7 @@ import {
   Activity,
   BookMarked,
   CheckCircle2,
+  ChevronRight,
   ClipboardList,
   TrendingUp,
   TriangleAlert,
@@ -464,6 +478,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import StudentDetailDialog from '@/components/instructor/StudentDetailDialog.vue'
 import {
   ChartContainer,
   ChartCrosshair,
@@ -473,11 +488,11 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
-import { getAllStudents, getClassOverview, getPhonemeHeatmap } from '@/api/analytics'
+import { getAllStudents, getClassOverview, getPhonemeHeatmap, getStudentDrillDown } from '@/api/analytics'
 import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
 import { useModulesStore } from '@/stores/modules'
-import type { ClassOverview, PhonemeBreakdown, StudentStat } from '@/types'
+import type { ClassOverview, PhonemeBreakdown, StudentDrillDown, StudentStat } from '@/types'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -489,6 +504,10 @@ const students = ref<StudentStat[]>([])
 const heatmap = ref<Record<string, PhonemeBreakdown>>({})
 const loading = ref(false)
 const error = ref<string | null>(null)
+const selectedStudentUid = ref<string | null>(null)
+const drilldown = ref<StudentDrillDown | null>(null)
+const drilldownLoading = ref(false)
+const detailModalOpen = ref(false)
 const flagThreshold = 60
 const topPerfThreshold = 85
 const trendChartConfig = {
@@ -624,6 +643,28 @@ const trendChartData = computed<TrendChartPoint[]>(() => {
     practiceVolume: Math.min(100, (week.attempt_count / maxAttempts) * 100),
   }))
 })
+
+const selectedStudent = computed(() =>
+  overview.value?.flagged_students.find((s) => s.uid === selectedStudentUid.value)
+  ?? students.value.find((s) => s.uid === selectedStudentUid.value)
+  ?? null,
+)
+
+
+async function openStudentDetail(uid: string) {
+  selectedStudentUid.value = uid
+  drilldown.value = null
+  drilldownLoading.value = true
+  detailModalOpen.value = true
+  try {
+    drilldown.value = await getStudentDrillDown(uid, classesStore.activeClassId!)
+  } catch {
+    // dialog handles null drilldown gracefully
+  } finally {
+    drilldownLoading.value = false
+  }
+}
+
 
 function formatWeekLabel(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {

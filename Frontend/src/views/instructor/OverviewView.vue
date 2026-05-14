@@ -66,7 +66,7 @@
               </div>
             </CardHeader>
 
-            <CardContent class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <CardContent class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <Card
                 v-for="item in metricCards"
                 :key="item.label"
@@ -79,7 +79,10 @@
                     </p>
                     <component :is="item.icon" class="text-muted-foreground" />
                   </div>
-                  <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  <CardTitle
+                    class="font-(--font-display) text-3xl leading-none"
+                    :class="item.tone ?? 'text-(--color-heading)'"
+                  >
                     {{ item.value }}
                   </CardTitle>
                   <CardDescription>
@@ -232,66 +235,194 @@
             </Card>
           </div>
 
-          <Card class="border-border/80 bg-card/95">
+          <Card v-if="sortedModuleHeatmap.length" class="border-border/80 bg-card/95">
             <CardHeader class="gap-3">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-col gap-3">
-                  <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                    Needs attention
-                  </Badge>
-                  <div class="flex flex-col gap-2">
-                    <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                      Flagged students
-                    </CardTitle>
-                    <CardDescription>
-                      Learners below {{ flagThreshold }}% are surfaced here first so you can move directly into drilldown review.
-                    </CardDescription>
-                  </div>
-                </div>
-
-                <Badge variant="outline" class="rounded-full px-3 py-1">
-                  {{ overview.flagged_students.length }} flagged
-                </Badge>
-              </div>
+              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                Module difficulty
+              </Badge>
+              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                Hardest modules this class
+              </CardTitle>
+              <CardDescription>
+                Ranked by overall class accuracy — weakest modules surface first so you know where to focus your next coaching session.
+              </CardDescription>
             </CardHeader>
 
             <CardContent class="grid gap-3 lg:grid-cols-2">
-              <template v-if="overview.flagged_students.length">
-                <button
-                  v-for="student in overview.flagged_students"
-                  :key="student.uid"
-                  type="button"
-                  class="flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:border-primary/30 hover:bg-muted/50"
-                  @click="router.push('/instructor/students')"
-                >
-                  <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-destructive/10 font-semibold text-destructive">
-                    {{ student.display_name.slice(0, 1).toUpperCase() }}
+              <div
+                v-for="module in sortedModuleHeatmap"
+                :key="module.moduleId"
+                class="flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/30 p-4"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex min-w-0 items-center gap-2">
+                    <BookMarked class="size-4 shrink-0 text-muted-foreground" />
+                    <p class="truncate font-semibold text-(--color-heading)">{{ module.title }}</p>
                   </div>
-
-                  <div class="min-w-0 flex-1">
-                    <p class="truncate font-semibold text-(--color-heading)">
-                      {{ student.display_name }}
-                    </p>
-                    <p class="truncate text-sm text-muted-foreground">
-                      {{ student.email }}
-                    </p>
-                  </div>
-
-                  <Badge variant="destructive" class="rounded-full px-3 py-1">
-                    {{ student.overall_average.toFixed(0) }}%
+                  <Badge :variant="scoreVariant(module.overall)" class="shrink-0 rounded-full px-3 py-1">
+                    {{ module.overall.toFixed(1) }}%
                   </Badge>
-                </button>
-              </template>
+                </div>
 
-              <Alert v-else>
-                <CheckCircle2 />
-                <AlertTitle>No flagged students</AlertTitle>
-                <AlertDescription>
-                  Everyone in the active class is currently above the review threshold.
-                </AlertDescription>
-              </Alert>
+                <div class="grid grid-cols-3 gap-3">
+                  <div
+                    v-for="bar in [
+                      { label: 'Mora', value: module.mora },
+                      { label: 'Consonant', value: module.consonant },
+                      { label: 'Vowel', value: module.vowel },
+                    ]"
+                    :key="bar.label"
+                    class="flex flex-col gap-1"
+                  >
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        {{ bar.label }}
+                      </span>
+                      <span class="text-[10px] tabular-nums text-muted-foreground">
+                        {{ bar.value.toFixed(0) }}%
+                      </span>
+                    </div>
+                    <div class="h-1.5 overflow-hidden rounded-full bg-border/70">
+                      <div
+                        class="h-full rounded-full transition-[width] duration-300"
+                        :class="bar.value >= 85
+                          ? 'bg-emerald-500'
+                          : bar.value >= 70
+                            ? 'bg-primary'
+                            : bar.value >= 55
+                              ? 'bg-amber-500'
+                              : 'bg-destructive'"
+                        :style="{ width: `${bar.value}%` }"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
+
+          <div class="grid gap-5 lg:grid-cols-2">
+            <Card class="border-border/80 bg-card/95">
+              <CardHeader class="gap-3">
+                <div class="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                    Needs attention
+                  </Badge>
+                  <Badge variant="outline" class="rounded-full px-3 py-1">
+                    {{ overview.flagged_students.length }} flagged
+                  </Badge>
+                </div>
+                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  Flagged students
+                </CardTitle>
+                <CardDescription>
+                  Learners below {{ flagThreshold }}% are surfaced here first so you can move directly into drilldown review.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent class="flex flex-col gap-2">
+                <template v-if="overview.flagged_students.length">
+                  <button
+                    v-for="student in overview.flagged_students"
+                    :key="student.uid"
+                    type="button"
+                    class="flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:border-primary/30 hover:bg-muted/50"
+                    @click="router.push('/instructor/students')"
+                  >
+                    <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-destructive/10 font-semibold text-destructive">
+                      {{ student.display_name.slice(0, 1).toUpperCase() }}
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate font-semibold text-(--color-heading)">
+                        {{ student.display_name }}
+                      </p>
+                      <p class="truncate text-sm text-muted-foreground">
+                        {{ student.email }}
+                      </p>
+                      <p class="mt-0.5 text-xs text-muted-foreground">
+                        {{ student.total_attempts }} attempts · {{ student.streak_days }}d streak
+                      </p>
+                    </div>
+
+                    <Badge variant="destructive" class="shrink-0 rounded-full px-3 py-1">
+                      {{ student.overall_average.toFixed(0) }}%
+                    </Badge>
+                  </button>
+                </template>
+
+                <Alert v-else>
+                  <CheckCircle2 />
+                  <AlertTitle>No flagged students</AlertTitle>
+                  <AlertDescription>
+                    Everyone in the active class is currently above the review threshold.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+
+            <Card class="border-border/80 bg-card/95">
+              <CardHeader class="gap-3">
+                <div class="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                    Excelling
+                  </Badge>
+                  <Badge variant="outline" class="rounded-full px-3 py-1">
+                    {{ topPerformers.length }} excelling
+                  </Badge>
+                </div>
+                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                  Top performers
+                </CardTitle>
+                <CardDescription>
+                  Students scoring {{ topPerfThreshold }}% or above, ranked highest first.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent class="flex flex-col gap-2">
+                <template v-if="topPerformers.length">
+                  <button
+                    v-for="student in topPerformers"
+                    :key="student.uid"
+                    type="button"
+                    class="flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:border-primary/30 hover:bg-muted/50"
+                    @click="router.push('/instructor/students')"
+                  >
+                    <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 font-semibold text-emerald-700">
+                      {{ student.display_name.slice(0, 1).toUpperCase() }}
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate font-semibold text-(--color-heading)">
+                        {{ student.display_name }}
+                      </p>
+                      <p class="truncate text-sm text-muted-foreground">
+                        {{ student.email }}
+                      </p>
+                      <p class="mt-0.5 text-xs text-muted-foreground">
+                        {{ student.total_attempts }} attempts · {{ student.streak_days }}d streak
+                      </p>
+                    </div>
+
+                    <Badge
+                      variant="outline"
+                      class="shrink-0 rounded-full border-emerald-300/70 bg-emerald-100 px-3 py-1 text-emerald-800"
+                    >
+                      {{ student.overall_average.toFixed(0) }}%
+                    </Badge>
+                  </button>
+                </template>
+
+                <Alert v-else>
+                  <Trophy />
+                  <AlertTitle>No top performers yet</AlertTitle>
+                  <AlertDescription>
+                    Students who reach {{ topPerfThreshold }}% or above will be shown here.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </div>
         </template>
       </template>
     </div>
@@ -304,11 +435,14 @@ import { useRouter } from 'vue-router'
 import { VisArea, VisAxis, VisLine, VisXYContainer } from '@unovis/vue'
 import {
   Activity,
+  BookMarked,
   CheckCircle2,
   ClipboardList,
   TrendingUp,
   TriangleAlert,
+  Trophy,
   UserRoundCheck,
+  UserRoundX,
   Users,
 } from 'lucide-vue-next'
 
@@ -332,19 +466,24 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
-import { getClassOverview } from '@/api/analytics'
+import { getAllStudents, getClassOverview, getPhonemeHeatmap } from '@/api/analytics'
 import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
-import type { ClassOverview } from '@/types'
+import { useModulesStore } from '@/stores/modules'
+import type { ClassOverview, PhonemeBreakdown, StudentStat } from '@/types'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const classesStore = useClassesStore()
+const modulesStore = useModulesStore()
 
 const overview = ref<ClassOverview | null>(null)
+const students = ref<StudentStat[]>([])
+const heatmap = ref<Record<string, PhonemeBreakdown>>({})
 const loading = ref(false)
 const error = ref<string | null>(null)
 const flagThreshold = 60
+const topPerfThreshold = 85
 const trendChartConfig = {
   accuracy: {
     label: 'Accuracy',
@@ -386,6 +525,30 @@ const todayLabel = computed(() =>
   }),
 )
 
+const neverPracticedCount = computed(
+  () => students.value.filter((s) => s.total_attempts === 0).length,
+)
+
+const topPerformers = computed(() =>
+  students.value
+    .filter((s) => s.overall_average >= topPerfThreshold && s.total_attempts > 0)
+    .sort((a, b) => b.overall_average - a.overall_average)
+    .slice(0, 6),
+)
+
+const sortedModuleHeatmap = computed(() =>
+  Object.entries(heatmap.value)
+    .map(([moduleId, scores]) => ({
+      moduleId,
+      title: modulesStore.modules.find((m) => m.module_id === moduleId)?.title ?? moduleId,
+      overall: scores.overall_avg,
+      mora: scores.mora_timing_avg,
+      consonant: scores.consonant_avg,
+      vowel: scores.vowel_avg,
+    }))
+    .sort((a, b) => a.overall - b.overall),
+)
+
 const metricCards = computed(() => {
   if (!overview.value) return []
 
@@ -395,24 +558,35 @@ const metricCards = computed(() => {
       value: `${overview.value.class_average.toFixed(1)}%`,
       copy: 'overall pronunciation accuracy in the active class',
       icon: TrendingUp,
+      tone: null as string | null,
     },
     {
       label: 'Total students',
       value: `${overview.value.total_students}`,
       copy: 'learners currently enrolled in this roster',
       icon: Users,
+      tone: null as string | null,
     },
     {
       label: 'Active this week',
       value: `${overview.value.active_students}`,
       copy: 'students who practiced recently',
       icon: UserRoundCheck,
+      tone: null as string | null,
     },
     {
       label: 'Weekly attempts',
       value: `${overview.value.weekly_attempts}`,
       copy: 'submissions recorded inside the current week window',
       icon: Activity,
+      tone: null as string | null,
+    },
+    {
+      label: 'Never practiced',
+      value: `${neverPracticedCount.value}`,
+      copy: 'enrolled students with no practice attempts yet',
+      icon: UserRoundX,
+      tone: neverPracticedCount.value > 0 ? 'text-destructive' : (null as string | null),
     },
   ]
 })
@@ -478,6 +652,8 @@ function scoreVariant(score: number): 'default' | 'secondary' | 'outline' | 'des
 
 async function loadOverview(classId: string | null) {
   overview.value = null
+  students.value = []
+  heatmap.value = {}
   error.value = null
 
   if (!classId) {
@@ -487,7 +663,14 @@ async function loadOverview(classId: string | null) {
 
   loading.value = true
   try {
-    overview.value = await getClassOverview(classId, flagThreshold)
+    const [overviewData, studentsData, heatmapData] = await Promise.all([
+      getClassOverview(classId, flagThreshold),
+      getAllStudents(classId, flagThreshold),
+      getPhonemeHeatmap(classId),
+    ])
+    overview.value = overviewData
+    students.value = studentsData
+    heatmap.value = heatmapData
   } catch {
     error.value = 'Failed to load class analytics.'
   } finally {
@@ -498,6 +681,7 @@ async function loadOverview(classId: string | null) {
 onMounted(async () => {
   try {
     await classesStore.ensureLoaded()
+    await modulesStore.fetchModules()
   } catch {
     error.value = 'Failed to load your classes.'
   }

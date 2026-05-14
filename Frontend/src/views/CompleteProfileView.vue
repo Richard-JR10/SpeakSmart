@@ -162,11 +162,76 @@
                   </p>
                 </div>
 
+                <div class="flex flex-col gap-3">
+                  <div class="flex flex-col gap-2">
+                    <div class="flex items-start gap-3">
+                      <input
+                        id="terms-checkbox"
+                        v-model="termsAccepted"
+                        type="checkbox"
+                        class="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-border accent-(--color-primary)"
+                        :aria-describedby="termsError ? 'terms-error' : undefined"
+                        :aria-invalid="Boolean(termsError)"
+                      />
+                      <label for="terms-checkbox" class="cursor-pointer text-sm leading-5 text-muted-foreground">
+                        I have read and agree to the
+                        <button
+                          type="button"
+                          class="font-medium text-primary underline hover:no-underline"
+                          @click="termsOpen = true"
+                        >
+                          Terms and Conditions
+                        </button>
+                      </label>
+                    </div>
+                    <p
+                      v-if="termsError"
+                      id="terms-error"
+                      class="pl-7 text-sm font-medium text-destructive"
+                    >
+                      {{ termsError }}
+                    </p>
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <div class="flex items-start gap-3">
+                      <input
+                        id="privacy-checkbox"
+                        v-model="privacyAccepted"
+                        type="checkbox"
+                        class="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-border accent-(--color-primary)"
+                        :aria-describedby="privacyError ? 'privacy-error' : undefined"
+                        :aria-invalid="Boolean(privacyError)"
+                      />
+                      <label for="privacy-checkbox" class="cursor-pointer text-sm leading-5 text-muted-foreground">
+                        I have read and agree to the
+                        <button
+                          type="button"
+                          class="font-medium text-primary underline hover:no-underline"
+                          @click="privacyOpen = true"
+                        >
+                          Privacy Policy
+                        </button>
+                      </label>
+                    </div>
+                    <p
+                      v-if="privacyError"
+                      id="privacy-error"
+                      class="pl-7 text-sm font-medium text-destructive"
+                    >
+                      {{ privacyError }}
+                    </p>
+                  </div>
+                </div>
+
                 <Button variant="default" size="lg" type="submit" class="w-full" :disabled="submitDisabled">
                   <LoaderCircle v-if="loading" class="animate-spin" data-icon="inline-start" />
                   <span>{{ loading ? 'Saving profile...' : 'Complete setup' }}</span>
                 </Button>
               </form>
+
+              <TermsDialog v-model:open="termsOpen" />
+              <PrivacyPolicyDialog v-model:open="privacyOpen" />
             </CardContent>
 
             <CardFooter class="flex-col items-start gap-4 border-t">
@@ -213,6 +278,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import PrivacyPolicyDialog from '@/components/PrivacyPolicyDialog.vue'
+import TermsDialog from '@/components/TermsDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { UserRole } from '@/types'
 
@@ -234,9 +301,15 @@ const authStore = useAuthStore()
 const displayName = ref(authStore.firebaseUser?.displayName?.trim() ?? '')
 const role = ref<UserRole | undefined>(undefined)
 const loading = ref(false)
+const termsAccepted = ref(false)
+const privacyAccepted = ref(false)
+const termsOpen = ref(false)
+const privacyOpen = ref(false)
 const formError = ref<string | null>(null)
 const nameError = ref<string | null>(null)
 const roleError = ref<string | null>(null)
+const termsError = ref<string | null>(null)
+const privacyError = ref<string | null>(null)
 
 const roleOptions: RoleOption[] = [
   {
@@ -270,7 +343,7 @@ const highlightCards: HighlightCard[] = [
 ]
 
 const visibleError = computed(() => formError.value ?? authStore.error)
-const submitDisabled = computed(() => loading.value || !displayName.value.trim())
+const submitDisabled = computed(() => loading.value || !displayName.value.trim() || !termsAccepted.value || !privacyAccepted.value)
 
 watch(displayName, (value) => {
   if (value.trim()) {
@@ -284,10 +357,20 @@ watch(role, (value) => {
   }
 })
 
+watch(termsAccepted, (value) => {
+  if (value) termsError.value = null
+})
+
+watch(privacyAccepted, (value) => {
+  if (value) privacyError.value = null
+})
+
 function dismissError() {
   formError.value = null
   nameError.value = null
   roleError.value = null
+  termsError.value = null
+  privacyError.value = null
   authStore.clearError()
 }
 
@@ -301,6 +384,16 @@ async function handleCompleteProfile() {
 
   if (!role.value) {
     roleError.value = 'Choose a role to finish setup.'
+    return
+  }
+
+  if (!termsAccepted.value) {
+    termsError.value = 'You must accept the Terms and Conditions.'
+    return
+  }
+
+  if (!privacyAccepted.value) {
+    privacyError.value = 'You must accept the Privacy Policy.'
     return
   }
 

@@ -229,11 +229,76 @@
                   </div>
                 </div>
 
+                <div class="flex flex-col gap-3">
+                  <div class="flex flex-col gap-2">
+                    <div class="flex items-start gap-3">
+                      <input
+                        id="terms-checkbox"
+                        v-model="termsAccepted"
+                        type="checkbox"
+                        class="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-border accent-(--color-primary)"
+                        :aria-describedby="fieldErrors.terms ? 'terms-error' : undefined"
+                        :aria-invalid="Boolean(fieldErrors.terms)"
+                      />
+                      <label for="terms-checkbox" class="cursor-pointer text-sm leading-5 text-muted-foreground">
+                        I have read and agree to the
+                        <button
+                          type="button"
+                          class="font-medium text-primary underline hover:no-underline"
+                          @click="termsOpen = true"
+                        >
+                          Terms and Conditions
+                        </button>
+                      </label>
+                    </div>
+                    <p
+                      v-if="fieldErrors.terms"
+                      id="terms-error"
+                      class="pl-7 text-sm font-medium text-destructive"
+                    >
+                      {{ fieldErrors.terms }}
+                    </p>
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <div class="flex items-start gap-3">
+                      <input
+                        id="privacy-checkbox"
+                        v-model="privacyAccepted"
+                        type="checkbox"
+                        class="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-border accent-(--color-primary)"
+                        :aria-describedby="fieldErrors.privacy ? 'privacy-error' : undefined"
+                        :aria-invalid="Boolean(fieldErrors.privacy)"
+                      />
+                      <label for="privacy-checkbox" class="cursor-pointer text-sm leading-5 text-muted-foreground">
+                        I have read and agree to the
+                        <button
+                          type="button"
+                          class="font-medium text-primary underline hover:no-underline"
+                          @click="privacyOpen = true"
+                        >
+                          Privacy Policy
+                        </button>
+                      </label>
+                    </div>
+                    <p
+                      v-if="fieldErrors.privacy"
+                      id="privacy-error"
+                      class="pl-7 text-sm font-medium text-destructive"
+                    >
+                      {{ fieldErrors.privacy }}
+                    </p>
+                  </div>
+                </div>
+
                 <Button variant="default" size="lg" type="submit" class="w-full" :disabled="submitDisabled">
                   <LoaderCircle v-if="isEmailLoading" class="animate-spin" data-icon="inline-start" />
                   <span>{{ isEmailLoading ? 'Creating account...' : 'Create account' }}</span>
                 </Button>
               </form>
+
+              <TermsDialog v-model:open="termsOpen" />
+              <PrivacyPolicyDialog v-model:open="privacyOpen" />
 
               <div class="flex items-center gap-4 text-sm text-muted-foreground">
                 <Separator class="flex-1" />
@@ -294,6 +359,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import PrivacyPolicyDialog from '@/components/PrivacyPolicyDialog.vue'
+import TermsDialog from '@/components/TermsDialog.vue'
 import { useAuthRedirect } from '@/composables/useAuthRedirect'
 import { useAuthStore } from '@/stores/auth'
 import type { UserRole } from '@/types'
@@ -308,6 +375,10 @@ const email = ref('')
 const password = ref('')
 const role = ref<UserRole | undefined>(undefined)
 const showPassword = ref(false)
+const termsAccepted = ref(false)
+const privacyAccepted = ref(false)
+const termsOpen = ref(false)
+const privacyOpen = ref(false)
 const loading = ref(false)
 const activeAuthMethod = ref<'email' | 'google' | null>(null)
 const { redirectAfterAuth } = useAuthRedirect({
@@ -322,6 +393,8 @@ const fieldErrors = ref({
   email: null as string | null,
   role: null as string | null,
   password: null as string | null,
+  terms: null as string | null,
+  privacy: null as string | null,
 })
 
 const roleOptions: Array<{ value: UserRole; label: string; copy: string }> = [
@@ -375,7 +448,7 @@ const passwordChecklist = computed(() => [
 ])
 
 const visibleError = computed(() => formError.value ?? authStore.error)
-const submitDisabled = computed(() => loading.value || !role.value)
+const submitDisabled = computed(() => loading.value || !role.value || !termsAccepted.value || !privacyAccepted.value)
 const isEmailLoading = computed(() => loading.value && activeAuthMethod.value === 'email')
 const isGoogleLoading = computed(() => loading.value && activeAuthMethod.value === 'google')
 
@@ -385,6 +458,8 @@ function dismissError() {
   fieldErrors.value.email = null
   fieldErrors.value.role = null
   fieldErrors.value.password = null
+  fieldErrors.value.terms = null
+  fieldErrors.value.privacy = null
   authStore.clearError()
 }
 
@@ -404,12 +479,20 @@ function validateForm() {
   fieldErrors.value.password = isPasswordValid(password.value)
     ? null
     : 'Password does not meet the required strength rules.'
+  fieldErrors.value.terms = termsAccepted.value
+    ? null
+    : 'You must accept the Terms and Conditions.'
+  fieldErrors.value.privacy = privacyAccepted.value
+    ? null
+    : 'You must accept the Privacy Policy.'
 
   return (
     !fieldErrors.value.displayName &&
     !fieldErrors.value.email &&
     !fieldErrors.value.role &&
-    !fieldErrors.value.password
+    !fieldErrors.value.password &&
+    !fieldErrors.value.terms &&
+    !fieldErrors.value.privacy
   )
 }
 
@@ -449,6 +532,14 @@ watch(role, (value) => {
 
 watch(password, (value) => {
   if (value && isPasswordValid(value)) fieldErrors.value.password = null
+})
+
+watch(termsAccepted, (value) => {
+  if (value) fieldErrors.value.terms = null
+})
+
+watch(privacyAccepted, (value) => {
+  if (value) fieldErrors.value.privacy = null
 })
 
 async function handleSignup() {

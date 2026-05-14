@@ -1,7 +1,7 @@
 <template>
   <InstructorLayout>
     <div class="flex flex-col gap-4">
-      <Card class="border-rose-200/80 bg-gradient-to-br from-card via-card to-rose-50/70 shadow-sm shadow-rose-900/5">
+      <Card class="border-rose-200/80 bg-linear-to-br from-card via-card to-rose-50/70 shadow-sm shadow-rose-900/5">
         <CardHeader class="gap-3 p-4 sm:p-5">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div class="min-w-0">
@@ -29,7 +29,7 @@
                 <Input
                   id="student-search"
                   v-model="search"
-                  class="h-9 rounded-none border-0 bg-transparent px-0 text-sm shadow-none ring-0 outline-none focus-visible:!border-transparent focus-visible:!shadow-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!outline-none"
+                  class="h-9 rounded-none border-0 bg-transparent px-0 text-sm shadow-none ring-0 outline-none focus-visible:border-transparent! focus-visible:shadow-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:outline-none!"
                   placeholder="Search by name or email"
                 />
               </div>
@@ -37,7 +37,7 @@
               <PopoverRoot>
                 <PopoverTrigger
                   aria-label="Filter class list"
-                  class="relative inline-flex size-11 items-center justify-center rounded-xl border border-primary/35 bg-white text-primary shadow-sm shadow-rose-900/5 outline-none ring-1 ring-primary/10 transition hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30"
+                  class="relative inline-flex size-11 items-center justify-center rounded-xl border border-primary/35 bg-white text-primary shadow-sm shadow-rose-900/5 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30"
                 >
                   <Funnel class="size-4" />
                   <span
@@ -87,7 +87,7 @@
                               :key="option.value"
                               type="button"
                               data-slot="filter-option"
-                              class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                              class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
                               :class="studentStatusFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
                               @click="studentStatusFilter = option.value"
                             >
@@ -118,7 +118,7 @@
                               :key="option.value"
                               type="button"
                               data-slot="filter-option"
-                              class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                              class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
                               :class="activityFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
                               @click="activityFilter = option.value"
                             >
@@ -151,7 +151,7 @@
                             :key="option.value"
                             type="button"
                             data-slot="filter-option"
-                            class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
                             :class="scoreBandFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
                             @click="scoreBandFilter = option.value"
                           >
@@ -183,7 +183,7 @@
                             :key="option.value"
                             type="button"
                             data-slot="filter-option"
-                            class="flex items-center justify-between gap-1 rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            class="flex items-center justify-between gap-1 rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
                             :class="studentSort === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
                             @click="studentSort = option.value"
                           >

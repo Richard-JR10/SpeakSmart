@@ -1,6 +1,8 @@
 // src/composables/useAudioRecorder.ts
 import { ref } from 'vue'
 
+export const MAX_RECORDING_SECONDS = 10
+
 export function useAudioRecorder() {
   const isRecording = ref(false)
   const audioBlob = ref<Blob | null>(null)
@@ -9,6 +11,8 @@ export function useAudioRecorder() {
   const duration = ref(0)
   // null = not yet analyzed, true = speech detected, false = silence/no speech
   const hasSpeech = ref<boolean | null>(null)
+  // true when recording was stopped automatically because it hit the time limit
+  const stoppedAtLimit = ref(false)
 
   let mediaRecorder: MediaRecorder | null = null
   let chunks: BlobPart[] = []
@@ -77,9 +81,13 @@ export function useAudioRecorder() {
       mediaRecorder.start(100) // collect data every 100ms
       isRecording.value = true
 
-      // Duration counter
+      // Duration counter — auto-stops at the limit
       durationTimer = setInterval(() => {
         duration.value += 1
+        if (duration.value >= MAX_RECORDING_SECONDS) {
+          stoppedAtLimit.value = true
+          stopRecording()
+        }
       }, 1000)
 
     } catch (e: any) {
@@ -113,6 +121,7 @@ export function useAudioRecorder() {
     duration.value = 0
     error.value = null
     hasSpeech.value = null
+    stoppedAtLimit.value = false
   }
 
   return {
@@ -122,6 +131,7 @@ export function useAudioRecorder() {
     duration,
     error,
     hasSpeech,
+    stoppedAtLimit,
     startRecording,
     stopRecording,
     clearRecording,

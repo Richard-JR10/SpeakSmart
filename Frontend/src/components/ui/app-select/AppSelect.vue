@@ -7,7 +7,7 @@
     <SelectTrigger
       :aria-label="props.ariaLabel"
       :class="cn(
-        'inline-flex h-9 min-w-0 items-center justify-between gap-2 rounded-xl border-2 border-primary/65 bg-card px-3 text-sm font-semibold text-foreground shadow-sm shadow-primary/10 ring-1 ring-primary/25 outline-none transition hover:border-primary hover:bg-primary/5 hover:ring-primary/35 focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary data-[state=open]:bg-primary/5 data-[state=open]:ring-2 data-[state=open]:ring-primary/30',
+        'inline-flex h-9 min-w-0 items-center justify-between gap-2 rounded-xl border border-primary/65 bg-card px-3 text-sm font-semibold text-foreground shadow-sm shadow-primary/10 ring-1 ring-primary/25 outline-none transition hover:border-primary hover:bg-primary/5 hover:ring-primary/35 focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary data-[state=open]:bg-primary/5 data-[state=open]:ring-2 data-[state=open]:ring-primary/30',
         props.triggerClass,
       )"
     >

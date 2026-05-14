@@ -193,7 +193,7 @@
                     </Button>
 
                     <div class="flex flex-col gap-1">
-                      <p class="text-base font-semibold text-(--color-heading)">
+                      <p class="text-base font-semibold text-(--color-heading)" :class="{ 'text-destructive': recorder.isRecording.value && timeRemaining <= 3 }">
                         {{ recordingStatusLabel }}
                       </p>
                       <p class="text-xs leading-5 text-muted-foreground">
@@ -386,7 +386,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { useAudioRecorder } from '@/composables/useAudioRecorder'
+import { useAudioRecorder, MAX_RECORDING_SECONDS } from '@/composables/useAudioRecorder'
 import StudentLayout from '@/layouts/StudentLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
@@ -482,8 +482,14 @@ const currentRecordingLabel = computed(() => {
   if (currentHasRecording.value) return 'Saved locally'
   return 'Waiting'
 })
+const timeRemaining = computed(() => MAX_RECORDING_SECONDS - recorder.duration.value)
 const recordingStatusLabel = computed(() => {
-  if (recorder.isRecording.value) return `Recording live - ${recorder.duration.value}s`
+  if (recorder.isRecording.value) {
+    return timeRemaining.value <= 3
+      ? `Recording — ${timeRemaining.value}s left`
+      : `Recording — ${recorder.duration.value}s / ${MAX_RECORDING_SECONDS}s`
+  }
+  if (recorder.stoppedAtLimit.value) return 'Recording saved — limit reached'
   if (currentHasRecording.value) return 'Recording saved for final submit'
   if (currentPhraseLocked.value) return 'Phrase already submitted'
   return 'Ready to record'
@@ -498,7 +504,10 @@ const recorderHint = computed(() => {
     return 'This phrase already has a submitted recording and counts toward this assignment.'
   }
   if (recorder.isRecording.value) {
-    return 'Speak clearly, then stop the recording when you finish the assigned phrase.'
+    return `Speak clearly. Recording stops automatically at ${MAX_RECORDING_SECONDS}s.`
+  }
+  if (recorder.stoppedAtLimit.value) {
+    return `Recording reached the ${MAX_RECORDING_SECONDS}s limit and was saved automatically. Record again if you need another take.`
   }
   if (currentHasRecording.value) {
     return 'Preview the take below, move to the next phrase, or record again before final submission.'

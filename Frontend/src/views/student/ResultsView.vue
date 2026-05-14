@@ -180,7 +180,7 @@
           </CardContent>
         </Card>
 
-        <div class="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+        <div v-if="!isFailedAttempt" class="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
           <!-- How to Say It -->
           <Card class="border-border/80 bg-card/95">
             <CardHeader class="gap-3">
@@ -448,7 +448,7 @@
           </Card>
         </div>
 
-        <div class="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+        <div v-if="!isFailedAttempt" class="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
           <!-- Acoustic Breakdown -->
           <Card class="border-border/80 bg-card/95">
             <CardHeader class="gap-3">
@@ -602,38 +602,6 @@
         <!-- Audio playback -->
         <div class="grid gap-4 lg:grid-cols-2">
           <Card
-            v-if="submittedAudioUrl"
-            class="border-border/80 bg-card/95"
-          >
-            <CardHeader class="gap-3">
-              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
-                Your Audio
-              </Badge>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
-                Submitted Recording
-              </CardTitle>
-              <CardDescription>
-                Replay the exact take that was sent for scoring.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent class="flex flex-col gap-4">
-              <div class="rounded-2xl border border-border/70 bg-muted/25 p-4">
-                <div class="mb-3 flex items-center gap-2">
-                  <AudioLines aria-hidden="true" class="text-primary" />
-                  <p class="font-semibold text-(--color-heading)">Latest take</p>
-                </div>
-                <audio
-                  class="w-full"
-                  :src="submittedAudioUrl"
-                  controls
-                  preload="metadata"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
             class="border-border/80 bg-card/95"
             :class="!submittedAudioUrl ? 'lg:col-span-2' : ''"
           >
@@ -710,10 +678,88 @@
               </Button>
             </CardFooter>
           </Card>
+
+          <Card
+            v-if="submittedAudioUrl"
+            class="border-border/80 bg-card/95"
+          >
+            <CardHeader class="gap-3">
+              <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+                Your Audio
+              </Badge>
+              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                Submitted Recording
+              </CardTitle>
+              <CardDescription>
+                Replay the exact take that was sent for scoring.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent class="flex flex-col gap-4">
+              <div class="rounded-2xl border border-border/70 bg-muted/25 p-4">
+                <div class="mb-3 flex items-center gap-2">
+                  <AudioLines aria-hidden="true" class="text-primary" />
+                  <p class="font-semibold text-(--color-heading)">Latest take</p>
+                </div>
+                <audio
+                  class="w-full"
+                  :src="submittedAudioUrl"
+                  controls
+                  preload="metadata"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <!-- Actions -->
-        <div class="grid gap-3 md:grid-cols-2">
+        <!-- Try Again card — failed attempts only -->
+        <Card v-if="isFailedAttempt" class="border-border/80 bg-card/95">
+          <CardHeader class="gap-3">
+            <Badge variant="destructive" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+              Try Again
+            </Badge>
+            <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              {{ verificationGuidanceTitle }}
+            </CardTitle>
+            <CardDescription>
+              {{ verificationGuidanceCopy }}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent class="grid gap-4">
+            <div
+              v-if="recognizedTextDisplay"
+              class="rounded-2xl border border-border/70 bg-muted/25 p-4"
+            >
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                We heard
+              </p>
+              <p class="mt-2 text-base font-semibold text-(--color-heading)">
+                {{ recognizedTextDisplay }}
+              </p>
+            </div>
+
+            <div class="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Say this instead
+              </p>
+              <p class="mt-2 font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                {{ targetPronunciation?.kana ?? currentPhrase?.japanese_text }}
+              </p>
+              <p class="mt-2 text-base font-semibold text-primary">
+                {{ targetPronunciation?.romaji ?? currentPhrase?.romaji }}
+              </p>
+            </div>
+
+            <Button class="w-full" size="lg" @click="tryAgain">
+              <Mic aria-hidden="true" data-icon="inline-start" />
+              <span>Try Again</span>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <!-- Actions — accepted attempts only -->
+        <div v-if="!isFailedAttempt" class="grid gap-3 md:grid-cols-2">
           <Button variant="outline" size="lg" class="w-full" @click="tryAgain">
             <RotateCcw aria-hidden="true" data-icon="inline-start" />
             <span>Try Again</span>
@@ -988,6 +1034,10 @@ const assessmentConfidence = computed(() =>
 
 const isLowAssessmentConfidence = computed(() =>
   assessmentConfidence.value?.level === 'low',
+)
+
+const isFailedAttempt = computed(() =>
+  attempt.value?.verification_status !== 'accepted',
 )
 
 const recognizedTextDisplay = computed(() => {

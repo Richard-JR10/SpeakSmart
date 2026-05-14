@@ -179,8 +179,8 @@
                     </Button>
 
                     <div class="flex flex-col gap-1">
-                      <p class="text-base font-semibold text-(--color-heading)">
-                        {{ recorder.isRecording.value ? `Recording live - ${recorder.duration.value}s` : recorder.audioBlob.value ? 'Recording captured' : 'Ready to record' }}
+                      <p class="text-base font-semibold text-(--color-heading)" :class="{ 'text-destructive': recorder.isRecording.value && timeRemaining <= 3 }">
+                        {{ recorder.isRecording.value ? `Recording — ${recorder.duration.value}s / ${MAX_RECORDING_SECONDS}s` : recorder.audioBlob.value ? 'Recording captured' : 'Ready to record' }}
                       </p>
                       <p class="text-xs leading-5 text-muted-foreground">
                         {{ recorderHint }}
@@ -302,7 +302,7 @@ import { Separator } from '@/components/ui/separator'
 import { useModulesStore } from '@/stores/modules'
 import { useAttemptsStore } from '@/stores/attempts'
 import { useAuthStore } from '@/stores/auth'
-import { useAudioRecorder } from '@/composables/useAudioRecorder'
+import { useAudioRecorder, MAX_RECORDING_SECONDS } from '@/composables/useAudioRecorder'
 import { setLastPracticeSession } from '@/utils/studentSession'
 import type { Module, Phrase } from '@/types'
 
@@ -364,6 +364,8 @@ const recorderHint = computed(() => {
   return 'Use a quiet space if possible, and keep the microphone close enough for a clear capture.'
 })
 
+const timeRemaining = computed(() => MAX_RECORDING_SECONDS - recorder.duration.value)
+
 const recordingStateTitle = computed(() => {
   if (recorder.error.value || attemptsStore.error) {
     return 'Recording problem'
@@ -378,7 +380,13 @@ const recordingStateTitle = computed(() => {
   }
 
   if (recorder.isRecording.value) {
-    return 'Recording in progress'
+    return timeRemaining.value <= 3
+      ? `Recording — ${timeRemaining.value}s left`
+      : 'Recording in progress'
+  }
+
+  if (recorder.stoppedAtLimit.value) {
+    return 'Recording complete'
   }
 
   if (recorder.audioBlob.value) {
@@ -398,7 +406,11 @@ const recordingStateCopy = computed(() => {
   }
 
   if (recorder.isRecording.value) {
-    return `Live capture is running. Current duration: ${recorder.duration.value}s.`
+    return `Live capture is running — ${recorder.duration.value}s / ${MAX_RECORDING_SECONDS}s. Recording stops automatically at the limit.`
+  }
+
+  if (recorder.stoppedAtLimit.value) {
+    return `Recording reached the ${MAX_RECORDING_SECONDS}s limit and was saved automatically. Preview it, then submit or record again.`
   }
 
   if (recorder.audioBlob.value) {

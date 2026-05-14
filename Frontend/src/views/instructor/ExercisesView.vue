@@ -451,11 +451,27 @@
                           :key="module.module_id"
                           class="rounded-2xl border border-border/70 bg-background/80 p-4"
                         >
-                          <div class="flex items-center gap-2">
-                            <BookMarked class="text-muted-foreground" />
-                            <p class="font-semibold text-(--color-heading)">
-                              {{ module.title }}
-                            </p>
+                          <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                              <BookMarked class="text-muted-foreground" />
+                              <p class="font-semibold text-(--color-heading)">
+                                {{ module.title }}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              class="h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors"
+                              :class="allModulePhrasesSelected(module.module_id)
+                                ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary'
+                                : 'text-muted-foreground hover:text-foreground'"
+                              :disabled="!modulesStore.getPhrasesForModule(module.module_id).length"
+                              @click="toggleAllModulePhrases(module.module_id)"
+                            >
+                              <SquareCheck v-if="allModulePhrasesSelected(module.module_id)" class="size-3.5" />
+                              <Square v-else class="size-3.5" />
+                              {{ allModulePhrasesSelected(module.module_id) ? 'Deselect all' : 'Select all' }}
+                            </Button>
                           </div>
 
                           <div class="mt-3 flex flex-col gap-2">
@@ -486,11 +502,27 @@
                   </div>
 
                   <div class="flex flex-col gap-3">
-                    <div>
-                      <p class="font-semibold text-(--color-heading)">Assign to students</p>
-                      <p class="text-sm text-muted-foreground">
-                        {{ form.student_uids.length }} selected
-                      </p>
+                    <div class="flex items-center justify-between gap-3">
+                      <div>
+                        <p class="font-semibold text-(--color-heading)">Assign to students</p>
+                        <p class="text-sm text-muted-foreground">
+                          {{ form.student_uids.length }} selected
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors"
+                        :class="allStudentsSelected
+                          ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary'
+                          : 'text-muted-foreground hover:text-foreground'"
+                        :disabled="!students.length"
+                        @click="toggleAllStudents"
+                      >
+                        <SquareCheck v-if="allStudentsSelected" class="size-3.5" />
+                        <Square v-else class="size-3.5" />
+                        {{ allStudentsSelected ? 'Deselect all' : 'Select all' }}
+                      </Button>
                     </div>
 
                     <div class="max-h-96 overflow-y-auto rounded-3xl border border-border/70 bg-muted/25 p-4">
@@ -564,6 +596,8 @@ import {
   Plus,
   Funnel,
   Search,
+  Square,
+  SquareCheck,
   TriangleAlert,
   Users,
   X,
@@ -679,6 +713,28 @@ const form = ref({
   student_uids: [] as string[],
   due_date: '',
 })
+
+const allStudentsSelected = computed(
+  () => students.value.length > 0 && form.value.student_uids.length === students.value.length,
+)
+
+function toggleAllStudents() {
+  form.value.student_uids = allStudentsSelected.value ? [] : students.value.map((s) => s.uid)
+}
+
+function allModulePhrasesSelected(moduleId: string) {
+  const phrases = modulesStore.getPhrasesForModule(moduleId)
+  return phrases.length > 0 && phrases.every((p) => form.value.phrase_ids.includes(p.phrase_id))
+}
+
+function toggleAllModulePhrases(moduleId: string) {
+  const phraseIds = modulesStore.getPhrasesForModule(moduleId).map((p) => p.phrase_id)
+  if (allModulePhrasesSelected(moduleId)) {
+    form.value.phrase_ids = form.value.phrase_ids.filter((id) => !phraseIds.includes(id))
+  } else {
+    form.value.phrase_ids = [...new Set([...form.value.phrase_ids, ...phraseIds])]
+  }
+}
 
 const selectedExercise = computed(
   () => exercises.value.find((exercise) => exercise.exercise_id === selectedExerciseId.value) ?? null,

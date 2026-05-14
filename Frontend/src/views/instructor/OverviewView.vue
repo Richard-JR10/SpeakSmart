@@ -226,7 +226,14 @@
                   </div>
                   <div class="h-2 overflow-hidden rounded-full bg-border/70">
                     <div
-                      class="h-full rounded-full bg-primary transition-[width] duration-300"
+                      class="h-full rounded-full transition-[width] duration-300"
+                      :class="item.value >= 85
+                        ? 'bg-emerald-500'
+                        : item.value >= 70
+                          ? 'bg-primary'
+                          : item.value >= 55
+                            ? 'bg-amber-500'
+                            : 'bg-destructive'"
                       :style="{ width: `${item.value}%` }"
                     />
                   </div>

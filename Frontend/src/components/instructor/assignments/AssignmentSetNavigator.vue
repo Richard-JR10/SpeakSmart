@@ -144,7 +144,7 @@ function handleFilterUpdate(value: unknown) {
         >
           <SelectTrigger
             aria-label="Filter assignment sets"
-            class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 bg-secondary text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
+            class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
           >
             <Funnel class="size-4 shrink-0" />
           </SelectTrigger>

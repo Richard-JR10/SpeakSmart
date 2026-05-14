@@ -110,7 +110,7 @@
                     <Search class="size-4 text-muted-foreground" />
                     <Input
                       v-model="submissionSearch"
-                      class="h-8 rounded-none border-0 bg-transparent px-0 text-sm shadow-none ring-0 outline-none focus-visible:!border-transparent focus-visible:!shadow-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!outline-none"
+                      class="h-8 rounded-none border-0 bg-transparent px-0 text-sm shadow-none ring-0 outline-none focus-visible:border-transparent focus-visible:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
                       placeholder="Search student"
                     />
                   </div>
@@ -121,7 +121,7 @@
                   >
                     <SelectTrigger
                       aria-label="Filter student review queue"
-                      class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 bg-secondary text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
+                      class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
                     >
                       <Funnel class="size-4 shrink-0" />
                     </SelectTrigger>
@@ -141,7 +141,7 @@
                             v-for="option in submissionFilterOptions"
                             :key="option.value"
                             :value="option.value"
-                            class="group relative flex cursor-default select-none items-center rounded-lg py-2 pr-9 pl-3 text-sm outline-none transition-colors focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! data-[highlighted]:bg-muted data-[highlighted]:outline-none data-[highlighted]:ring-0 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                            class="group relative flex cursor-default select-none items-center rounded-lg py-2 pr-9 pl-3 text-sm outline-none transition-colors focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! data-highlighted:bg-muted data-highlighted:outline-none data-highlighted:ring-0 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                           >
                             <SelectItemText>
                               <span class="flex min-w-0 items-center gap-2">
@@ -484,7 +484,7 @@
                                 v-model="form.phrase_ids"
                                 type="checkbox"
                                 :value="phrase.phrase_id"
-                                class="mt-1 accent-[var(--color-primary)]"
+                                class="mt-1 accent-(--color-primary)"
                               >
                               <div class="min-w-0">
                                 <p class="font-semibold text-(--color-heading)">
@@ -536,7 +536,7 @@
                             v-model="form.student_uids"
                             type="checkbox"
                             :value="student.uid"
-                            class="mt-1 accent-[var(--color-primary)]"
+                            class="mt-1 accent-(--color-primary)"
                           >
                           <div class="min-w-0">
                             <p class="font-semibold text-(--color-heading)">

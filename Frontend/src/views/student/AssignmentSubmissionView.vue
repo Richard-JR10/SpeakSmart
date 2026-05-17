@@ -62,6 +62,7 @@
               </div>
             </div>
 
+            <div class="relative">
             <div class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.78fr)]">
               <section class="flex min-w-0 flex-col gap-4 px-4 py-4 lg:min-h-[520px] lg:px-5 lg:py-5">
                 <div class="flex min-w-0 flex-wrap items-center gap-2">
@@ -237,11 +238,31 @@
                     </div>
                     <div class="h-2 overflow-hidden rounded-full bg-border/70">
                       <div
-                        class="h-full rounded-full bg-emerald-600"
+                        class="h-full rounded-full transition-colors duration-300"
+                        :class="missingPhraseIds.length ? 'bg-amber-500' : 'bg-emerald-600'"
                         :style="{ width: `${assignmentCompletion}%` }"
                       />
                     </div>
                   </div>
+
+                  <Alert v-if="!allRequiredWorkComplete && missingPhraseIds.length > 0" variant="destructive">
+                    <TriangleAlert />
+                    <AlertTitle>Record all phrases before submitting</AlertTitle>
+                    <AlertDescription>
+                      Phrase{{ missingPhraseNumbers.length === 1 ? '' : 's' }}
+                      {{ missingPhraseNumbers.join(', ') }}
+                      still need{{ missingPhraseNumbers.length === 1 ? 's' : '' }} a recording.
+                      Navigate to each and tap Record.
+                    </AlertDescription>
+                  </Alert>
+
+                  <Alert v-else-if="!allRequiredWorkComplete && recordedPhraseIds.length > 0 && missingPhraseIds.length === 0">
+                    <CircleCheck class="text-emerald-600" />
+                    <AlertTitle>All phrases recorded</AlertTitle>
+                    <AlertDescription>
+                      Ready to submit — click "Submit assignment" when you're ready.
+                    </AlertDescription>
+                  </Alert>
                 </div>
 
                 <div class="mt-auto flex flex-col gap-2 border-t border-border/70 bg-card/70 px-4 py-3 sm:flex-row sm:flex-wrap lg:px-5">
@@ -268,17 +289,49 @@
                     <span>Clear take</span>
                   </Button>
 
-                  <Button
-                    size="sm"
-                    class="w-full rounded-xl sm:w-auto"
-                    :disabled="!canFinalSubmit"
-                    @click="openSubmitConfirm"
+                  <span
+                    class="w-full sm:w-auto"
+                    :title="!canFinalSubmit && missingPhraseIds.length
+                      ? `${missingPhraseIds.length} phrase${missingPhraseIds.length === 1 ? '' : 's'} still need a recording`
+                      : undefined"
                   >
-                    <Send data-icon="inline-start" />
-                    <span>Submit assignment</span>
-                  </Button>
+                    <Button
+                      size="sm"
+                      class="w-full rounded-xl sm:w-auto"
+                      :disabled="!canFinalSubmit"
+                      @click="openSubmitConfirm"
+                    >
+                      <Send data-icon="inline-start" />
+                      <span>Submit assignment</span>
+                    </Button>
+                  </span>
                 </div>
               </section>
+            </div>
+
+            <Transition
+              enter-active-class="transition-opacity duration-200"
+              enter-from-class="opacity-0"
+              leave-active-class="transition-opacity duration-200"
+              leave-to-class="opacity-0"
+            >
+              <div
+                v-if="submitting"
+                class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 rounded-b-[inherit] bg-background/90 backdrop-blur-sm"
+              >
+                <LoaderCircle class="size-10 animate-spin text-primary" />
+                <div class="flex flex-col items-center gap-1 text-center">
+                  <p class="font-semibold text-(--color-heading)">{{ submitProgressLabel }}</p>
+                  <p class="text-sm text-muted-foreground">Please wait — do not close this page.</p>
+                </div>
+                <div class="h-2 w-52 overflow-hidden rounded-full bg-border/70">
+                  <div
+                    class="h-full rounded-full bg-primary transition-[width] duration-300"
+                    :style="{ width: `${submitProgressTotal ? (submitProgressCurrent / submitProgressTotal) * 100 : 0}%` }"
+                  />
+                </div>
+              </div>
+            </Transition>
             </div>
           </CardContent>
         </Card>
@@ -310,7 +363,7 @@
               Submit assignment?
             </DialogTitle>
             <DialogDescription class="text-sm leading-6 text-muted-foreground">
-              Your recorded phrases will be uploaded for teacher review. You can still cancel and review the takes before sending.
+              All {{ requiredPhraseIds.length }} phrase{{ requiredPhraseIds.length === 1 ? '' : 's' }} are recorded and will be uploaded for teacher review. This action cannot be undone.
             </DialogDescription>
           </div>
 
@@ -370,6 +423,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleAlert,
+  CircleCheck,
   ClipboardList,
   LoaderCircle,
   Mic,
@@ -446,6 +500,9 @@ const missingPhraseIds = computed(() =>
   requiredPhraseIds.value.filter((id) =>
     !completedPhraseIds.value.includes(id) && !recordedTakes.value[id],
   ),
+)
+const missingPhraseNumbers = computed(() =>
+  missingPhraseIds.value.map((id) => requiredPhraseIds.value.indexOf(id) + 1),
 )
 const completionCount = computed(() => completedPhraseIds.value.length + recordedPhraseIds.value.length)
 const assignmentCompletion = computed(() => {

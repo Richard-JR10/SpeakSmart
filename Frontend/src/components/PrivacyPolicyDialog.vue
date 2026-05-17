@@ -171,10 +171,19 @@
             </section>
 
             <section class="flex flex-col gap-2">
-              <h2 class="text-base font-semibold text-(--color-heading)">10. Contact</h2>
+              <h2 class="text-base font-semibold text-(--color-heading)">10. Contact & Data Protection Officer</h2>
               <p class="text-muted-foreground">
-                For questions, requests, or concerns about this Privacy Policy, please contact us at
-                <span class="font-medium text-foreground">speaksmart@gordoncollege.edu.ph</span>.
+                For questions, requests, or concerns about this Privacy Policy or the handling of your personal data,
+                please contact our designated Data Protection Officer:
+              </p>
+              <ul class="ml-4 flex list-disc flex-col gap-1 text-muted-foreground">
+                <li><span class="font-medium text-foreground">Name:</span> Mr. Aaron Selubo</li>
+                <li><span class="font-medium text-foreground">Institution:</span> Gordon College, Olongapo City, Philippines</li>
+                <li><span class="font-medium text-foreground">Email:</span> 202312292@gordoncollege.edu.ph</li>
+              </ul>
+              <p class="text-muted-foreground">
+                This contact is in accordance with the requirements of the Data Privacy Act of 2012 (Republic Act No. 10173)
+                and the National Privacy Commission's guidelines.
               </p>
             </section>
           </div>

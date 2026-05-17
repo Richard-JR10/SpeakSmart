@@ -177,6 +177,49 @@
       <Card class="border-border/80 bg-card/95">
         <CardHeader class="gap-3">
           <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
+            Legal
+          </Badge>
+          <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+            Legal Documents
+          </CardTitle>
+          <CardDescription>
+            Review our terms and how we handle your data at any time.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent class="grid gap-3">
+          <div class="flex flex-col gap-4 rounded-2xl border border-border/70 bg-muted/25 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+              <p class="font-semibold text-(--color-heading)">Terms and Conditions</p>
+              <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                Rules for using the SpeakSmart platform.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" class="w-full sm:w-auto sm:shrink-0" @click="termsOpen = true">
+              View
+            </Button>
+          </div>
+
+          <div class="flex flex-col gap-4 rounded-2xl border border-border/70 bg-muted/25 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+              <p class="font-semibold text-(--color-heading)">Privacy Policy</p>
+              <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                How we collect, use, and protect your personal data.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" class="w-full sm:w-auto sm:shrink-0" @click="privacyOpen = true">
+              View
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <TermsDialog v-model:open="termsOpen" />
+      <PrivacyPolicyDialog v-model:open="privacyOpen" />
+
+      <Card class="border-border/80 bg-card/95">
+        <CardHeader class="gap-3">
+          <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
             Session
           </Badge>
           <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
@@ -290,6 +333,8 @@ import {
 } from 'reka-ui'
 
 import { updateProfile } from '@/api/auth'
+import PrivacyPolicyDialog from '@/components/PrivacyPolicyDialog.vue'
+import TermsDialog from '@/components/TermsDialog.vue'
 import StudentLayout from '@/layouts/StudentLayout.vue'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -319,6 +364,8 @@ const saving = ref(false)
 const saveSuccess = ref(false)
 const saveError = ref<string | null>(null)
 const nameError = ref<string | null>(null)
+const termsOpen = ref(false)
+const privacyOpen = ref(false)
 const signOutConfirm = ref(false)
 const signingOut = ref(false)
 const signOutError = ref<string | null>(null)

@@ -155,6 +155,10 @@
                     <p class="text-sm leading-6 text-muted-foreground">
                       Listen first if needed, then record one clear attempt before sending it for scoring.
                     </p>
+                    <p class="text-xs leading-5 text-muted-foreground/70">
+                      Your audio is used for pronunciation scoring only.
+                      <button type="button" class="underline hover:no-underline" @click="privacyOpen = true">Privacy Policy</button>
+                    </p>
                   </div>
                 </div>
 
@@ -275,6 +279,8 @@
         </CardContent>
       </Card>
     </div>
+
+    <PrivacyPolicyDialog v-model:open="privacyOpen" />
   </StudentLayout>
 </template>
 
@@ -296,6 +302,7 @@ import {
   Volume2,
 } from 'lucide-vue-next'
 
+import PrivacyPolicyDialog from '@/components/PrivacyPolicyDialog.vue'
 import StudentLayout from '@/layouts/StudentLayout.vue'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -321,6 +328,7 @@ const recorder = useAudioRecorder()
 const loading = ref(false)
 const playingReference = ref(false)
 const waveformTick = ref(0)
+const privacyOpen = ref(false)
 
 const moduleId = computed(() => String(route.params.moduleId ?? ''))
 const phraseId = computed(() => String(route.params.phraseId ?? ''))

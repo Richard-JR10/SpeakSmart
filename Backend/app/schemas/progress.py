@@ -7,6 +7,8 @@ class ProgressSummaryResponse(BaseModel):
     module_id: str
     average_accuracy: float
     total_attempts: int
+    completed_phrases: int = 0
+    total_phrases: int = 0
     streak_days: int
     last_attempted_at: datetime | None
     updated_at: datetime

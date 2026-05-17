@@ -26,6 +26,38 @@
       </Card>
 
       <template v-else>
+        <!-- Module completion celebration -->
+        <Card
+          v-if="showCelebration"
+          class="border-emerald-200 bg-[linear-gradient(135deg,rgba(52,211,153,0.10),rgba(16,185,129,0.06))] shadow-sm"
+        >
+          <CardContent class="flex flex-col items-center gap-4 px-5 py-5 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:text-left">
+            <div class="flex items-center gap-3">
+              <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <Trophy aria-hidden="true" class="size-6" />
+              </span>
+              <div class="min-w-0">
+                <p class="font-semibold text-(--color-heading)">
+                  Module complete!
+                </p>
+                <p class="text-sm text-muted-foreground">
+                  You finished every phrase in {{ currentModule?.title ?? 'this module' }}. Your certificate is ready.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              class="w-full shrink-0 rounded-xl sm:w-auto"
+              :disabled="certificateDownloading"
+              @click="handleDownloadCertificate"
+            >
+              <LoaderCircle v-if="certificateDownloading" class="animate-spin" data-icon="inline-start" />
+              <Download v-else data-icon="inline-start" />
+              <span>{{ certificateDownloading ? 'Preparing...' : 'Download Certificate' }}</span>
+            </Button>
+          </CardContent>
+        </Card>
+
         <!-- Header card: score + phrase + feedback -->
         <Card class="border-border/80 bg-card/95">
           <CardHeader class="gap-4">
@@ -796,10 +828,13 @@ import {
   CircleAlert,
   CirclePlay,
   Clock3,
+  Download,
+  LoaderCircle,
   Mic,
   MoveRight,
   RotateCcw,
   TrendingUp,
+  Trophy,
   Volume2,
 } from 'lucide-vue-next'
 
@@ -816,7 +851,10 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { useAttemptsStore } from '@/stores/attempts'
+import { useAuthStore } from '@/stores/auth'
 import { useModulesStore } from '@/stores/modules'
+import { useProgressStore } from '@/stores/progress'
+import { downloadCertificate } from '@/api/certificates'
 import type { DetailedPhonemeError } from '@/types'
 import { formatRecognizedTextForDisplay } from '@/utils/japanese'
 
@@ -847,9 +885,13 @@ type ScoredMora = {
 const route = useRoute()
 const router = useRouter()
 const attemptsStore = useAttemptsStore()
+const authStore = useAuthStore()
 const modulesStore = useModulesStore()
+const progressStore = useProgressStore()
 
 const referencePlaying = ref(false)
+const showCelebration = ref(false)
+const certificateDownloading = ref(false)
 
 const fullDateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long',
@@ -1344,6 +1386,26 @@ async function ensureResultContext() {
 
   if (attemptedModuleId.value) {
     await modulesStore.fetchPhrases(attemptedModuleId.value)
+
+    if (attempt.value.counts_for_progress && authStore.uid) {
+      const moduleId = resolvedModuleId.value
+      const progressBefore = progressStore.getProgressForModule(moduleId)
+      const wasAlreadyComplete =
+        progressBefore !== null &&
+        progressBefore.total_phrases > 0 &&
+        progressBefore.completed_phrases === progressBefore.total_phrases
+
+      await progressStore.fetchModuleProgress(authStore.uid, moduleId)
+
+      const progressAfter = progressStore.getProgressForModule(moduleId)
+      const isNowComplete =
+        progressAfter !== null &&
+        progressAfter.total_phrases > 0 &&
+        progressAfter.completed_phrases === progressAfter.total_phrases
+
+      showCelebration.value = isNowComplete && !wasAlreadyComplete
+    }
+
     return
   }
 
@@ -1353,6 +1415,18 @@ async function ensureResultContext() {
         modulesStore.fetchPhrases(module.module_id),
       ),
     )
+  }
+}
+
+async function handleDownloadCertificate() {
+  if (!authStore.uid || !resolvedModuleId.value) return
+  certificateDownloading.value = true
+  try {
+    await downloadCertificate(authStore.uid, resolvedModuleId.value)
+  } catch (e) {
+    console.error('Certificate download failed:', e)
+  } finally {
+    certificateDownloading.value = false
   }
 }
 

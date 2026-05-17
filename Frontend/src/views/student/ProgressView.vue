@@ -216,22 +216,44 @@
 
             <CardContent class="flex flex-col gap-1 px-4 pb-4 sm:px-5">
               <template v-for="(summary, index) in dashboard.progress_by_module" :key="summary.module_id">
-                <div class="flex items-center justify-between gap-3 rounded-xl bg-secondary/35 px-3 py-2.5">
-                  <div class="flex min-w-0 items-center gap-3">
-                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
-                      <AppIcon :name="moduleIconName(summary.module_id)" :size="18" />
-                    </span>
-                    <div class="min-w-0">
-                      <p class="truncate text-sm font-semibold text-(--color-heading)">
-                        {{ modulesStore.getModuleById(summary.module_id)?.title ?? summary.module_id }}
-                      </p>
-                      <p class="mt-0.5 text-xs text-muted-foreground">
-                        {{ summary.total_attempts }} attempts
-                      </p>
+                <div class="flex flex-col gap-1.5 rounded-xl bg-secondary/35 px-3 py-2.5">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                      <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                        <AppIcon :name="moduleIconName(summary.module_id)" :size="18" />
+                      </span>
+                      <div class="min-w-0">
+                        <p class="truncate text-sm font-semibold text-(--color-heading)">
+                          {{ modulesStore.getModuleById(summary.module_id)?.title ?? summary.module_id }}
+                        </p>
+                        <p class="mt-0.5 text-xs text-muted-foreground">
+                          {{ summary.completed_phrases }} / {{ summary.total_phrases }} phrases completed · {{ summary.total_attempts }} attempts
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="flex shrink-0 items-center gap-2">
+                      <Badge
+                        v-if="summary.total_phrases > 0 && summary.completed_phrases === summary.total_phrases"
+                        variant="default"
+                        class="rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.14em]"
+                      >
+                        Completed
+                      </Badge>
+                      <ScoreCircle :score="summary.average_accuracy" size="sm" />
                     </div>
                   </div>
 
-                  <ScoreCircle :score="summary.average_accuracy" size="sm" />
+                  <div class="h-1 w-full overflow-hidden rounded-full bg-border/60">
+                    <div
+                      class="h-full rounded-full bg-primary transition-[width] duration-300"
+                      :style="{
+                        width: summary.total_phrases > 0
+                          ? `${(summary.completed_phrases / summary.total_phrases) * 100}%`
+                          : '0%'
+                      }"
+                    />
+                  </div>
                 </div>
                 <Separator v-if="index < dashboard.progress_by_module.length - 1" />
               </template>

@@ -225,6 +225,8 @@ export interface ProgressSummary {
   module_id: string
   average_accuracy: number
   total_attempts: number
+  completed_phrases: number
+  total_phrases: number
   streak_days: number
   last_attempted_at: string | null
   updated_at: string

@@ -248,6 +248,7 @@ import type { Component } from 'vue'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
+  Award,
   BookOpen,
   ChartColumn,
   ChevronLeft,
@@ -281,7 +282,7 @@ import {
 } from '@/components/ui/sheet'
 import LogoMark from '@/components/shared/LogoMark.vue'
 
-type StudentSection = 'home' | 'lessons' | 'assignments' | 'progress' | 'classes' | 'settings'
+type StudentSection = 'home' | 'lessons' | 'assignments' | 'progress' | 'certificates' | 'classes' | 'settings'
 
 type NavItem = {
   section: StudentSection
@@ -312,6 +313,7 @@ const navItems: NavItem[] = [
   { section: 'lessons', label: 'Lessons', icon: BookOpen, to: '/lessons' },
   { section: 'assignments', label: 'Assignments', icon: ClipboardList, to: '/assignments' },
   { section: 'progress', label: 'Progress', icon: ChartColumn, to: '/progress' },
+  { section: 'certificates', label: 'Certificates', icon: Award, to: '/certificates' },
   { section: 'classes', label: 'Classes', icon: School, to: '/classes' },
   { section: 'settings', label: 'Settings', icon: Settings, to: '/settings' },
 ]
@@ -321,6 +323,7 @@ const sectionRouteNames: Record<StudentSection, string[]> = {
   lessons: ['lessons', 'practice', 'results'],
   assignments: ['assignments', 'assignment-submission'],
   progress: ['progress'],
+  certificates: ['certificates'],
   classes: ['classes'],
   settings: ['settings'],
 }
@@ -330,6 +333,7 @@ const sectionCopy: Record<StudentSection, string> = {
   lessons: 'Move through guided practice modules and keep your topic progress easy to scan.',
   assignments: 'Open assigned work, record submissions, and review teacher-released feedback in one place.',
   progress: 'Review accuracy trends, streaks, and module performance in one student view.',
+  certificates: 'Download completion certificates for every module you have fully finished.',
   classes: 'Join classes, review where you are enrolled, and keep classroom access easy to manage.',
   settings: 'Manage your profile, preferences, and account access without leaving the app shell.',
 }
@@ -351,6 +355,10 @@ const activeSection = computed<StudentSection>(() => {
 
   if (sectionRouteNames.classes.includes(routeName)) {
     return 'classes'
+  }
+
+  if (sectionRouteNames.certificates.includes(routeName)) {
+    return 'certificates'
   }
 
   if (sectionRouteNames.settings.includes(routeName)) {

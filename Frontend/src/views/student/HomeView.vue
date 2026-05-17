@@ -527,6 +527,7 @@ import {
   FileCheck2,
   Flame,
   Globe2,
+  CheckCircle2,
   Hand,
   MapPinned,
   MessageSquareText,
@@ -748,6 +749,19 @@ const releasedSummaryLabelClass = computed(() =>
   releasedAssignmentPhrases.value > 0 ? 'text-emerald-800' : 'text-muted-foreground',
 )
 
+const completedModulesCount = computed(() =>
+  (dashboard.value?.progress_by_module ?? []).filter(
+    (s) => s.total_phrases > 0 && s.completed_phrases === s.total_phrases,
+  ).length,
+)
+
+const totalCompletedPhrases = computed(() =>
+  (dashboard.value?.progress_by_module ?? []).reduce(
+    (sum, s) => sum + s.completed_phrases,
+    0,
+  ),
+)
+
 const metricCards = computed(() => [
   {
     label: 'Streak',
@@ -764,11 +778,13 @@ const metricCards = computed(() => [
     iconClass: 'bg-secondary text-primary ring-1 ring-primary/15',
   },
   {
-    label: 'Modules active',
-    value: `${activeModulesCount.value}`,
-    copy: 'topics you have already touched',
-    icon: BookOpen,
-    iconClass: 'bg-sky-50 text-sky-800 ring-1 ring-sky-200',
+    label: 'Phrases done',
+    value: `${totalCompletedPhrases.value}`,
+    copy: completedModulesCount.value > 0
+      ? `${completedModulesCount.value} module${completedModulesCount.value !== 1 ? 's' : ''} fully completed`
+      : 'complete all phrases in a module to earn a certificate',
+    icon: CheckCircle2,
+    iconClass: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200',
   },
   {
     label: 'Strongest module',

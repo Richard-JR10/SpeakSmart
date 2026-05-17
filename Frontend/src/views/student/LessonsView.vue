@@ -148,7 +148,14 @@
                       </Badge>
                       <Badge
                         v-if="moduleProgress(module.module_id)?.total_attempts"
-                        :variant="progressPercent(module.module_id) >= 70 ? 'default' : 'outline'"
+                        :variant="progressPercent(module.module_id) === 100 ? 'default' : 'outline'"
+                        class="rounded-full px-2.5 py-1"
+                      >
+                        {{ moduleProgress(module.module_id)?.completed_phrases ?? 0 }} / {{ moduleProgress(module.module_id)?.total_phrases ?? phraseCount(module.module_id) }} completed
+                      </Badge>
+                      <Badge
+                        v-if="moduleProgress(module.module_id)?.total_attempts"
+                        variant="outline"
                         class="rounded-full px-2.5 py-1"
                       >
                         {{ moduleProgress(module.module_id)?.average_accuracy.toFixed(0) }}% average
@@ -170,7 +177,7 @@
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-sm font-semibold text-muted-foreground">Progress</span>
                   <span class="text-sm font-semibold text-(--color-heading)">
-                    {{ progressPercent(module.module_id).toFixed(0) }}%
+                    {{ progressPercent(module.module_id) }}%
                   </span>
                 </div>
 
@@ -318,8 +325,8 @@ function moduleProgress(moduleId: string) {
 
 function progressPercent(moduleId: string) {
   const progress = moduleProgress(moduleId)
-  if (!progress) return 0
-  return Math.min(100, progress.average_accuracy)
+  if (!progress || progress.total_phrases === 0) return 0
+  return Math.round((progress.completed_phrases / progress.total_phrases) * 100)
 }
 
 function latestAttemptForModule(moduleId: string) {

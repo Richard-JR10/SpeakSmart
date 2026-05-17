@@ -24,6 +24,9 @@
                 <Badge variant="outline" class="rounded-full px-2.5 py-1 text-xs">
                   {{ phraseIndex + 1 }} of {{ phrases.length }}
                 </Badge>
+                <Badge variant="outline" class="rounded-full px-2.5 py-1 text-xs">
+                  {{ completedPhrases }} of {{ totalPhrases }} completed
+                </Badge>
                 <span class="hidden h-4 w-px bg-border sm:block" aria-hidden="true" />
                 <div class="min-w-0">
                   <p class="truncate text-sm font-semibold text-(--color-heading)">
@@ -302,6 +305,7 @@ import { Separator } from '@/components/ui/separator'
 import { useModulesStore } from '@/stores/modules'
 import { useAttemptsStore } from '@/stores/attempts'
 import { useAuthStore } from '@/stores/auth'
+import { useProgressStore } from '@/stores/progress'
 import { useAudioRecorder, MAX_RECORDING_SECONDS } from '@/composables/useAudioRecorder'
 import { setLastPracticeSession } from '@/utils/studentSession'
 import type { Module, Phrase } from '@/types'
@@ -311,6 +315,7 @@ const router = useRouter()
 const modulesStore = useModulesStore()
 const attemptsStore = useAttemptsStore()
 const authStore = useAuthStore()
+const progressStore = useProgressStore()
 const recorder = useAudioRecorder()
 
 const loading = ref(false)
@@ -332,6 +337,10 @@ const phrase = computed<Phrase | undefined>(() =>
 const phraseIndex = computed(() =>
   phrases.value.findIndex((item) => item.phrase_id === phraseId.value),
 )
+
+const moduleProgress = computed(() => progressStore.getProgressForModule(moduleId.value))
+const completedPhrases = computed(() => moduleProgress.value?.completed_phrases ?? 0)
+const totalPhrases = computed(() => moduleProgress.value?.total_phrases ?? phrases.value.length)
 
 const difficultyLabel = computed(() => {
   const labels = ['', 'Beginner', 'Easy', 'Medium', 'Hard', 'Expert']
@@ -476,6 +485,9 @@ async function loadPracticeData() {
   try {
     await modulesStore.fetchModules()
     await modulesStore.fetchPhrases(moduleId.value)
+    if (authStore.uid) {
+      await progressStore.fetchModuleProgress(authStore.uid, moduleId.value)
+    }
   } finally {
     loading.value = false
   }

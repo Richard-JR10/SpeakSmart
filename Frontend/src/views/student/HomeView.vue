@@ -1,6 +1,6 @@
 <template>
   <StudentLayout title="Dashboard" wide>
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-3">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-4">
       <LoadingSpinner
         v-if="progressStore.loading && !dashboard"
         full-screen
@@ -16,8 +16,9 @@
           </AlertDescription>
         </Alert>
 
+        <!-- ── Hero ──────────────────────────────────────────── -->
         <section
-          class="overflow-hidden rounded-2xl border border-border/80 bg-[radial-gradient(circle_at_15%_20%,rgba(193,120,150,0.14),transparent_28%),linear-gradient(135deg,#fffdfb_0%,#fde8f2_56%,#fff4e8_100%)] shadow-(--shadow-soft)"
+          class="hw-anim hw-anim--1 overflow-hidden rounded-2xl border border-border/80 bg-[radial-gradient(circle_at_15%_20%,rgba(193,120,150,0.14),transparent_28%),linear-gradient(135deg,#fffdfb_0%,#fde8f2_56%,#fff4e8_100%)] shadow-(--shadow-soft)"
           aria-labelledby="student-home-title"
         >
           <div class="grid gap-4 p-4">
@@ -42,7 +43,12 @@
                   <component :is="continueModule ? RefreshCcw : Mic" data-icon="inline-start" />
                   <span>{{ continueModule ? 'Resume practice' : 'Start practicing' }}</span>
                 </Button>
-                <Button variant="outline" size="sm" class="rounded-xl bg-card/80 px-4" @click="router.push('/assignments')">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="rounded-xl bg-card/80 px-4"
+                  @click="router.push('/assignments')"
+                >
                   <ClipboardList data-icon="inline-start" />
                   <span>View assignments</span>
                 </Button>
@@ -66,7 +72,7 @@
                 </div>
                 <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
                   <div
-                    class="h-full rounded-full bg-primary"
+                    class="h-full rounded-full bg-primary transition-all duration-700"
                     :style="{ width: overallAverageWidth }"
                   />
                 </div>
@@ -108,42 +114,37 @@
           </div>
         </section>
 
-        <section class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Student practice metrics">
+        <!-- ── Metric bar ─────────────────────────────────────── -->
+        <section
+          class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+          aria-label="Student practice metrics"
+        >
           <div
-            v-for="item in metricCards"
+            v-for="(item, i) in metricCards"
             :key="item.label"
-            class="rounded-xl border border-border/70 bg-card/90 px-3 py-2.5 shadow-xs transition-transform duration-200 ease-out hover:-translate-y-0.5"
+            :class="['hw-anim', `hw-anim--${i + 2}`, 'hw-metric']"
           >
-            <div class="flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <p class="text-xs font-semibold text-muted-foreground">
-                  {{ item.label }}
-                </p>
-                <p class="mt-1 truncate font-(--font-display) text-xl leading-none text-(--color-heading)">
-                  {{ item.value }}
-                </p>
-                <p class="mt-1 truncate text-xs text-muted-foreground">
-                  {{ item.copy }}
-                </p>
-              </div>
-              <span :class="['flex size-8 shrink-0 items-center justify-center rounded-xl', item.iconClass]">
-                <component :is="item.icon" class="size-4" aria-hidden="true" />
+            <div class="flex items-start justify-between gap-3">
+              <p class="hw-metric__label">{{ item.label }}</p>
+              <span :class="['flex size-7 shrink-0 items-center justify-center rounded-lg', item.iconClass]">
+                <component :is="item.icon" class="size-3.5" aria-hidden="true" />
               </span>
             </div>
+            <p class="hw-metric__value">{{ item.value }}</p>
+            <p class="hw-metric__copy">{{ item.copy }}</p>
           </div>
         </section>
 
-        <div class="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]">
-          <Card class="order-1 flex h-full border-border/80 bg-card/95 shadow-(--shadow-soft)">
-            <CardHeader class="gap-2 px-4 py-4">
+        <!-- ── Next session + Focus area ─────────────────────── -->
+        <div class="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.56fr)]">
+          <Card class="hw-anim hw-anim--6 flex h-full border-border/80 bg-card/95 shadow-(--shadow-soft)">
+            <CardHeader class="gap-2 px-5 py-4">
               <div class="flex items-center justify-between gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">
-                  Next session
-                </Badge>
+                <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">Next session</Badge>
                 <Clock3 class="size-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <div class="flex flex-col gap-1">
-                <CardTitle class="truncate font-(--font-display) text-2xl leading-tight text-(--color-heading)">
+                <CardTitle class="font-(--font-display) text-2xl leading-tight text-(--color-heading)">
                   {{ continueModule ? continueModule.title : 'Choose your first module' }}
                 </CardTitle>
                 <CardDescription class="text-sm">
@@ -152,42 +153,28 @@
               </div>
             </CardHeader>
 
-            <CardContent class="flex flex-1 flex-col px-4 pb-4">
-              <div v-if="continueModule" class="flex flex-1 flex-col justify-between gap-3 rounded-xl border border-border/70 bg-muted/40 p-3">
+            <CardContent class="flex flex-1 flex-col px-5 pb-5">
+              <div v-if="continueModule" class="flex flex-1 flex-col justify-between gap-3 rounded-xl border border-border/70 bg-muted/40 p-3.5">
                 <div class="flex min-w-0 items-start gap-3">
-                  <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                  <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <component :is="moduleIcon(continueModule.module_id)" class="size-4" aria-hidden="true" />
                   </span>
                   <div class="min-w-0">
-                    <p class="line-clamp-2 text-sm leading-6 text-muted-foreground">
-                      {{ continueSessionCopy }}
-                    </p>
-                    <p class="mt-1 text-xs font-medium text-muted-foreground">
-                      {{ continueSessionSource }}
-                    </p>
+                    <p class="text-sm leading-6 text-muted-foreground">{{ continueSessionCopy }}</p>
+                    <p class="mt-1 text-xs font-medium text-muted-foreground/70">{{ continueSessionSource }}</p>
                   </div>
                 </div>
-
-                <div class="grid gap-2 sm:grid-cols-2">
+                <div class="grid grid-cols-2 gap-2">
                   <div class="rounded-xl border border-border/60 bg-background/70 px-3 py-2">
-                    <p class="text-xs font-semibold text-muted-foreground">
-                      Session type
-                    </p>
-                    <p class="mt-0.5 text-sm font-semibold text-(--color-heading)">
-                      Short speaking set
-                    </p>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Session type</p>
+                    <p class="mt-0.5 text-sm font-semibold text-(--color-heading)">Short speaking set</p>
                   </div>
                   <div class="rounded-xl border border-border/60 bg-background/70 px-3 py-2">
-                    <p class="text-xs font-semibold text-muted-foreground">
-                      Next action
-                    </p>
-                    <p class="mt-0.5 text-sm font-semibold text-(--color-heading)">
-                      Record next phrase
-                    </p>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Next action</p>
+                    <p class="mt-0.5 text-sm font-semibold text-(--color-heading)">Record next phrase</p>
                   </div>
                 </div>
               </div>
-
               <Alert v-else class="flex-1">
                 <BookOpen />
                 <AlertTitle>No recent module yet</AlertTitle>
@@ -197,134 +184,18 @@
               </Alert>
             </CardContent>
 
-            <CardFooter class="border-t px-4 py-3">
-              <Button size="sm" class="w-full rounded-xl md:w-auto" @click="continueSession">
+            <CardFooter class="border-t px-5 py-3">
+              <Button size="sm" class="rounded-xl" @click="continueSession">
                 <ArrowRight data-icon="inline-start" />
                 <span>{{ continueModule ? 'Open module' : 'Browse lessons' }}</span>
               </Button>
             </CardFooter>
           </Card>
 
-            <Card class="order-3 border-border/80 bg-card/95 shadow-(--shadow-soft) xl:col-span-2">
-              <CardHeader class="gap-3 px-4 py-4">
-                <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                  <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">
-                        Teacher assignments
-                      </Badge>
-                      <ClipboardList class="size-4 text-muted-foreground" aria-hidden="true" />
-                    </div>
-                    <CardTitle class="mt-2 font-(--font-display) text-2xl leading-tight text-(--color-heading)">
-                      Assigned practice queue
-                    </CardTitle>
-                    <CardDescription class="text-sm">
-                      Teacher-assigned phrases stay separate from normal practice scores.
-                    </CardDescription>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-2 sm:w-52">
-                    <div :class="['rounded-xl border px-3 py-2', pendingSummaryCardClass]">
-                      <p :class="['text-xs font-semibold', pendingSummaryLabelClass]">
-                        Pending
-                      </p>
-                      <p class="mt-1 font-(--font-display) text-2xl leading-none">
-                        {{ pendingAssignmentsCount }}
-                      </p>
-                    </div>
-                    <div :class="['rounded-xl border px-3 py-2', releasedSummaryCardClass]">
-                      <p :class="['text-xs font-semibold', releasedSummaryLabelClass]">
-                        Released
-                      </p>
-                      <p class="mt-1 font-(--font-display) text-2xl leading-none">
-                        {{ releasedAssignmentPhrases }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent class="grid items-start gap-3 px-4 pb-4 lg:grid-cols-[minmax(0,1fr)_150px]">
-                <div class="flex flex-col gap-2">
-                  <LoadingSpinner v-if="assignmentsLoading" size="sm" />
-
-                  <Alert v-else-if="assignmentsError" variant="destructive">
-                    <AlertTriangle />
-                    <AlertTitle>Assignments could not load</AlertTitle>
-                    <AlertDescription>
-                      {{ assignmentsError }}
-                    </AlertDescription>
-                  </Alert>
-
-                  <template v-else-if="assignmentPreview.length">
-                    <div
-                      v-for="assignment in assignmentPreview"
-                      :key="assignment.exercise_id"
-                      class="grid gap-2 rounded-xl border border-border/70 bg-muted/25 px-3 py-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-                    >
-                      <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <p class="truncate text-sm font-semibold text-(--color-heading)">
-                            {{ assignment.title }}
-                          </p>
-                          <Badge
-                            variant="outline"
-                            :class="assignmentStatusClass(assignment)"
-                          >
-                            {{ assignment.completed_at ? 'Submitted' : assignment.is_overdue ? 'Overdue' : 'Open' }}
-                          </Badge>
-                        </div>
-
-                        <p class="mt-1 truncate text-xs text-muted-foreground">
-                          {{ submittedPhraseCount(assignment) }}/{{ assignment.phrases.length }} phrases submitted
-                          <span v-if="assignment.due_date">
-                            , due {{ formatDueDate(assignment.due_date) }}
-                          </span>
-                        </p>
-                      </div>
-
-                      <Badge
-                        variant="outline"
-                        :class="releasedPhraseBadgeClass(assignment)"
-                      >
-                        {{ releasedPhraseCount(assignment) }} released
-                      </Badge>
-                    </div>
-                  </template>
-
-                  <Alert v-else>
-                    <BookOpen />
-                    <AlertTitle>No teacher assignments yet</AlertTitle>
-                    <AlertDescription>
-                      Assigned work from your teachers will appear here once it is sent to your account.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-
-                <div class="rounded-xl border border-dashed border-border/80 bg-background/70 px-3 py-3">
-                  <div class="flex flex-col gap-2">
-                    <span class="flex size-8 items-center justify-center rounded-xl bg-secondary text-primary">
-                      <FileCheck2 class="size-4" aria-hidden="true" />
-                    </span>
-                    <p class="text-xs leading-5 text-muted-foreground">
-                      Record pending phrases or review released feedback.
-                    </p>
-                    <Button size="sm" class="w-full rounded-xl lg:px-3" @click="router.push('/assignments')">
-                      <span>Open</span>
-                      <ArrowRight data-icon="inline-end" />
-                      <span class="sr-only">Assignments</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-          <Card class="order-2 h-full border-border/80 bg-card/95 shadow-(--shadow-soft)">
-            <CardHeader class="gap-2 px-4 py-4">
+          <Card class="hw-anim hw-anim--7 border-border/80 bg-card/95 shadow-(--shadow-soft)">
+            <CardHeader class="gap-2 px-5 py-4">
               <div class="flex items-center justify-between gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">
-                  Focus area
-                </Badge>
+                <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">Focus area</Badge>
                 <Target class="size-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <div class="flex flex-col gap-1">
@@ -337,18 +208,14 @@
               </div>
             </CardHeader>
 
-            <CardContent class="flex flex-1 flex-col gap-3 px-4 pb-4">
-              <Alert
-                v-if="dashboard?.weakest_module_id"
-                class="border-amber-200 bg-amber-50 text-amber-950"
-              >
+            <CardContent class="flex flex-1 flex-col gap-3 px-5 pb-5">
+              <Alert v-if="dashboard?.weakest_module_id" class="border-amber-200 bg-amber-50 text-amber-950">
                 <Target />
                 <AlertTitle>{{ weakestModuleTitle }}</AlertTitle>
                 <AlertDescription class="text-amber-900">
                   Averaging {{ dashboard.weakest_module_score?.toFixed(0) }}%.
                 </AlertDescription>
               </Alert>
-
               <Alert v-else class="border-sky-200 bg-sky-50 text-sky-950">
                 <Sparkles />
                 <AlertTitle>Focus module not available yet</AlertTitle>
@@ -357,8 +224,8 @@
                 </AlertDescription>
               </Alert>
 
-              <div :class="['rounded-xl border px-3 py-2.5', focusPlanClass]">
-                <p :class="['text-xs font-semibold', focusPlanLabelClass]">
+              <div :class="['rounded-xl border px-3.5 py-3', focusPlanClass]">
+                <p :class="['text-[11px] font-semibold uppercase tracking-[0.12em]', focusPlanLabelClass]">
                   Repetition plan
                 </p>
                 <p class="mt-1 truncate text-base font-semibold">
@@ -372,12 +239,12 @@
               </div>
             </CardContent>
 
-            <CardFooter class="border-t px-4 py-3">
+            <CardFooter class="border-t px-5 py-3">
               <Button
                 variant="outline"
                 size="sm"
                 :disabled="!dashboard?.weakest_module_id"
-                class="w-full rounded-xl sm:w-auto"
+                class="rounded-xl"
                 @click="practiceWeakest"
               >
                 <Mic data-icon="inline-start" />
@@ -387,47 +254,147 @@
           </Card>
         </div>
 
-        <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <Card class="border-border/80 bg-card/95 shadow-(--shadow-soft)">
-            <CardHeader class="gap-2 px-4 py-4">
+        <!-- ── Teacher assignments ────────────────────────────── -->
+        <Card class="hw-anim hw-anim--8 border-border/80 bg-card/95 shadow-(--shadow-soft)">
+          <CardHeader class="gap-3 px-5 py-4">
+            <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">
+                    Teacher assignments
+                  </Badge>
+                  <ClipboardList class="size-4 text-muted-foreground" aria-hidden="true" />
+                </div>
+                <CardTitle class="mt-2 font-(--font-display) text-2xl leading-tight text-(--color-heading)">
+                  Assigned practice queue
+                </CardTitle>
+                <CardDescription class="mt-1 text-sm">
+                  Teacher-assigned phrases stay separate from normal practice scores.
+                </CardDescription>
+              </div>
+
+              <div class="flex gap-2 sm:w-48">
+                <div :class="['flex-1 rounded-xl border px-3 py-2', pendingSummaryCardClass]">
+                  <p :class="['text-[11px] font-semibold uppercase tracking-[0.12em]', pendingSummaryLabelClass]">
+                    Pending
+                  </p>
+                  <p class="mt-1 font-(--font-display) text-2xl leading-none">
+                    {{ pendingAssignmentsCount }}
+                  </p>
+                </div>
+                <div :class="['flex-1 rounded-xl border px-3 py-2', releasedSummaryCardClass]">
+                  <p :class="['text-[11px] font-semibold uppercase tracking-[0.12em]', releasedSummaryLabelClass]">
+                    Released
+                  </p>
+                  <p class="mt-1 font-(--font-display) text-2xl leading-none">
+                    {{ releasedAssignmentPhrases }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent class="grid items-start gap-3 px-5 pb-5 lg:grid-cols-[minmax(0,1fr)_150px]">
+            <div class="flex flex-col gap-2">
+              <LoadingSpinner v-if="assignmentsLoading" size="sm" />
+
+              <Alert v-else-if="assignmentsError" variant="destructive">
+                <AlertTriangle />
+                <AlertTitle>Assignments could not load</AlertTitle>
+                <AlertDescription>{{ assignmentsError }}</AlertDescription>
+              </Alert>
+
+              <template v-else-if="assignmentPreview.length">
+                <div
+                  v-for="assignment in assignmentPreview"
+                  :key="assignment.exercise_id"
+                  class="grid gap-2 rounded-xl border border-border/70 bg-muted/25 px-3.5 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+                >
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <p class="truncate text-sm font-semibold text-(--color-heading)">{{ assignment.title }}</p>
+                      <Badge variant="outline" :class="assignmentStatusClass(assignment)">
+                        {{ assignment.completed_at ? 'Submitted' : assignment.is_overdue ? 'Overdue' : 'Open' }}
+                      </Badge>
+                    </div>
+                    <p class="mt-0.5 text-xs text-muted-foreground">
+                      {{ submittedPhraseCount(assignment) }}/{{ assignment.phrases.length }} phrases submitted
+                      <span v-if="assignment.due_date">, due {{ formatDueDate(assignment.due_date) }}</span>
+                    </p>
+                  </div>
+                  <Badge variant="outline" :class="releasedPhraseBadgeClass(assignment)">
+                    {{ releasedPhraseCount(assignment) }} released
+                  </Badge>
+                </div>
+              </template>
+
+              <Alert v-else>
+                <BookOpen />
+                <AlertTitle>No teacher assignments yet</AlertTitle>
+                <AlertDescription>
+                  Assigned work from your teachers will appear here once it is sent to your account.
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <div class="rounded-xl border border-dashed border-border/80 bg-background/70 px-3 py-3">
+              <div class="flex flex-col gap-2">
+                <span class="flex size-8 items-center justify-center rounded-xl bg-secondary text-primary">
+                  <FileCheck2 class="size-4" aria-hidden="true" />
+                </span>
+                <p class="text-xs leading-5 text-muted-foreground">
+                  Record pending phrases or review released feedback.
+                </p>
+                <Button size="sm" class="w-full rounded-xl lg:px-3" @click="router.push('/assignments')">
+                  <span>Open</span>
+                  <ArrowRight data-icon="inline-end" />
+                  <span class="sr-only">Assignments</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- ── Module atlas + Recent attempts ─────────────────── -->
+        <div class="grid gap-3 xl:grid-cols-2">
+          <Card class="hw-anim hw-anim--9 flex flex-col border-border/80 bg-card/95 shadow-(--shadow-soft)">
+            <CardHeader class="gap-2 px-5 py-4">
               <div class="flex items-center justify-between gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">
-                  Module atlas
-                </Badge>
+                <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">Module atlas</Badge>
                 <BookOpen class="size-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <CardTitle class="font-(--font-display) text-2xl leading-tight text-(--color-heading)">
                 Where you sound strongest
               </CardTitle>
-              <CardDescription class="text-sm">
-                Ranked by accuracy across modules.
-              </CardDescription>
+              <CardDescription class="text-sm">Ranked by accuracy across modules.</CardDescription>
             </CardHeader>
 
-            <CardContent class="flex flex-col gap-1 px-4 pb-4">
+            <CardContent class="flex flex-1 flex-col px-4 pb-4">
               <template v-if="rankedModules.length">
                 <template v-for="(summary, index) in rankedModules" :key="summary.module_id">
-                  <div class="flex flex-col gap-2 rounded-xl px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="flex min-w-0 items-center gap-3">
-                      <span class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
-                        <component :is="moduleIcon(summary.module_id)" class="size-4" aria-hidden="true" />
-                      </span>
-                      <div class="min-w-0">
-                        <p class="truncate text-sm font-semibold text-(--color-heading)">
-                          {{ modulesStore.getModuleById(summary.module_id)?.title ?? summary.module_id }}
-                        </p>
-                        <p class="mt-0.5 text-xs text-muted-foreground">
-                          {{ summary.total_attempts }} attempts recorded
-                        </p>
+                  <div class="flex items-center gap-3 px-1 py-2" :class="{ 'opacity-45': !summary.started }">
+                    <span class="w-4 shrink-0 text-right text-[11px] font-bold tabular-nums text-muted-foreground">
+                      {{ summary.started ? index + 1 : '—' }}
+                    </span>
+                    <span class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                      <component :is="moduleIcon(summary.module_id)" class="size-4" aria-hidden="true" />
+                    </span>
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate text-sm font-semibold text-(--color-heading)">
+                        {{ modulesStore.getModuleById(summary.module_id)?.title ?? summary.module_id }}
+                      </p>
+                      <div class="mt-1.5 flex items-center gap-2">
+                        <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+                          <div
+                            class="h-full rounded-full bg-primary transition-all duration-700"
+                            :style="{ width: `${summary.average_accuracy}%` }"
+                          />
+                        </div>
+                        <span class="shrink-0 text-[11px] font-bold tabular-nums text-muted-foreground">
+                          {{ summary.started ? `${summary.average_accuracy.toFixed(0)}%` : 'Not started' }}
+                        </span>
                       </div>
                     </div>
-
-                    <Badge
-                      variant="outline"
-                      :class="scoreBadgeClass(summary.average_accuracy)"
-                    >
-                      {{ summary.average_accuracy.toFixed(0) }}%
-                    </Badge>
                   </div>
                   <Separator v-if="index < rankedModules.length - 1" />
                 </template>
@@ -442,48 +409,48 @@
               </Alert>
             </CardContent>
 
-            <CardFooter class="border-t px-4 py-3">
-              <Button variant="outline" size="sm" class="w-full rounded-xl sm:w-auto" @click="router.push('/lessons')">
+            <CardFooter class="border-t px-5 py-3">
+              <Button variant="outline" size="sm" class="rounded-xl" @click="router.push('/lessons')">
                 <BookOpen data-icon="inline-start" />
                 <span>Explore all modules</span>
               </Button>
             </CardFooter>
           </Card>
 
-          <Card class="border-border/80 bg-card/95 shadow-(--shadow-soft)">
-            <CardHeader class="gap-2 px-4 py-4">
+          <Card class="hw-anim hw-anim--10 flex flex-col border-border/80 bg-card/95 shadow-(--shadow-soft)">
+            <CardHeader class="gap-2 px-5 py-4">
               <div class="flex items-center justify-between gap-3">
-                <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">
-                  Recent work
-                </Badge>
+                <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-xs">Recent work</Badge>
                 <MessageSquareText class="size-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <CardTitle class="font-(--font-display) text-2xl leading-tight text-(--color-heading)">
                 Latest speaking checks
               </CardTitle>
-              <CardDescription class="text-sm">
-                Your most recent pronunciation checks.
-              </CardDescription>
+              <CardDescription class="text-sm">Your most recent pronunciation checks.</CardDescription>
             </CardHeader>
 
-            <CardContent class="flex flex-col gap-1 px-4 pb-4">
+            <CardContent class="flex flex-1 flex-col px-4 pb-4">
               <LoadingSpinner v-if="attemptsStore.loading" size="sm" />
 
               <template v-else-if="recentAttempts.length">
                 <template v-for="(attempt, index) in recentAttempts" :key="attempt.attempt_id">
-                  <div class="flex flex-col gap-2 rounded-xl px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="min-w-0">
+                  <div class="flex items-center gap-3 px-1 py-2">
+                    <div class="min-w-0 flex-1">
                       <p class="truncate text-sm font-semibold text-(--color-heading)">{{ attempt.phrase_id }}</p>
                       <p class="mt-0.5 text-xs text-muted-foreground">
                         {{ formatAttemptDate(attempt.attempted_at) }}
                       </p>
                     </div>
-                    <Badge
-                      variant="outline"
-                      :class="scoreBadgeClass(attempt.accuracy_score)"
-                    >
-                      {{ attempt.accuracy_score.toFixed(0) }}%
-                    </Badge>
+                    <div class="flex items-center gap-2">
+                      <div
+                        class="hw-bar"
+                        :style="{ '--w': `${attempt.accuracy_score}%` }"
+                        aria-hidden="true"
+                      />
+                      <Badge variant="outline" :class="scoreBadgeClass(attempt.accuracy_score)">
+                        {{ attempt.accuracy_score.toFixed(0) }}%
+                      </Badge>
+                    </div>
                   </div>
                   <Separator v-if="index < recentAttempts.length - 1" />
                 </template>
@@ -498,8 +465,8 @@
               </Alert>
             </CardContent>
 
-            <CardFooter class="border-t px-4 py-3">
-              <Button size="sm" class="w-full rounded-xl sm:w-auto" @click="router.push('/lessons')">
+            <CardFooter class="border-t px-5 py-3">
+              <Button size="sm" class="rounded-xl" @click="router.push('/lessons')">
                 <Mic data-icon="inline-start" />
                 <span>Start a new session</span>
               </Button>
@@ -594,7 +561,7 @@ const overallAverageWidth = computed(() => {
   return `${average}%`
 })
 const latestAttempt = computed(() => attemptsStore.attemptHistory[0] ?? null)
-const recentAttempts = computed(() => attemptsStore.attemptHistory.slice(0, 4))
+const recentAttempts = computed(() => attemptsStore.attemptHistory.slice(0, 5))
 const weeklyAccuracy = computed(() => dashboard.value?.weekly_accuracy.slice(-6) ?? [])
 const studentName = computed(() => authStore.profile?.display_name ?? 'Student')
 const pendingAssignmentsCount = computed(() =>
@@ -673,18 +640,36 @@ const activeModulesCount = computed(
     dashboard.value?.progress_by_module.filter((summary) => summary.total_attempts > 0).length ?? 0,
 )
 
-const rankedModules = computed(() =>
-  [...(dashboard.value?.progress_by_module ?? [])]
-    .sort((a, b) => {
-      if (b.average_accuracy === a.average_accuracy) {
-        return b.total_attempts - a.total_attempts
+const rankedModules = computed(() => {
+  const progressMap = new Map(
+    (dashboard.value?.progress_by_module ?? []).map((s) => [s.module_id, s]),
+  )
+  return modulesStore.modules
+    .map((mod) => {
+      const p = progressMap.get(mod.module_id)
+      return {
+        module_id: mod.module_id,
+        average_accuracy: p?.average_accuracy ?? 0,
+        total_attempts: p?.total_attempts ?? 0,
+        started: (p?.total_attempts ?? 0) > 0,
       }
+    })
+    .sort((a, b) => {
+      if (!a.started && !b.started) return 0
+      if (!a.started) return 1
+      if (!b.started) return -1
+      if (b.average_accuracy === a.average_accuracy) return b.total_attempts - a.total_attempts
       return b.average_accuracy - a.average_accuracy
     })
-    .slice(0, 4),
-)
+    .slice(0, 5)
+})
 
-const strongestModule = computed<ProgressSummary | null>(() => rankedModules.value[0] ?? null)
+const strongestModule = computed<ProgressSummary | null>(() => {
+  const summaries = [...(dashboard.value?.progress_by_module ?? [])]
+    .filter((s) => s.total_attempts > 0)
+    .sort((a, b) => b.average_accuracy - a.average_accuracy)
+  return summaries[0] ?? null
+})
 
 const strongestModuleTitle = computed(() => {
   if (!strongestModule.value) return 'Warming up'
@@ -929,3 +914,93 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+/* ── Entrance animations ─────────────────────────────────── */
+@keyframes hw-slide-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hw-anim {
+  animation: hw-slide-up 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hw-anim--1  { animation-delay: 0.04s; }
+.hw-anim--2  { animation-delay: 0.10s; }
+.hw-anim--3  { animation-delay: 0.15s; }
+.hw-anim--4  { animation-delay: 0.20s; }
+.hw-anim--5  { animation-delay: 0.25s; }
+.hw-anim--6  { animation-delay: 0.28s; }
+.hw-anim--7  { animation-delay: 0.33s; }
+.hw-anim--8  { animation-delay: 0.38s; }
+.hw-anim--9  { animation-delay: 0.43s; }
+.hw-anim--10 { animation-delay: 0.48s; }
+
+/* ── Metric cards ────────────────────────────────────────── */
+.hw-metric {
+  border-radius: 0.875rem;
+  border: 1px solid rgba(234, 209, 220, 0.7);
+  background: rgba(255, 253, 251, 0.95);
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  box-shadow: 0 1px 3px rgba(58, 20, 39, 0.05);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hw-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(58, 20, 39, 0.09);
+}
+
+.hw-metric__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(37, 20, 29, 0.45);
+  margin-bottom: 0.3rem;
+}
+
+.hw-metric__value {
+  font-family: var(--font-display);
+  font-size: 1.625rem;
+  line-height: 1.1;
+  color: #25141d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hw-metric__copy {
+  font-size: 0.6875rem;
+  color: rgba(37, 20, 29, 0.45);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 0.2rem;
+}
+
+/* ── Inline score bar (recent attempts) ─────────────────── */
+.hw-bar {
+  width: 2.5rem;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(234, 209, 220, 0.6);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.hw-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  right: auto;
+  width: var(--w, 0%);
+  border-radius: inherit;
+  background: #a81f5d;
+}
+</style>

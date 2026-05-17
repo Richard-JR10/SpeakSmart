@@ -398,7 +398,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Flame, Mic, Target, Zap } from 'lucide-vue-next'
+import { Target, Zap } from 'lucide-vue-next'
 
 import StudentLayout from '@/layouts/StudentLayout.vue'
 import AppIcon from '@/components/shared/AppIcon.vue'
@@ -552,12 +552,6 @@ function formatDate(dateStr: string) {
   })
 }
 
-function scoreBadgeVariant(score: number): 'default' | 'secondary' | 'outline' | 'destructive' {
-  if (score >= 85) return 'default'
-  if (score >= 70) return 'secondary'
-  if (score >= 55) return 'outline'
-  return 'destructive'
-}
 
 async function practiceModule(moduleId: string) {
   await modulesStore.fetchPhrases(moduleId)

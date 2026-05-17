@@ -15,3 +15,11 @@ export const getModuleProgress = async (
     const res = await api.get(`/api/v1/progress/${studentUid}/module/${moduleId}`)
     return res.data
 }
+
+export const getCompletedPhraseIds = async (
+    studentUid: string,
+    moduleId: string,
+): Promise<string[]> => {
+    const res = await api.get(`/api/v1/progress/${studentUid}/module/${moduleId}/completed-phrases`)
+    return res.data.completed_phrase_ids
+}

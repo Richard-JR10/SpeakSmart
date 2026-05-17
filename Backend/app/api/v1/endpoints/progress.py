@@ -236,6 +236,33 @@ async def get_module_certificate(
     )
 
 
+@router.get("/{student_uid}/module/{module_id}/completed-phrases")
+@limiter.limit(settings.RATE_LIMIT_PROGRESS)
+async def get_module_completed_phrases(
+    request: Request,
+    student_uid: str,
+    module_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Returns the list of phrase IDs that count toward module completion for this student.
+    Uses the same query as completed_phrases in the progress summary.
+    """
+    await authorize_student_access(db, current_user, student_uid)
+
+    result = await db.execute(
+        select(distinct(Attempt.phrase_id))
+        .join(Phrase, Phrase.phrase_id == Attempt.phrase_id)
+        .where(
+            Attempt.student_uid == student_uid,
+            Attempt.counts_for_progress.is_(True),
+            Phrase.module_id == module_id,
+        )
+    )
+    return {"completed_phrase_ids": [row[0] for row in result.all()]}
+
+
 @router.get("/{student_uid}/module/{module_id}", response_model=ProgressSummaryResponse)
 @limiter.limit(settings.RATE_LIMIT_PROGRESS)
 async def get_module_progress(

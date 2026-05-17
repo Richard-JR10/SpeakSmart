@@ -71,6 +71,16 @@
                   <Badge variant="outline" class="rounded-full px-2.5 py-1 text-xs">
                     Prompt
                   </Badge>
+                  <Badge
+                    v-if="currentPhraseCompleted"
+                    class="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600"
+                  >
+                    <Check class="size-3" />
+                    Phrase completed
+                  </Badge>
+                  <Badge v-else variant="outline" class="rounded-full px-2.5 py-1 text-xs text-muted-foreground">
+                    Not yet completed
+                  </Badge>
                 </div>
 
                 <div class="flex flex-1 flex-col justify-between gap-4">
@@ -285,11 +295,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   AudioLines,
   BookOpen,
+  Check,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
@@ -315,6 +326,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useProgressStore } from '@/stores/progress'
 import { useAudioRecorder, MAX_RECORDING_SECONDS } from '@/composables/useAudioRecorder'
 import { setLastPracticeSession } from '@/utils/studentSession'
+import { getCompletedPhraseIds } from '@/api/progress'
 import type { Module, Phrase } from '@/types'
 
 const route = useRoute()
@@ -329,6 +341,7 @@ const loading = ref(false)
 const playingReference = ref(false)
 const waveformTick = ref(0)
 const privacyOpen = ref(false)
+const completedPhraseIds = reactive(new Set<string>())
 
 const moduleId = computed(() => String(route.params.moduleId ?? ''))
 const phraseId = computed(() => String(route.params.phraseId ?? ''))
@@ -349,6 +362,9 @@ const phraseIndex = computed(() =>
 const moduleProgress = computed(() => progressStore.getProgressForModule(moduleId.value))
 const completedPhrases = computed(() => moduleProgress.value?.completed_phrases ?? 0)
 const totalPhrases = computed(() => moduleProgress.value?.total_phrases ?? phrases.value.length)
+const currentPhraseCompleted = computed(() =>
+  phrase.value ? completedPhraseIds.has(phrase.value.phrase_id) : false,
+)
 
 const difficultyLabel = computed(() => {
   const labels = ['', 'Beginner', 'Easy', 'Medium', 'Hard', 'Expert']
@@ -495,6 +511,10 @@ async function loadPracticeData() {
     await modulesStore.fetchPhrases(moduleId.value)
     if (authStore.uid) {
       await progressStore.fetchModuleProgress(authStore.uid, moduleId.value)
+      const ids = await getCompletedPhraseIds(authStore.uid, moduleId.value)
+      for (const id of ids) {
+        completedPhraseIds.add(id)
+      }
     }
   } finally {
     loading.value = false
@@ -555,7 +575,10 @@ async function submitAttempt() {
   if (!recorder.audioBlob.value || !phrase.value) return
 
   try {
-    await attemptsStore.submit(phrase.value.phrase_id, recorder.audioBlob.value)
+    const attempt = await attemptsStore.submit(phrase.value.phrase_id, recorder.audioBlob.value)
+    if (attempt.counts_for_progress) {
+      completedPhraseIds.add(phrase.value.phrase_id)
+    }
     await router.push({
       path: '/results',
       query: {

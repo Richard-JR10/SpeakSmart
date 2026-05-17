@@ -37,9 +37,9 @@
               class="h-10 justify-between rounded-full border-border bg-background px-3 text-xs font-semibold transition-[background-color,border-color,color,box-shadow] hover:bg-muted data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground sm:min-w-32"
               :aria-label="`${option.label}: ${assignmentFilterCount(option.value)} assignments`"
             >
-              <span>{{ option.label }}</span>
+              <span class="min-w-0 truncate">{{ option.label }}</span>
               <span
-                class="rounded-full px-2 py-0.5 text-[11px]"
+                class="shrink-0 rounded-full px-2 py-0.5 text-[11px]"
                 :class="assignmentFilter === option.value ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'"
               >
                 {{ assignmentFilterCount(option.value) }}
@@ -88,8 +88,8 @@
           class="overflow-hidden border-border/80 bg-card/95 py-0 shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-primary/35 hover:shadow-md"
         >
           <CardContent class="p-0">
-            <article class="grid lg:grid-cols-[minmax(220px,0.85fr)_minmax(320px,1.15fr)_220px]">
-              <section class="flex min-w-0 flex-col gap-3 border-b border-border/70 p-4 lg:border-r lg:border-b-0">
+            <article class="grid md:grid-cols-[1fr_200px] lg:grid-cols-[minmax(220px,0.85fr)_minmax(320px,1.15fr)_220px]">
+              <section class="flex min-w-0 flex-col gap-3 border-b border-border/70 p-4 md:order-1 lg:border-r lg:border-b-0">
                 <div class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div class="flex min-w-0 flex-wrap items-center gap-2">
                     <Badge :class="assignmentStatusClass(assignment)">
@@ -136,7 +136,7 @@
                 </div>
               </section>
 
-              <section class="grid min-w-0 content-start gap-2 border-b border-border/70 bg-muted/15 p-4 lg:border-r lg:border-b-0">
+              <section class="grid min-w-0 content-start gap-2 border-b border-border/70 bg-muted/15 p-4 md:order-3 md:col-span-2 md:border-b-0 lg:order-2 lg:col-span-1 lg:border-r lg:border-b-0">
                 <div class="flex items-center justify-between gap-3">
                   <p class="text-[11px] font-semibold uppercase text-muted-foreground">
                     Phrase work
@@ -146,7 +146,7 @@
                   </span>
                 </div>
 
-                <div class="grid gap-2 xl:grid-cols-2">
+                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <article
                     v-for="phraseStatus in assignment.phrases"
                     :key="phraseStatus.phrase_id"
@@ -176,7 +176,7 @@
                 </div>
               </section>
 
-              <aside class="flex flex-col justify-between gap-4 bg-muted/20 p-4">
+              <aside class="flex flex-col gap-4 bg-muted/20 p-4 md:order-2 md:border-l md:border-b md:border-border/70 lg:order-3 lg:justify-between lg:border-l-0 lg:border-b-0">
                 <div class="grid gap-2">
                   <div class="flex items-center justify-between gap-3 text-xs">
                     <span class="font-medium text-muted-foreground">Progress</span>

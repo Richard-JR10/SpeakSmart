@@ -17,6 +17,12 @@ PHRASES = [
     {"phrase_id": "ph_greet_004", "module_id": "module_greetings", "japanese_text": "はじめまして", "romaji": "Hajimemashite", "english_translation": "Nice to meet you", "difficulty_level": 2},
     {"phrase_id": "ph_greet_005", "module_id": "module_greetings", "japanese_text": "よろしくおねがいします", "romaji": "Yoroshiku onegaishimasu", "english_translation": "Please treat me well", "difficulty_level": 3},
     {"phrase_id": "ph_greet_006", "module_id": "module_greetings", "japanese_text": "ありがとうございます", "romaji": "Arigatou gozaimasu", "english_translation": "Thank you very much", "difficulty_level": 2},
+    {"phrase_id": "ph_greet_007", "module_id": "module_greetings", "japanese_text": "すみません", "romaji": "Sumimasen", "english_translation": "Excuse me / I'm sorry", "difficulty_level": 1},
+    {"phrase_id": "ph_greet_008", "module_id": "module_greetings", "japanese_text": "おげんきですか", "romaji": "Ogenki desu ka", "english_translation": "How are you?", "difficulty_level": 2},
+    {"phrase_id": "ph_greet_009", "module_id": "module_greetings", "japanese_text": "おやすみなさい", "romaji": "Oyasuminasai", "english_translation": "Good night", "difficulty_level": 2},
+    {"phrase_id": "ph_greet_010", "module_id": "module_greetings", "japanese_text": "またあとで", "romaji": "Mata ato de", "english_translation": "See you later", "difficulty_level": 1},
+    {"phrase_id": "ph_greet_011", "module_id": "module_greetings", "japanese_text": "どういたしまして", "romaji": "Dou itashimashite", "english_translation": "You're welcome", "difficulty_level": 2},
+    {"phrase_id": "ph_greet_012", "module_id": "module_greetings", "japanese_text": "しつれいします", "romaji": "Shitsurei shimasu", "english_translation": "Excuse me (formal)", "difficulty_level": 3},
 
     # --- Hotel ---
     {"phrase_id": "ph_hotel_001", "module_id": "module_hotel", "japanese_text": "チェックインをおねがいします", "romaji": "Chekkuin wo onegaishimasu", "english_translation": "I would like to check in", "difficulty_level": 2},
@@ -25,6 +31,12 @@ PHRASES = [
     {"phrase_id": "ph_hotel_004", "module_id": "module_hotel", "japanese_text": "タオルをもってきてください", "romaji": "Taoru wo motte kite kudasai", "english_translation": "Please bring towels", "difficulty_level": 3},
     {"phrase_id": "ph_hotel_005", "module_id": "module_hotel", "japanese_text": "チェックアウトはなんじですか", "romaji": "Chekkuauto wa nanji desu ka", "english_translation": "What time is check-out?", "difficulty_level": 2},
     {"phrase_id": "ph_hotel_006", "module_id": "module_hotel", "japanese_text": "WiFiのパスワードをおしえてください", "romaji": "WiFi no pasuwaado wo oshiete kudasai", "english_translation": "Please tell me the WiFi password", "difficulty_level": 3},
+    {"phrase_id": "ph_hotel_007", "module_id": "module_hotel", "japanese_text": "エレベーターはどこですか", "romaji": "Erebeetaa wa doko desu ka", "english_translation": "Where is the elevator?", "difficulty_level": 2},
+    {"phrase_id": "ph_hotel_008", "module_id": "module_hotel", "japanese_text": "へやをそうじしてください", "romaji": "Heya wo souji shite kudasai", "english_translation": "Please clean my room", "difficulty_level": 3},
+    {"phrase_id": "ph_hotel_009", "module_id": "module_hotel", "japanese_text": "おゆがでません", "romaji": "Oyu ga demasen", "english_translation": "There is no hot water", "difficulty_level": 3},
+    {"phrase_id": "ph_hotel_010", "module_id": "module_hotel", "japanese_text": "もっとまくらをください", "romaji": "Motto makura wo kudasai", "english_translation": "Please give me more pillows", "difficulty_level": 2},
+    {"phrase_id": "ph_hotel_011", "module_id": "module_hotel", "japanese_text": "レイトチェックアウトはできますか", "romaji": "Reito chekkuauto wa dekimasu ka", "english_translation": "Can I have a late check-out?", "difficulty_level": 4},
+    {"phrase_id": "ph_hotel_012", "module_id": "module_hotel", "japanese_text": "ちかくにコンビニはありますか", "romaji": "Chikaku ni konbini wa arimasu ka", "english_translation": "Is there a convenience store nearby?", "difficulty_level": 3},
 
     # --- Directions ---
     {"phrase_id": "ph_dir_001", "module_id": "module_directions", "japanese_text": "えきはどこですか", "romaji": "Eki wa doko desu ka", "english_translation": "Where is the station?", "difficulty_level": 1},
@@ -33,6 +45,12 @@ PHRASES = [
     {"phrase_id": "ph_dir_004", "module_id": "module_directions", "japanese_text": "まっすぐいってください", "romaji": "Massugu itte kudasai", "english_translation": "Please go straight", "difficulty_level": 2},
     {"phrase_id": "ph_dir_005", "module_id": "module_directions", "japanese_text": "ここからとおいですか", "romaji": "Koko kara tooi desu ka", "english_translation": "Is it far from here?", "difficulty_level": 2},
     {"phrase_id": "ph_dir_006", "module_id": "module_directions", "japanese_text": "ちずをかいてもらえますか", "romaji": "Chizu wo kaite moraemasu ka", "english_translation": "Could you draw me a map?", "difficulty_level": 4},
+    {"phrase_id": "ph_dir_007", "module_id": "module_directions", "japanese_text": "バスていはどこですか", "romaji": "Basutei wa doko desu ka", "english_translation": "Where is the bus stop?", "difficulty_level": 1},
+    {"phrase_id": "ph_dir_008", "module_id": "module_directions", "japanese_text": "あるいていけますか", "romaji": "Aruite ikemasu ka", "english_translation": "Can I walk there?", "difficulty_level": 2},
+    {"phrase_id": "ph_dir_009", "module_id": "module_directions", "japanese_text": "このでんしゃはどこいきですか", "romaji": "Kono densha wa doko yuki desu ka", "english_translation": "Where does this train go?", "difficulty_level": 3},
+    {"phrase_id": "ph_dir_010", "module_id": "module_directions", "japanese_text": "しんごうをわたってください", "romaji": "Shingou wo watatte kudasai", "english_translation": "Please cross at the traffic light", "difficulty_level": 3},
+    {"phrase_id": "ph_dir_011", "module_id": "module_directions", "japanese_text": "つぎのかどをみぎにまがってください", "romaji": "Tsugi no kado wo migi ni magatte kudasai", "english_translation": "Please turn right at the next corner", "difficulty_level": 3},
+    {"phrase_id": "ph_dir_012", "module_id": "module_directions", "japanese_text": "このじゅうしょをしっていますか", "romaji": "Kono juusho wo shitte imasu ka", "english_translation": "Do you know this address?", "difficulty_level": 3},
 
     # --- Food ---
     {"phrase_id": "ph_food_001", "module_id": "module_food", "japanese_text": "メニューをみせてください", "romaji": "Menyuu wo misete kudasai", "english_translation": "Please show me the menu", "difficulty_level": 1},
@@ -41,6 +59,12 @@ PHRASES = [
     {"phrase_id": "ph_food_004", "module_id": "module_food", "japanese_text": "アレルギーがあります", "romaji": "Arerugii ga arimasu", "english_translation": "I have allergies", "difficulty_level": 3},
     {"phrase_id": "ph_food_005", "module_id": "module_food", "japanese_text": "おかいけいをおねがいします", "romaji": "Okaikei wo onegaishimasu", "english_translation": "Check please", "difficulty_level": 2},
     {"phrase_id": "ph_food_006", "module_id": "module_food", "japanese_text": "とてもおいしかったです", "romaji": "Totemo oishikatta desu", "english_translation": "It was very delicious", "difficulty_level": 3},
+    {"phrase_id": "ph_food_007", "module_id": "module_food", "japanese_text": "おみずをください", "romaji": "Omizu wo kudasai", "english_translation": "Please give me water", "difficulty_level": 1},
+    {"phrase_id": "ph_food_008", "module_id": "module_food", "japanese_text": "からいですか", "romaji": "Karai desu ka", "english_translation": "Is it spicy?", "difficulty_level": 1},
+    {"phrase_id": "ph_food_009", "module_id": "module_food", "japanese_text": "クレジットカードはつかえますか", "romaji": "Kurejitto kaado wa tsukaemasu ka", "english_translation": "Can I use a credit card?", "difficulty_level": 3},
+    {"phrase_id": "ph_food_010", "module_id": "module_food", "japanese_text": "ベジタリアンりょうりはありますか", "romaji": "Bejitarian ryouri wa arimasu ka", "english_translation": "Do you have vegetarian dishes?", "difficulty_level": 3},
+    {"phrase_id": "ph_food_011", "module_id": "module_food", "japanese_text": "よやくをしたいのですが", "romaji": "Yoyaku wo shitai no desu ga", "english_translation": "I would like to make a reservation", "difficulty_level": 4},
+    {"phrase_id": "ph_food_012", "module_id": "module_food", "japanese_text": "もうひとつおなじものをください", "romaji": "Mou hitotsu onaji mono wo kudasai", "english_translation": "Please give me one more of the same", "difficulty_level": 3},
 
     # --- Emergency ---
     {"phrase_id": "ph_emer_001", "module_id": "module_emergency", "japanese_text": "たすけてください", "romaji": "Tasukete kudasai", "english_translation": "Please help me", "difficulty_level": 1},
@@ -49,6 +73,12 @@ PHRASES = [
     {"phrase_id": "ph_emer_004", "module_id": "module_emergency", "japanese_text": "ぐあいがわるいです", "romaji": "Guai ga warui desu", "english_translation": "I am not feeling well", "difficulty_level": 2},
     {"phrase_id": "ph_emer_005", "module_id": "module_emergency", "japanese_text": "びょういんはどこですか", "romaji": "Byouin wa doko desu ka", "english_translation": "Where is the hospital?", "difficulty_level": 2},
     {"phrase_id": "ph_emer_006", "module_id": "module_emergency", "japanese_text": "パスポートをなくしました", "romaji": "Pasupooto wo nakushimashita", "english_translation": "I lost my passport", "difficulty_level": 3},
+    {"phrase_id": "ph_emer_007", "module_id": "module_emergency", "japanese_text": "いたいです", "romaji": "Itai desu", "english_translation": "It hurts", "difficulty_level": 1},
+    {"phrase_id": "ph_emer_008", "module_id": "module_emergency", "japanese_text": "いしゃをよんでください", "romaji": "Isha wo yonde kudasai", "english_translation": "Please call a doctor", "difficulty_level": 2},
+    {"phrase_id": "ph_emer_009", "module_id": "module_emergency", "japanese_text": "にほんごがわかりません", "romaji": "Nihongo ga wakarimasen", "english_translation": "I don't understand Japanese", "difficulty_level": 2},
+    {"phrase_id": "ph_emer_010", "module_id": "module_emergency", "japanese_text": "えいごをはなせるひとはいますか", "romaji": "Eigo wo hanaseru hito wa imasu ka", "english_translation": "Is there someone who speaks English?", "difficulty_level": 3},
+    {"phrase_id": "ph_emer_011", "module_id": "module_emergency", "japanese_text": "けがをしました", "romaji": "Kega wo shimashita", "english_translation": "I got injured", "difficulty_level": 2},
+    {"phrase_id": "ph_emer_012", "module_id": "module_emergency", "japanese_text": "くすりがほしいです", "romaji": "Kusuri ga hoshii desu", "english_translation": "I need medicine", "difficulty_level": 2},
 
     # --- Tour Guide ---
     {"phrase_id": "ph_tour_001", "module_id": "module_tour_guide", "japanese_text": "ようこそフィリピンへ", "romaji": "Youkoso Firipin e", "english_translation": "Welcome to the Philippines", "difficulty_level": 1},
@@ -57,4 +87,10 @@ PHRASES = [
     {"phrase_id": "ph_tour_004", "module_id": "module_tour_guide", "japanese_text": "つぎはうみにいきます", "romaji": "Tsugi wa umi ni ikimasu", "english_translation": "Next we will go to the sea", "difficulty_level": 2},
     {"phrase_id": "ph_tour_005", "module_id": "module_tour_guide", "japanese_text": "ここはゆうめいなかんこうちです", "romaji": "Koko wa yuumei na kankouchi desu", "english_translation": "This is a famous tourist spot", "difficulty_level": 3},
     {"phrase_id": "ph_tour_006", "module_id": "module_tour_guide", "japanese_text": "なにかしつもんはありますか", "romaji": "Nanika shitsumon wa arimasu ka", "english_translation": "Do you have any questions?", "difficulty_level": 3},
+    {"phrase_id": "ph_tour_007", "module_id": "module_tour_guide", "japanese_text": "バスにのってください", "romaji": "Basu ni notte kudasai", "english_translation": "Please get on the bus", "difficulty_level": 2},
+    {"phrase_id": "ph_tour_008", "module_id": "module_tour_guide", "japanese_text": "じゆうじかんはさんじゅっぷんです", "romaji": "Jiyuu jikan wa sanjuppun desu", "english_translation": "Free time is thirty minutes", "difficulty_level": 3},
+    {"phrase_id": "ph_tour_009", "module_id": "module_tour_guide", "japanese_text": "ここでそろってください", "romaji": "Koko de sorotte kudasai", "english_translation": "Please line up here", "difficulty_level": 2},
+    {"phrase_id": "ph_tour_010", "module_id": "module_tour_guide", "japanese_text": "ほんじつはありがとうございました", "romaji": "Honjitsu wa arigatou gozaimashita", "english_translation": "Thank you for today", "difficulty_level": 3},
+    {"phrase_id": "ph_tour_011", "module_id": "module_tour_guide", "japanese_text": "このけしきはすばらしいですね", "romaji": "Kono keshiki wa subarashii desu ne", "english_translation": "This scenery is wonderful, isn't it?", "difficulty_level": 3},
+    {"phrase_id": "ph_tour_012", "module_id": "module_tour_guide", "japanese_text": "しゃしんをとりましょうか", "romaji": "Shashin wo torimashou ka", "english_translation": "Shall I take a photo for you?", "difficulty_level": 3},
 ]

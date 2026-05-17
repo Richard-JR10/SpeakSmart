@@ -37,11 +37,15 @@ async def update_progress_summary(
     if not attempts:
         return None
 
-    # Compute average accuracy
-    average_accuracy = round(
-        sum(a.accuracy_score for a in attempts) / len(attempts), 2
-    )
-    total_attempts = len(attempts)
+    # Best accepted score per phrase, then average those bests
+    best_per_phrase: dict[str, float] = {}
+    for attempt in attempts:
+        pid = attempt.phrase_id
+        if pid not in best_per_phrase or attempt.accuracy_score > best_per_phrase[pid]:
+            best_per_phrase[pid] = attempt.accuracy_score
+
+    average_accuracy = round(sum(best_per_phrase.values()) / len(best_per_phrase), 2)
+    total_attempts = len(attempts)  # all attempts — used for practice volume, not accuracy
     last_attempted_at = attempts[0].attempted_at
 
     # Compute streak — consecutive days with at least one attempt

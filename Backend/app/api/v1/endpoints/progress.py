@@ -68,9 +68,6 @@ async def get_student_progress(
 
     # 2. Compute overall stats
     if summaries:
-        overall_average = round(
-            sum(s.average_accuracy for s in summaries) / len(summaries), 2
-        )
         total_attempts = sum(s.total_attempts for s in summaries)
         streak_days = max(s.streak_days for s in summaries)
         weakest = summaries[0]  # Already sorted ascending
@@ -96,6 +93,14 @@ async def get_student_progress(
         completed_by_module = {
             row.module_id: row.completed_count for row in completed_result.all()
         }
+
+        # Weighted overall: modules with more phrases attempted contribute proportionally
+        total_weighted = sum(
+            s.average_accuracy * completed_by_module.get(s.module_id, 0)
+            for s in summaries
+        )
+        total_completed = sum(completed_by_module.get(s.module_id, 0) for s in summaries)
+        overall_average = round(total_weighted / total_completed, 2) if total_completed > 0 else 0.0
 
         # 3b. Batch: total phrases per module
         total_result = await db.execute(

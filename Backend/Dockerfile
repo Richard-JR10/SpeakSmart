@@ -27,6 +27,7 @@ RUN uv run python scripts/prefetch_whisper_model.py
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
+COPY templates ./templates
 
 EXPOSE 8080
 

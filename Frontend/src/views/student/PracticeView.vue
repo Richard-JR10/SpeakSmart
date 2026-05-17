@@ -152,11 +152,53 @@
               </section>
 
               <section class="flex min-w-0 flex-col border-t border-border/70 bg-muted/20 lg:border-l lg:border-t-0">
+                <template v-if="attemptsStore.submitting">
+                  <div class="flex flex-1 flex-col items-center justify-center gap-5 px-6 py-12 text-center">
+                    <div class="relative flex items-center justify-center">
+                      <span class="absolute size-20 animate-ping rounded-full bg-primary/15" />
+                      <span class="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <LoaderCircle class="size-7 animate-spin" />
+                      </span>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <p class="font-(--font-display) text-xl font-semibold text-(--color-heading)">
+                        Scoring your pronunciation
+                      </p>
+                      <p class="max-w-xs text-sm leading-6 text-muted-foreground">
+                        Analyzing pitch accuracy, timing, and pronunciation quality. This takes a few seconds.
+                      </p>
+                    </div>
+                    <div class="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+                      <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Phrase submitted</p>
+                      <p class="mt-1 font-(--font-display) text-lg text-(--color-heading)">
+                        {{ phrase?.japanese_text }}
+                      </p>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-else>
                 <div class="flex flex-col gap-3 px-4 py-4 lg:px-5 lg:py-5">
-                  <div class="flex min-w-0 flex-wrap items-center gap-2">
-                    <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em]">
-                      Recording booth
-                    </Badge>
+                  <div class="flex items-center gap-1.5">
+                    <template v-for="(step, i) in ['Listen', 'Record', 'Submit']" :key="step">
+                      <div class="flex items-center gap-1.5">
+                        <span
+                          :class="[
+                            'flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors',
+                            recordingStep >= i + 1
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary text-muted-foreground',
+                          ]"
+                        >{{ i + 1 }}</span>
+                        <span
+                          :class="[
+                            'text-xs font-semibold transition-colors',
+                            recordingStep === i + 1 ? 'text-(--color-heading)' : 'text-muted-foreground',
+                          ]"
+                        >{{ step }}</span>
+                      </div>
+                      <span v-if="i < 2" class="h-px w-4 shrink-0 bg-border" aria-hidden="true" />
+                    </template>
                   </div>
                   <div class="flex flex-col gap-1">
                     <h3 class="font-(--font-display) text-2xl leading-tight text-(--color-heading)">
@@ -182,7 +224,14 @@
                     </AlertDescription>
                   </Alert>
 
-                  <div class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/80 bg-card/80 px-4 py-5 text-center">
+                  <div
+                    :class="[
+                      'flex flex-col items-center gap-3 rounded-2xl border px-4 py-5 text-center transition-colors duration-300',
+                      recorder.audioBlob.value && !recorder.isRecording.value
+                        ? 'border-emerald-500/30 bg-emerald-500/5'
+                        : 'border-dashed border-border/80 bg-card/80',
+                    ]"
+                  >
                     <Button
                       :variant="recorder.isRecording.value ? 'destructive' : 'default'"
                       size="icon-lg"
@@ -267,6 +316,7 @@
                     <span>{{ attemptsStore.submitting ? 'Submitting...' : 'Submit for scoring' }}</span>
                   </Button>
                 </div>
+                </template>
               </section>
             </div>
           </CardContent>
@@ -398,6 +448,12 @@ const recorderHint = computed(() => {
 })
 
 const timeRemaining = computed(() => MAX_RECORDING_SECONDS - recorder.duration.value)
+
+const recordingStep = computed(() => {
+  if (recorder.audioBlob.value) return 3
+  if (recorder.isRecording.value) return 2
+  return 1
+})
 
 const recordingStateTitle = computed(() => {
   if (recorder.error.value || attemptsStore.error) {

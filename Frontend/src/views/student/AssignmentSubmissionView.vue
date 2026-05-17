@@ -92,17 +92,8 @@
                     </div>
                   </div>
 
-                  <div class="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                    <div class="grid gap-2 text-sm sm:grid-cols-3">
-                      <div class="min-w-0">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                          Reference
-                        </p>
-                        <p class="truncate font-semibold text-(--color-heading)">
-                          {{ phrase.reference_audio_url ? 'Available' : 'Unavailable' }}
-                        </p>
-                      </div>
-
+                  <div class="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-3">
+                    <div class="grid gap-2 text-sm sm:grid-cols-2">
                       <div class="min-w-0">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                           Assignment
@@ -121,27 +112,7 @@
                         </p>
                       </div>
                     </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      class="w-full justify-center rounded-xl sm:w-auto"
-                      :disabled="!phrase.reference_audio_url || playingReference || recorder.isRecording.value || submitting"
-                      @click="playReference"
-                    >
-                      <LoaderCircle v-if="playingReference" class="animate-spin" data-icon="inline-start" />
-                      <Volume2 v-else data-icon="inline-start" />
-                      <span>{{ playingReference ? 'Playing...' : 'Play reference' }}</span>
-                    </Button>
                   </div>
-
-                  <Alert v-if="!phrase.reference_audio_url">
-                    <CircleAlert />
-                    <AlertTitle>Reference audio unavailable</AlertTitle>
-                    <AlertDescription>
-                      You can still record this phrase, but there is no model audio attached to it yet.
-                    </AlertDescription>
-                  </Alert>
 
                   <Alert v-if="allRequiredWorkComplete">
                     <ClipboardList />
@@ -155,10 +126,26 @@
 
               <section class="flex min-w-0 flex-col border-t border-border/70 bg-muted/20 lg:border-l lg:border-t-0">
                 <div class="flex flex-col gap-3 px-4 py-4 lg:px-5 lg:py-5">
-                  <div class="flex min-w-0 flex-wrap items-center gap-2">
-                    <Badge variant="secondary" class="w-fit rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em]">
-                      Recording booth
-                    </Badge>
+                  <div class="flex items-center gap-1.5">
+                    <template v-for="(step, i) in ['Record', 'Review', 'Submit']" :key="step">
+                      <div class="flex items-center gap-1.5">
+                        <span
+                          :class="[
+                            'flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors',
+                            assignmentStep >= i + 1
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary text-muted-foreground',
+                          ]"
+                        >{{ i + 1 }}</span>
+                        <span
+                          :class="[
+                            'text-xs font-semibold transition-colors',
+                            assignmentStep === i + 1 ? 'text-(--color-heading)' : 'text-muted-foreground',
+                          ]"
+                        >{{ step }}</span>
+                      </div>
+                      <span v-if="i < 2" class="h-px w-4 shrink-0 bg-border" aria-hidden="true" />
+                    </template>
                   </div>
                   <div class="flex flex-col gap-1">
                     <h3 class="font-(--font-display) text-2xl leading-tight text-(--color-heading)">
@@ -180,7 +167,16 @@
                     </AlertDescription>
                   </Alert>
 
-                  <div class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/80 bg-card/80 px-4 py-5 text-center">
+                  <div
+                    :class="[
+                      'flex flex-col items-center gap-3 rounded-2xl border px-4 py-5 text-center transition-colors duration-300',
+                      currentPhraseLocked
+                        ? 'border-primary/20 bg-primary/5'
+                        : currentHasRecording && !recorder.isRecording.value
+                          ? 'border-emerald-500/30 bg-emerald-500/5'
+                          : 'border-dashed border-border/80 bg-card/80',
+                    ]"
+                  >
                     <Button
                       :variant="recorder.isRecording.value ? 'destructive' : 'default'"
                       size="icon-lg"
@@ -319,10 +315,17 @@
                 v-if="submitting"
                 class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 rounded-b-[inherit] bg-background/90 backdrop-blur-sm"
               >
-                <LoaderCircle class="size-10 animate-spin text-primary" />
+                <div class="relative flex items-center justify-center">
+                  <span class="absolute size-20 animate-ping rounded-full bg-primary/15" />
+                  <span class="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <LoaderCircle class="size-7 animate-spin" />
+                  </span>
+                </div>
                 <div class="flex flex-col items-center gap-1 text-center">
-                  <p class="font-semibold text-(--color-heading)">{{ submitProgressLabel }}</p>
-                  <p class="text-sm text-muted-foreground">Please wait — do not close this page.</p>
+                  <p class="font-(--font-display) text-xl font-semibold text-(--color-heading)">
+                    Submitting your assignment
+                  </p>
+                  <p class="text-sm text-muted-foreground">{{ submitProgressLabel }} — please wait.</p>
                 </div>
                 <div class="h-2 w-52 overflow-hidden rounded-full bg-border/70">
                   <div
@@ -330,6 +333,7 @@
                     :style="{ width: `${submitProgressTotal ? (submitProgressCurrent / submitProgressTotal) * 100 : 0}%` }"
                   />
                 </div>
+                <p class="text-xs text-muted-foreground">Do not close this page.</p>
               </div>
             </Transition>
             </div>
@@ -422,7 +426,6 @@ import {
   AudioLines,
   ChevronLeft,
   ChevronRight,
-  CircleAlert,
   CircleCheck,
   ClipboardList,
   LoaderCircle,
@@ -431,7 +434,6 @@ import {
   Send,
   Square,
   TriangleAlert,
-  Volume2,
 } from 'lucide-vue-next'
 
 import { getStudentAssignments, submitAssignmentPhrase } from '@/api/assignments'
@@ -473,7 +475,6 @@ const recordedTakes = ref<Record<string, RecordedTake>>({})
 const waveformTick = shallowRef(0)
 const submitProgressCurrent = shallowRef(0)
 const submitProgressTotal = shallowRef(0)
-const playingReference = shallowRef(false)
 
 const assignment = computed(() =>
   assignments.value.find((item) => item.exercise_id === exerciseId.value) ?? null,
@@ -540,6 +541,12 @@ const currentRecordingLabel = computed(() => {
   return 'Waiting'
 })
 const timeRemaining = computed(() => MAX_RECORDING_SECONDS - recorder.duration.value)
+
+const assignmentStep = computed(() => {
+  if (missingPhraseIds.value.length === 0 && recordedPhraseIds.value.length > 0) return 3
+  if (currentHasRecording.value || currentPhraseLocked.value || recorder.isRecording.value) return 2
+  return 1
+})
 const recordingStatusLabel = computed(() => {
   if (recorder.isRecording.value) {
     return timeRemaining.value <= 3
@@ -605,7 +612,6 @@ const submitProgressLabel = computed(() => {
 })
 
 let waveformInterval: ReturnType<typeof setInterval> | null = null
-let referenceAudio: HTMLAudioElement | null = null
 
 watch(
   () => recorder.isRecording.value,
@@ -648,7 +654,6 @@ onBeforeUnmount(() => {
   if (recorder.isRecording.value) {
     recorder.stopRecording()
   }
-  stopReferenceAudio()
   recorder.clearRecording()
   clearRecordedTakes()
 })
@@ -711,41 +716,8 @@ function phraseStatusVariant(status: AssignmentPhraseStatus): 'default' | 'secon
   return 'destructive'
 }
 
-function stopReferenceAudio() {
-  if (referenceAudio) {
-    referenceAudio.pause()
-    referenceAudio.currentTime = 0
-    referenceAudio = null
-  }
-  playingReference.value = false
-}
-
-async function playReference() {
-  if (!phrase.value?.reference_audio_url) return
-
-  stopReferenceAudio()
-  playingReference.value = true
-
-  try {
-    referenceAudio = new Audio(phrase.value.reference_audio_url)
-    referenceAudio.onended = () => {
-      playingReference.value = false
-      referenceAudio = null
-    }
-    referenceAudio.onerror = () => {
-      playingReference.value = false
-      referenceAudio = null
-    }
-    await referenceAudio.play()
-  } catch {
-    playingReference.value = false
-    referenceAudio = null
-  }
-}
-
 async function toggleRecording() {
   if (recordingDisabled.value) return
-  stopReferenceAudio()
 
   if (recorder.isRecording.value) {
     recorder.stopRecording()
@@ -800,7 +772,6 @@ async function goToAssignmentPhrase(index: number) {
   const targetPhraseId = requiredPhraseIds.value[index]
   if (!targetPhraseId || recorder.isRecording.value || submitting.value) return
 
-  stopReferenceAudio()
   recorder.clearRecording()
   await router.push(`/assignments/${exerciseId.value}/${targetPhraseId}`)
 }

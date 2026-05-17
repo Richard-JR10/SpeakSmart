@@ -161,56 +161,45 @@ def score_pitch_accent(
             "pattern_match_ratio": None,
         }
 
-    # Score pitch TRANSITIONS between consecutive voiced morae rather than
-    # classifying each mora as H or L against a speaker-dependent threshold.
+    # Score using utterance-median H/L classification.
     #
-    # Japanese pitch accent is defined by where the pitch rises (L→H) and
-    # where it drops (H→L). H→H and L→L pairs carry no contrastive information
-    # and are skipped so they don't dilute the score.
-    #
-    # An 8% F0 ratio threshold separates meaningful transitions from
-    # natural jitter within a single pitch level.
-    _RISE_THRESHOLD = 1.08   # f0_next / f0_prev > 1.08 → rising
-    _FALL_THRESHOLD = 0.92   # f0_next / f0_prev < 0.92 → falling
+    # Each voiced mora is labelled H (above the speaker's own median F0) or L
+    # (below), then compared against the reference pattern. This is robust
+    # against natural F0 declination (pitch falls as speech progresses), which
+    # caused the previous transition-ratio approach to systematically under-score
+    # expected rises — a particular problem for Filipino speakers who produce
+    # smaller pitch excursions than native Japanese speakers.
+    voiced_f0_values = [f0 for _, _, f0 in voiced_pairs]
+    utterance_median = float(np.median(voiced_f0_values))
+
+    # If all morae are nearly the same pitch, we cannot reliably classify H/L.
+    # Return a neutral score so students are not penalised for flat-but-otherwise
+    # correct recordings where prosody simply wasn't captured.
+    f0_cv = (
+        float(np.std(voiced_f0_values) / utterance_median)
+        if utterance_median > 0
+        else 0.0
+    )
+    if f0_cv < 0.03:
+        return {
+            "pitch_accent_score": 60.0,
+            "mora_pitch_errors": [],
+            "pattern_match_ratio": None,
+        }
 
     errors: list[int] = []
-    correct = 0
+    correct = 0.0
     total = 0
 
-    for k in range(1, len(voiced_pairs)):
-        prev_idx, prev_pitch, prev_f0 = voiced_pairs[k - 1]
-        curr_idx, curr_pitch, curr_f0 = voiced_pairs[k]
-
-        # Only evaluate transitions between adjacent morae (not across voiceless gaps).
-        if curr_idx != prev_idx + 1:
-            continue
-
-        expected_rise = (prev_pitch == "L" and curr_pitch == "H")
-        expected_fall = (prev_pitch == "H" and curr_pitch == "L")
-
-        if not expected_rise and not expected_fall:
-            # Same-level transition (H→H or L→L) — skip, no penalty.
-            continue
-
-        ratio_f0 = curr_f0 / prev_f0 if prev_f0 > 0 else 1.0
-        student_rising = ratio_f0 > _RISE_THRESHOLD
-        student_falling = ratio_f0 < _FALL_THRESHOLD
-
-        if expected_rise:
-            if student_rising:
-                correct += 1
-            else:
-                errors.append(curr_idx)
-        else:  # expected_fall
-            if student_falling:
-                correct += 1
-            else:
-                errors.append(curr_idx)
+    for mora_idx, expected_pitch, f0 in voiced_pairs:
+        student_pitch = "H" if f0 >= utterance_median else "L"
+        if student_pitch == expected_pitch:
+            correct += 1.0
+        else:
+            errors.append(mora_idx)
         total += 1
 
     if total == 0:
-        # No scoreable transitions (e.g. flat accent phrase with all H→H).
-        # Return a neutral score rather than None so the row still appears.
         return {
             "pitch_accent_score": 75.0,
             "mora_pitch_errors": [],
@@ -225,6 +214,7 @@ def score_pitch_accent(
         "mora_pitch_errors": errors,
         "pattern_match_ratio": round(ratio, 3),
     }
+
 
 
 def _katakana_to_morae(text: str) -> list[str]:

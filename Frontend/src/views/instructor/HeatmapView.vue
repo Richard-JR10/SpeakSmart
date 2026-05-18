@@ -76,40 +76,22 @@
 
             <CardContent class="p-0">
               <template v-if="moduleIds.length">
-                <div class="overflow-x-auto">
-                  <div class="min-w-130">
-                    <div class="grid grid-cols-[minmax(130px,1.4fr)_repeat(4,minmax(88px,0.7fr))] border-b border-border/70 bg-muted/20 px-4 py-2">
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Module
-                      </p>
-                      <p
-                        v-for="label in heatmapColumnLabels"
-                        :key="label"
-                        class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-                      >
-                        {{ label }}
+                <!-- Mobile card layout (< sm) -->
+                <div class="sm:hidden divide-y divide-border/60">
+                  <div
+                    v-for="moduleId in moduleIds"
+                    :key="moduleId"
+                    class="px-4 py-3"
+                  >
+                    <div class="mb-2.5 flex items-center gap-2">
+                      <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
+                        <BookMarked class="size-3.5" />
+                      </div>
+                      <p class="truncate text-sm font-semibold text-(--color-heading)">
+                        {{ moduleName(moduleId) }}
                       </p>
                     </div>
-
-                    <div
-                      v-for="moduleId in moduleIds"
-                      :key="moduleId"
-                      class="grid grid-cols-[minmax(130px,1.4fr)_repeat(4,minmax(88px,0.7fr))] items-stretch gap-2 border-b border-border/60 px-4 py-2 last:border-b-0 hover:bg-muted/20"
-                    >
-                      <div class="flex min-w-0 items-center gap-3 pr-2">
-                        <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
-                          <BookMarked class="size-4" />
-                        </div>
-                        <div class="min-w-0">
-                          <p class="truncate text-sm font-semibold text-(--color-heading)">
-                            {{ moduleName(moduleId) }}
-                          </p>
-                          <p class="truncate text-xs text-muted-foreground">
-                            Module performance snapshot
-                          </p>
-                        </div>
-                      </div>
-
+                    <div class="grid grid-cols-2 gap-2">
                       <div
                         v-for="item in scoreRows(moduleId)"
                         :key="item.label"
@@ -120,10 +102,61 @@
                         <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                           {{ item.label }}
                         </p>
-                        <p class="mt-1 font-(--font-display) text-xl leading-none text-(--color-heading) sm:text-2xl">
+                        <p class="mt-1 font-(--font-display) text-lg leading-none text-(--color-heading)">
                           {{ item.value.toFixed(0) }}%
                         </p>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Table layout (sm+) — fits without horizontal scroll at ≥640px -->
+                <div class="hidden sm:block">
+                  <div class="grid grid-cols-[minmax(130px,1.4fr)_repeat(4,minmax(88px,0.7fr))] border-b border-border/70 bg-muted/20 px-4 py-2">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Module
+                    </p>
+                    <p
+                      v-for="label in heatmapColumnLabels"
+                      :key="label"
+                      class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+                    >
+                      {{ label }}
+                    </p>
+                  </div>
+
+                  <div
+                    v-for="moduleId in moduleIds"
+                    :key="moduleId"
+                    class="grid grid-cols-[minmax(130px,1.4fr)_repeat(4,minmax(88px,0.7fr))] items-stretch gap-2 border-b border-border/60 px-4 py-2 last:border-b-0 hover:bg-muted/20"
+                  >
+                    <div class="flex min-w-0 items-center gap-3 pr-2">
+                      <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                        <BookMarked class="size-4" />
+                      </div>
+                      <div class="min-w-0">
+                        <p class="truncate text-sm font-semibold text-(--color-heading)">
+                          {{ moduleName(moduleId) }}
+                        </p>
+                        <p class="truncate text-xs text-muted-foreground">
+                          Module performance snapshot
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      v-for="item in scoreRows(moduleId)"
+                      :key="item.label"
+                      class="rounded-xl border px-3 py-2"
+                      :class="item.label === 'Overall' ? 'ring-1 ring-primary/15' : ''"
+                      :style="cellStyle(item.value)"
+                    >
+                      <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        {{ item.label }}
+                      </p>
+                      <p class="mt-1 font-(--font-display) text-xl leading-none text-(--color-heading) sm:text-2xl">
+                        {{ item.value.toFixed(0) }}%
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -152,7 +152,7 @@
               <h2 class="text-base font-semibold text-(--color-heading)">12. Contact</h2>
               <p class="text-muted-foreground">
                 For questions or concerns about these Terms and Conditions, please contact us at
-                <span class="font-medium text-foreground">speaksmart@gordoncollege.edu.ph</span>.
+                <span class="font-medium text-foreground">speaksmart@gmail.com</span>.
               </p>
             </section>
           </div>

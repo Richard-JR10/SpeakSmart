@@ -8,61 +8,15 @@
     </a>
 
     <main id="signup-main" tabindex="-1">
-      <div class="mx-auto flex min-h-dvh w-full max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-8">
-        <div class="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_460px] lg:items-start">
-          <div class="order-1 flex flex-col gap-6 lg:pt-8">
+      <div class="mx-auto flex min-h-dvh w-full max-w-6xl justify-center items-center px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex-col w-lg gap-6">
+          <div class="mb-4">
             <Button as-child variant="outline" size="lg" class="w-fit">
               <RouterLink to="/">
                 <ArrowLeft data-icon="inline-start" />
                 Back
               </RouterLink>
             </Button>
-
-            <div class="hidden lg:flex flex-col gap-4">
-              <div class="flex size-12 items-center justify-center rounded-2xl bg-secondary text-primary">
-                <Sparkles class="size-5" />
-              </div>
-
-              <div class="flex flex-col gap-3">
-                <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                  Create account
-                </p>
-                <h1 class="text-balance font-(--font-display) text-5xl leading-[0.95] tracking-[-0.04em] text-(--color-heading) sm:text-6xl">
-                  Start your <span translate="no">SpeakSmart</span> journey with the right role.
-                </h1>
-                <p class="max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
-                  Set up a student or instructor account in one clean flow. The page stays
-                  simple, but the account is ready for practice, tracking, and class use.
-                </p>
-              </div>
-            </div>
-
-            <div class="hidden lg:grid gap-4 sm:grid-cols-3">
-              <Card v-for="item in highlightCards" :key="item.title">
-                <CardHeader>
-                  <div class="flex size-10 items-center justify-center rounded-2xl bg-secondary text-primary">
-                    <component :is="item.icon" class="size-5" />
-                  </div>
-                  <CardTitle>{{ item.title }}</CardTitle>
-                  <CardDescription>{{ item.copy }}</CardDescription>
-                </CardHeader>
-              </Card>
-            </div>
-
-            <Card class="hidden lg:block border-none bg-primary text-primary-foreground shadow-sm">
-              <CardHeader class="gap-3">
-                <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary-foreground/70">
-                  Account setup
-                </p>
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-primary-foreground">
-                  Choose your role once, then move straight into practice or oversight.
-                </CardTitle>
-                <CardDescription class="text-primary-foreground/75">
-                  Students use the account for lessons, attempts, and progress. Instructors
-                  use it for analytics, flagged learners, and exercises.
-                </CardDescription>
-              </CardHeader>
-            </Card>
           </div>
 
           <Card class="order-1 lg:order-2">
@@ -340,15 +294,11 @@ import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vu
 import { RouterLink } from 'vue-router'
 import {
   ArrowLeft,
-  BookOpen,
   Check,
-  ChartColumn,
-  ClipboardCheck,
   Dot,
   Eye,
   EyeOff,
   LoaderCircle,
-  Sparkles,
   TriangleAlert,
 } from 'lucide-vue-next'
 
@@ -407,24 +357,6 @@ const roleOptions: Array<{ value: UserRole; label: string; copy: string }> = [
     value: 'instructor',
     label: 'Instructor',
     copy: 'Review analytics, learners, and classroom exercises.',
-  },
-]
-
-const highlightCards = [
-  {
-    icon: BookOpen,
-    title: 'Role-based access',
-    copy: 'Start with the right experience for student practice or instructor review.',
-  },
-  {
-    icon: ChartColumn,
-    title: 'Progress-ready',
-    copy: 'Your account connects directly to scores, attempts, and tracking.',
-  },
-  {
-    icon: ClipboardCheck,
-    title: 'Simple setup',
-    copy: 'Account creation stays short, responsive, and easy to complete on mobile.',
   },
 ]
 

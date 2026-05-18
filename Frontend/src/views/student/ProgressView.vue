@@ -193,9 +193,9 @@
           <CardContent class="px-5 pb-5 pt-4">
             <div v-if="weeklyChartPoints.length">
               <svg
-                class="h-72 w-full"
+                class="w-full"
                 :viewBox="`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`"
-                preserveAspectRatio="none"
+                preserveAspectRatio="xMidYMid meet"
                 role="img"
                 aria-label="Weekly accuracy and attempt volume chart"
               >
@@ -299,69 +299,110 @@
             <LoadingSpinner v-if="attemptsStore.loading" size="sm" />
 
             <template v-else-if="visibleAttempts.length">
-              <Table>
-                <TableHeader>
-                  <TableRow class="hover:bg-transparent border-border/40">
-                    <TableHead class="pl-5 text-[10px] uppercase tracking-[0.14em]">When</TableHead>
-                    <TableHead class="text-[10px] uppercase tracking-[0.14em]">Phrase</TableHead>
-                    <TableHead class="text-[10px] uppercase tracking-[0.14em]">Status</TableHead>
-                    <TableHead class="pr-5 text-right text-[10px] uppercase tracking-[0.14em]">Score</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow
-                    v-for="attempt in visibleAttempts"
-                    :key="attempt.attempt_id"
-                    class="border-border/30"
-                  >
-                    <!-- Date -->
-                    <TableCell class="pl-5 text-xs tabular-nums text-muted-foreground">
+              <!-- Mobile card list (< sm) -->
+              <div class="sm:hidden divide-y divide-border/40">
+                <div
+                  v-for="attempt in visibleAttempts"
+                  :key="attempt.attempt_id"
+                  class="flex items-start gap-3 px-4 py-3"
+                >
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-semibold text-(--color-heading)">
+                      {{ phraseMap[attempt.phrase_id]?.japanese_text ?? attempt.phrase_id }}
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                      {{ phraseMap[attempt.phrase_id]?.romaji ?? '' }}
+                    </p>
+                    <p class="mt-0.5 text-xs tabular-nums text-muted-foreground">
                       {{ formatDate(attempt.attempted_at) }}
-                    </TableCell>
-
-                    <!-- Phrase -->
-                    <TableCell class="font-semibold text-(--color-heading)">
-                      {{ attempt.phrase_id }}
-                    </TableCell>
-
-                    <!-- Status -->
-                    <TableCell>
-                      <span
-                        class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 flex-col items-end gap-1.5">
+                    <span
+                      class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                      :class="statusClass(attempt.verification_status)"
+                    >
+                      {{ statusLabel(attempt.verification_status) }}
+                    </span>
+                    <div class="relative h-5 w-16 overflow-hidden rounded-full bg-border/30">
+                      <div
+                        class="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
                         :class="{
-                          'bg-emerald-100 text-emerald-700': attempt.verification_status === 'accepted',
-                          'bg-amber-100 text-amber-700': attempt.verification_status === 'retry_needed',
-                          'bg-secondary text-muted-foreground': attempt.verification_status === 'no_clear_speech' || attempt.verification_status === 'wrong_phrase_detected',
+                          'bg-emerald-500/80': attempt.accuracy_score >= 85,
+                          'bg-primary/70': attempt.accuracy_score >= 70 && attempt.accuracy_score < 85,
+                          'bg-amber-400/80': attempt.accuracy_score >= 55 && attempt.accuracy_score < 70,
+                          'bg-rose-400/80': attempt.accuracy_score < 55,
                         }"
-                      >
-                        {{ attempt.verification_status === 'accepted' ? 'Accepted'
-                          : attempt.verification_status === 'retry_needed' ? 'Retry'
-                          : attempt.verification_status === 'no_clear_speech' ? 'No speech'
-                          : 'Wrong phrase' }}
+                        :style="{ width: `${attempt.accuracy_score}%` }"
+                      />
+                      <span class="absolute inset-0 flex items-center justify-center text-[10px] font-bold tabular-nums text-(--color-heading)">
+                        {{ attempt.accuracy_score.toFixed(0) }}%
                       </span>
-                    </TableCell>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                    <!-- Score bar -->
-                    <TableCell class="pr-5">
-                      <div class="relative ml-auto h-6 w-20 overflow-hidden rounded-full bg-border/30">
-                        <div
-                          class="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
-                          :class="{
-                            'bg-emerald-500/80': attempt.accuracy_score >= 85,
-                            'bg-primary/70': attempt.accuracy_score >= 70 && attempt.accuracy_score < 85,
-                            'bg-amber-400/80': attempt.accuracy_score >= 55 && attempt.accuracy_score < 70,
-                            'bg-rose-400/80': attempt.accuracy_score < 55,
-                          }"
-                          :style="{ width: `${attempt.accuracy_score}%` }"
-                        />
-                        <span class="absolute inset-0 flex items-center justify-center text-[11px] font-bold tabular-nums text-(--color-heading)">
-                          {{ attempt.accuracy_score.toFixed(0) }}%
+              <!-- Desktop table (sm+) -->
+              <div class="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow class="hover:bg-transparent border-border/40">
+                      <TableHead class="pl-5 text-[10px] uppercase tracking-[0.14em]">When</TableHead>
+                      <TableHead class="text-[10px] uppercase tracking-[0.14em]">Phrase</TableHead>
+                      <TableHead class="text-[10px] uppercase tracking-[0.14em]">Status</TableHead>
+                      <TableHead class="pr-5 text-right text-[10px] uppercase tracking-[0.14em]">Score</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow
+                      v-for="attempt in visibleAttempts"
+                      :key="attempt.attempt_id"
+                      class="border-border/30"
+                    >
+                      <TableCell class="pl-5 text-xs tabular-nums text-muted-foreground">
+                        {{ formatDate(attempt.attempted_at) }}
+                      </TableCell>
+
+                      <TableCell>
+                        <p class="font-semibold text-(--color-heading)">
+                          {{ phraseMap[attempt.phrase_id]?.japanese_text ?? attempt.phrase_id }}
+                        </p>
+                        <p class="text-xs text-muted-foreground">
+                          {{ phraseMap[attempt.phrase_id]?.romaji ?? '' }}
+                        </p>
+                      </TableCell>
+
+                      <TableCell>
+                        <span
+                          class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                          :class="statusClass(attempt.verification_status)"
+                        >
+                          {{ statusLabel(attempt.verification_status) }}
                         </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+                      </TableCell>
+
+                      <TableCell class="pr-5">
+                        <div class="relative ml-auto h-6 w-20 overflow-hidden rounded-full bg-border/30">
+                          <div
+                            class="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
+                            :class="{
+                              'bg-emerald-500/80': attempt.accuracy_score >= 85,
+                              'bg-primary/70': attempt.accuracy_score >= 70 && attempt.accuracy_score < 85,
+                              'bg-amber-400/80': attempt.accuracy_score >= 55 && attempt.accuracy_score < 70,
+                              'bg-rose-400/80': attempt.accuracy_score < 55,
+                            }"
+                            :style="{ width: `${attempt.accuracy_score}%` }"
+                          />
+                          <span class="absolute inset-0 flex items-center justify-center text-[11px] font-bold tabular-nums text-(--color-heading)">
+                            {{ attempt.accuracy_score.toFixed(0) }}%
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
             </template>
 
             <Alert v-else class="mx-5 my-3">
@@ -399,6 +440,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Target, Zap } from 'lucide-vue-next'
+import type { Phrase } from '@/types'
 
 import StudentLayout from '@/layouts/StudentLayout.vue'
 import AppIcon from '@/components/shared/AppIcon.vue'
@@ -437,7 +479,7 @@ const authStore = useAuthStore()
 const CHART_WIDTH = 680
 const CHART_HEIGHT = 300
 const CHART_PAD_L = 44
-const CHART_PAD_R = 16
+const CHART_PAD_R = 32
 const CHART_INNER_W = CHART_WIDTH - CHART_PAD_L - CHART_PAD_R
 // Accuracy zone: top band
 const ACC_TOP = 20
@@ -451,6 +493,29 @@ const CHART_TICKS = [0, 25, 50, 75, 100]
 
 const dashboard = computed(() => progressStore.dashboard)
 const visibleAttempts = computed(() => attemptsStore.attemptHistory.slice(0, 10))
+
+const phraseMap = computed<Record<string, Phrase>>(() => {
+  const result: Record<string, Phrase> = {}
+  for (const list of Object.values(modulesStore.phrases)) {
+    for (const p of list) {
+      result[p.phrase_id] = p
+    }
+  }
+  return result
+})
+
+function statusLabel(status: string) {
+  if (status === 'accepted') return 'Accepted'
+  if (status === 'retry_needed') return 'Retry'
+  if (status === 'no_clear_speech') return 'No speech'
+  return 'Wrong phrase'
+}
+
+function statusClass(status: string) {
+  if (status === 'accepted') return 'bg-emerald-100 text-emerald-700'
+  if (status === 'retry_needed') return 'bg-amber-100 text-amber-700'
+  return 'bg-secondary text-muted-foreground'
+}
 
 const chartTickLines = computed(() =>
   CHART_TICKS.map((value) => ({

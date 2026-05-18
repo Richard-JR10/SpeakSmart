@@ -15,18 +15,18 @@ venv.bak/
 serviceAccountKey.json
 
 # Backend specific
-backend/.env
-backend/__pycache__/
-backend/.ruff_cache/
-backend/.mypy_cache/
-backend/.pytest_cache/
+Backend/.env
+Backend/__pycache__/
+Backend/.ruff_cache/
+Backend/.mypy_cache/
+Backend/.pytest_cache/
 
 # Frontend (Vite + React)
-frontend/node_modules/
-frontend/dist/
-frontend/dist-ssr/
-frontend/*.local
-frontend/.env*.local
+Frontend/node_modules/
+Frontend/dist/
+Frontend/dist-ssr/
+Frontend/*.local
+Frontend/.env*.local
 
 # OS generated files
 .DS_Store

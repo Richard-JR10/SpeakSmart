@@ -39,24 +39,26 @@
           </Alert>
         </CardContent>
 
-        <CardFooter class="justify-end">
+        <CardFooter class="sm:justify-end">
           <Button
             v-if="isInstructor"
+            class="w-full sm:w-auto"
             :disabled="createSubmitting"
             @click="handleCreateClass"
           >
-            <LoaderCircle v-if="createSubmitting" class="mr-2 size-4 animate-spin" />
-            <School v-else class="mr-2 size-4" />
+            <LoaderCircle v-if="createSubmitting" class="animate-spin" data-icon="inline-start" />
+            <School v-else data-icon="inline-start" />
             <span>{{ createSubmitting ? 'Creating...' : 'Create class' }}</span>
           </Button>
 
           <Button
             v-else
+            class="w-full sm:w-auto"
             :disabled="joinSubmitting"
             @click="handleJoinClass"
           >
-            <LoaderCircle v-if="joinSubmitting" class="mr-2 size-4 animate-spin" />
-            <School v-else class="mr-2 size-4" />
+            <LoaderCircle v-if="joinSubmitting" class="animate-spin" data-icon="inline-start" />
+            <School v-else data-icon="inline-start" />
             <span>{{ joinSubmitting ? 'Joining...' : 'Join class' }}</span>
           </Button>
         </CardFooter>
@@ -116,7 +118,7 @@
           :key="item.class_id"
           class="border-border/70"
         >
-          <CardHeader class="gap-3 sm:flex sm:flex-row sm:items-start sm:justify-between">
+          <CardHeader class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div class="space-y-2">
               <div class="flex flex-wrap items-center gap-2">
                 <CardTitle class="text-xl">{{ item.name }}</CardTitle>
@@ -137,7 +139,7 @@
               </CardDescription>
             </div>
 
-            <div class="flex flex-wrap gap-2">
+            <div class="flex shrink-0 flex-wrap gap-2">
               <Button
                 v-if="classesStore.activeClassId !== item.class_id"
                 variant="outline"
@@ -154,8 +156,8 @@
                 :disabled="busyClassId === item.class_id"
                 @click="copyJoinCode(item.class_id, item.join_code)"
               >
-                <Check v-if="copiedClassId === item.class_id" class="mr-2 size-4" />
-                <Copy v-else class="mr-2 size-4" />
+                <Check v-if="copiedClassId === item.class_id" data-icon="inline-start" />
+                <Copy v-else data-icon="inline-start" />
                 <span>{{ copiedClassId === item.class_id ? 'Copied' : 'Copy code' }}</span>
               </Button>
             </div>
@@ -197,7 +199,7 @@
             </div>
           </CardContent>
 
-          <CardFooter class="flex flex-wrap justify-between gap-3">
+          <CardFooter class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="inline-flex items-center gap-2 text-sm text-muted-foreground">
               <Users class="size-4" />
               <span>
@@ -206,33 +208,37 @@
               </span>
             </div>
 
-            <div class="flex flex-wrap gap-2">
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
               <Button
                 v-if="isInstructor"
                 variant="outline"
                 size="sm"
+                class="w-full sm:w-auto"
                 :disabled="busyClassId === item.class_id"
                 @click="handleRegenerateCode(item.class_id, item.name)"
               >
                 <LoaderCircle
                   v-if="busyClassId === item.class_id"
-                  class="mr-2 size-4 animate-spin"
+                  class="animate-spin"
+                  data-icon="inline-start"
                 />
-                <RefreshCcw v-else class="mr-2 size-4" />
+                <RefreshCcw v-else data-icon="inline-start" />
                 <span>Regenerate code</span>
               </Button>
 
               <Button
                 variant="outline"
                 size="sm"
+                class="w-full sm:w-auto"
                 :disabled="rosterLoading && selectedRosterClassId === item.class_id"
                 @click="openRosterModal(item.class_id)"
               >
                 <LoaderCircle
                   v-if="rosterLoading && selectedRosterClassId === item.class_id"
-                  class="mr-2 size-4 animate-spin"
+                  class="animate-spin"
+                  data-icon="inline-start"
                 />
-                <Eye v-else class="mr-2 size-4" />
+                <Eye v-else data-icon="inline-start" />
                 <span>View class</span>
               </Button>
 
@@ -240,14 +246,16 @@
                 v-if="!isInstructor"
                 variant="outline"
                 size="sm"
+                class="w-full sm:w-auto"
                 :disabled="busyClassId === item.class_id"
                 @click="handleLeaveClass(item.class_id, item.name)"
               >
                 <LoaderCircle
                   v-if="busyClassId === item.class_id"
-                  class="mr-2 size-4 animate-spin"
+                  class="animate-spin"
+                  data-icon="inline-start"
                 />
-                <Trash2 v-else class="mr-2 size-4" />
+                <Trash2 v-else data-icon="inline-start" />
                 <span>Leave class</span>
               </Button>
             </div>

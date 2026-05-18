@@ -395,9 +395,9 @@
           <DialogContent
             class="fixed top-1/2 left-1/2 z-50 flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-lg"
           >
-            <div class="flex items-start justify-between gap-3 border-b border-border/70 px-6 py-5">
+            <div class="flex items-start justify-between gap-3 border-b border-border/70 px-4 py-4 sm:px-6 sm:py-5">
               <div class="min-w-0">
-                <DialogTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                <DialogTitle class="font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
                   Build an assignment
                 </DialogTitle>
                 <DialogDescription class="mt-2 text-sm leading-6 text-muted-foreground">
@@ -411,9 +411,9 @@
               </Button>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-6 py-5">
+            <div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
               <div class="flex flex-col gap-5">
-                <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+                <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_220px]">
                   <div class="flex flex-col gap-2">
                     <Label for="assignment-title">Title</Label>
                     <Input
@@ -433,18 +433,54 @@
                   </div>
                 </div>
 
-                <div class="grid gap-5 lg:grid-cols-2">
-                  <div class="flex flex-col gap-3">
+                <!-- Mobile tab switcher -->
+                <div class="grid grid-cols-2 gap-1 rounded-xl bg-muted/50 p-1 sm:hidden">
+                  <button
+                    type="button"
+                    class="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                    :class="activeSection === 'phrases'
+                      ? 'bg-background text-(--color-heading) shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'"
+                    @click="activeSection = 'phrases'"
+                  >
+                    Phrases
+                    <span
+                      v-if="form.phrase_ids.length"
+                      class="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+                    >{{ form.phrase_ids.length }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                    :class="activeSection === 'students'
+                      ? 'bg-background text-(--color-heading) shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'"
+                    @click="activeSection = 'students'"
+                  >
+                    Students
+                    <span
+                      v-if="form.student_uids.length"
+                      class="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+                    >{{ form.student_uids.length }}</span>
+                  </button>
+                </div>
+
+                <div class="grid gap-5 sm:grid-cols-2">
+                  <div class="flex flex-col gap-3" :class="{ 'hidden sm:flex': activeSection !== 'phrases' }">
                     <div class="flex items-center justify-between gap-3">
                       <div>
-                        <p class="font-semibold text-(--color-heading)">Select phrases</p>
-                        <p class="text-sm text-muted-foreground">
-                          {{ form.phrase_ids.length }} selected
-                        </p>
+                        <div class="flex items-center gap-2">
+                          <p class="font-semibold text-(--color-heading)">Select phrases</p>
+                          <span
+                            v-if="form.phrase_ids.length"
+                            class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                          >{{ form.phrase_ids.length }}</span>
+                        </div>
+                        <p class="text-sm text-muted-foreground">Choose phrases for this assignment</p>
                       </div>
                     </div>
 
-                    <div class="max-h-96 overflow-y-auto rounded-3xl border border-border/70 bg-muted/25 p-4">
+                    <div class="max-h-52 overflow-y-auto rounded-3xl border border-border/70 bg-muted/25 p-4 sm:max-h-64 lg:max-h-96">
                       <div class="flex flex-col gap-4">
                         <div
                           v-for="module in modulesStore.modules"
@@ -478,20 +514,23 @@
                             <label
                               v-for="phrase in modulesStore.getPhrasesForModule(module.module_id)"
                               :key="phrase.phrase_id"
-                              class="flex cursor-pointer items-start gap-3 rounded-2xl border border-border/70 bg-muted/30 p-3"
+                              class="flex cursor-pointer items-center gap-3 rounded-2xl border p-3 transition-colors"
+                              :class="form.phrase_ids.includes(phrase.phrase_id)
+                                ? 'border-primary/40 bg-primary/5'
+                                : 'border-border/70 bg-muted/30'"
                             >
                               <input
                                 v-model="form.phrase_ids"
                                 type="checkbox"
                                 :value="phrase.phrase_id"
-                                class="mt-1 accent-(--color-primary)"
-                              >
+                                class="accent-(--color-primary)"
+                              />
                               <div class="min-w-0">
                                 <p class="font-semibold text-(--color-heading)">
                                   {{ phrase.japanese_text }}
                                 </p>
                                 <p class="text-sm text-muted-foreground">
-                                  {{ phrase.romaji }} - {{ phrase.english_translation }}
+                                  {{ phrase.romaji }} — {{ phrase.english_translation }}
                                 </p>
                               </div>
                             </label>
@@ -501,13 +540,17 @@
                     </div>
                   </div>
 
-                  <div class="flex flex-col gap-3">
+                  <div class="flex flex-col gap-3" :class="{ 'hidden sm:flex': activeSection !== 'students' }">
                     <div class="flex items-center justify-between gap-3">
                       <div>
-                        <p class="font-semibold text-(--color-heading)">Assign to students</p>
-                        <p class="text-sm text-muted-foreground">
-                          {{ form.student_uids.length }} selected
-                        </p>
+                        <div class="flex items-center gap-2">
+                          <p class="font-semibold text-(--color-heading)">Assign to students</p>
+                          <span
+                            v-if="form.student_uids.length"
+                            class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                          >{{ form.student_uids.length }}</span>
+                        </div>
+                        <p class="text-sm text-muted-foreground">Choose who gets this assignment</p>
                       </div>
                       <Button
                         variant="ghost"
@@ -525,19 +568,25 @@
                       </Button>
                     </div>
 
-                    <div class="max-h-96 overflow-y-auto rounded-3xl border border-border/70 bg-muted/25 p-4">
+                    <div class="max-h-52 overflow-y-auto rounded-3xl border border-border/70 bg-muted/25 p-4 sm:max-h-64 lg:max-h-96">
                       <div class="flex flex-col gap-2">
                         <label
                           v-for="student in students"
                           :key="student.uid"
-                          class="flex cursor-pointer items-start gap-3 rounded-2xl border border-border/70 bg-background/80 p-3"
+                          class="flex cursor-pointer items-center gap-3 rounded-2xl border p-3 transition-colors"
+                          :class="form.student_uids.includes(student.uid)
+                            ? 'border-primary/40 bg-primary/5'
+                            : 'border-border/70 bg-background/80'"
                         >
                           <input
                             v-model="form.student_uids"
                             type="checkbox"
                             :value="student.uid"
-                            class="mt-1 accent-(--color-primary)"
-                          >
+                            class="accent-(--color-primary)"
+                          />
+                          <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary">
+                            {{ getInitials(student.display_name) }}
+                          </div>
                           <div class="min-w-0">
                             <p class="font-semibold text-(--color-heading)">
                               {{ student.display_name }}
@@ -560,7 +609,7 @@
               </div>
             </div>
 
-            <div class="border-t border-border/70 px-6 py-4">
+            <div class="border-t border-border/70 px-4 py-3 sm:px-6 sm:py-4">
               <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
                 <Button variant="outline" :disabled="submitting" @click="showForm = false">
                   Cancel
@@ -686,6 +735,7 @@ const error = ref<string | null>(null)
 const showForm = ref(false)
 const submitting = ref(false)
 const formError = ref<string | null>(null)
+const activeSection = ref<'phrases' | 'students'>('phrases')
 const exerciseSubmissions = ref<Record<string, InstructorAssignmentSubmission[]>>({})
 const submissionsLoading = ref<Record<string, boolean>>({})
 const submissionErrors = ref<Record<string, string | null>>({})
@@ -720,6 +770,10 @@ const allStudentsSelected = computed(
 
 function toggleAllStudents() {
   form.value.student_uids = allStudentsSelected.value ? [] : students.value.map((s) => s.uid)
+}
+
+function getInitials(name: string) {
+  return name.split(' ').slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase()
 }
 
 function allModulePhrasesSelected(moduleId: string) {
@@ -1403,7 +1457,10 @@ watch(
 )
 
 watch(showForm, (open) => {
-  if (open) return
+  if (open) {
+    activeSection.value = 'phrases'
+    return
+  }
   if (submitting.value) return
   formError.value = null
 })

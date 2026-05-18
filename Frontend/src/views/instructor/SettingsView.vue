@@ -1,5 +1,5 @@
 <template>
-  <StudentLayout title="Settings">
+  <InstructorLayout>
     <div class="mx-auto flex w-full max-w-4xl flex-col gap-4">
       <Card class="overflow-hidden border-border/80 bg-card/95">
         <CardContent class="flex flex-col gap-4 py-6 sm:flex-row sm:items-center">
@@ -32,7 +32,7 @@
             Update Display Name
           </CardTitle>
           <CardDescription>
-            Change the name shown across your student pages.
+            Change the name shown across your instructor pages.
           </CardDescription>
         </CardHeader>
 
@@ -74,7 +74,7 @@
               id="settings-display-name-hint"
               class="text-sm text-muted-foreground"
             >
-              Use the name you want to appear throughout your student account.
+              Use the name you want learners to see in your classes.
             </p>
           </div>
         </CardContent>
@@ -199,7 +199,7 @@
                 <TriangleAlert />
                 <AlertTitle>Leaving this session</AlertTitle>
                 <AlertDescription>
-                  Use sign out when you are done practicing, especially on a shared computer.
+                  Use sign out when you are done teaching, especially on a shared computer.
                 </AlertDescription>
               </Alert>
 
@@ -230,11 +230,11 @@
         </DialogPortal>
       </DialogRoot>
     </div>
-  </StudentLayout>
+  </InstructorLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   CheckCircle2,
@@ -255,7 +255,7 @@ import {
 import { updateProfile } from '@/api/auth'
 import PrivacyPolicyDialog from '@/components/PrivacyPolicyDialog.vue'
 import TermsDialog from '@/components/TermsDialog.vue'
-import StudentLayout from '@/layouts/StudentLayout.vue'
+import InstructorLayout from '@/layouts/InstructorLayout.vue'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -271,15 +271,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuthStore } from '@/stores/auth'
 
-const AUTO_PLAY_STORAGE_KEY = 'student-settings:auto-play-reference'
-const DAILY_REMINDER_STORAGE_KEY = 'student-settings:daily-reminder'
-
 const router = useRouter()
 const authStore = useAuthStore()
 
 const displayName = ref(authStore.profile?.display_name ?? '')
-const autoPlay = ref(false)
-const dailyReminder = ref(false)
 const saving = ref(false)
 const saveSuccess = ref(false)
 const saveError = ref<string | null>(null)
@@ -289,12 +284,11 @@ const privacyOpen = ref(false)
 const signOutConfirm = ref(false)
 const signingOut = ref(false)
 const signOutError = ref<string | null>(null)
-const preferencesReady = ref(false)
 
 let saveSuccessTimeout: ReturnType<typeof setTimeout> | null = null
 
 const displayNameValue = computed(() =>
-  authStore.profile?.display_name?.trim() || authStore.firebaseUser?.displayName?.trim() || 'Student',
+  authStore.profile?.display_name?.trim() || authStore.firebaseUser?.displayName?.trim() || 'Instructor',
 )
 const emailValue = computed(() =>
   authStore.profile?.email || authStore.firebaseUser?.email || 'No email available',
@@ -304,7 +298,7 @@ const normalizedCurrentDisplayName = computed(() =>
 )
 const normalizedDisplayName = computed(() => displayName.value.trim())
 const roleLabel = computed(() => {
-  const role = authStore.profile?.role ?? 'student'
+  const role = authStore.profile?.role ?? 'instructor'
   return `${role.charAt(0).toUpperCase()}${role.slice(1)}`
 })
 const initials = computed(() => {
@@ -346,37 +340,11 @@ watch(displayName, () => {
   }
 })
 
-watch(autoPlay, (value) => {
-  if (!preferencesReady.value) return
-  writeStoredPreference(AUTO_PLAY_STORAGE_KEY, value)
-})
-
-watch(dailyReminder, (value) => {
-  if (!preferencesReady.value) return
-  writeStoredPreference(DAILY_REMINDER_STORAGE_KEY, value)
-})
-
-onMounted(() => {
-  autoPlay.value = readStoredPreference(AUTO_PLAY_STORAGE_KEY)
-  dailyReminder.value = readStoredPreference(DAILY_REMINDER_STORAGE_KEY)
-  preferencesReady.value = true
-})
-
 onBeforeUnmount(() => {
   if (saveSuccessTimeout) {
     clearTimeout(saveSuccessTimeout)
   }
 })
-
-function readStoredPreference(key: string) {
-  if (typeof window === 'undefined') return false
-  return window.localStorage.getItem(key) === 'true'
-}
-
-function writeStoredPreference(key: string, value: boolean) {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(key, String(value))
-}
 
 function clearSaveSuccess() {
   if (saveSuccessTimeout) {

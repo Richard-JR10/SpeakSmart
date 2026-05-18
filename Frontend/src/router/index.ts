@@ -118,6 +118,12 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'instructor' },
     },
     {
+      path: '/instructor/settings',
+      name: 'instructor-settings',
+      component: () => import('@/views/instructor/SettingsView.vue'),
+      meta: { requiresAuth: true, role: 'instructor' },
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       redirect: '/',

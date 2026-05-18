@@ -285,6 +285,7 @@ import {
   LogOut,
   Menu,
   School,
+  Settings,
   TriangleAlert,
   Users,
 } from 'lucide-vue-next'
@@ -338,6 +339,7 @@ const navItems: NavItem[] = [
   { name: 'instructor-heatmap', label: 'Heatmap', icon: BookMarked, to: '/instructor/heatmap' },
   { name: 'instructor-exercises', label: 'Assignments', icon: ClipboardList, to: '/instructor/exercises' },
   { name: 'classes', label: 'Classes', icon: School, to: '/classes' },
+  { name: 'instructor-settings', label: 'Settings', icon: Settings, to: '/instructor/settings' },
 ]
 
 const pageContent: Record<string, { title: string; description: string }> = {
@@ -360,6 +362,10 @@ const pageContent: Record<string, { title: string; description: string }> = {
   classes: {
     title: 'Classes',
     description: 'Create classes, regenerate join codes, and change your active roster context when needed.',
+  },
+  'instructor-settings': {
+    title: 'Settings',
+    description: 'Update your display name, review legal documents, and manage your session.',
   },
 }
 

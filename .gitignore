@@ -84,3 +84,4 @@ dist-ssr
 .agents
 skills-lock.json
 .claude
+AGENTS.md

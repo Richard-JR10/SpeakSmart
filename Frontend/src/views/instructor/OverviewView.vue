@@ -1,6 +1,6 @@
 ﻿<template>
   <InstructorLayout>
-    <div class="flex flex-col gap-5">
+    <div class="flex min-w-0 flex-col gap-4 overflow-hidden sm:gap-5">
       <LoadingSpinner
         v-if="loading && !overview"
         full-screen
@@ -15,40 +15,41 @@
         </Alert>
 
         <template v-else-if="overview">
-          <Card class="border-border/80 bg-card/95">
-            <CardHeader class="gap-4">
+          <Card class="min-w-0 overflow-hidden border-border/80 bg-card/95">
+            <CardHeader class="min-w-0 gap-4 p-4 sm:p-6">
               <div class="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                   Live class pulse
                 </Badge>
-                <Badge variant="outline" class="rounded-full px-3 py-1">
+                <Badge variant="outline" class="max-w-full rounded-full px-3 py-1">
                   {{ classesStore.activeClass?.name ?? 'No active class' }}
                 </Badge>
               </div>
 
-              <div class="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_300px] lg:items-start">
+              <div class="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,300px)] lg:items-start">
                 <div class="flex min-w-0 flex-col gap-4">
                   <div class="flex flex-col gap-3">
-                    <CardTitle class="font-(--font-display) text-4xl leading-none text-(--color-heading) sm:text-5xl">
+                    <CardTitle class="text-balance wrap-break-word font-(--font-display) text-3xl leading-none text-(--color-heading) sm:text-4xl xl:text-5xl">
                       Teach from the class trend, not from guesswork
                     </CardTitle>
-                    <CardDescription class="max-w-3xl text-base leading-8">
+                    <CardDescription class="max-w-3xl text-pretty text-sm leading-6 sm:text-base sm:leading-8">
                       Review weekly movement, scan pronunciation category averages, and surface students who need intervention before the next assignment cycle.
                     </CardDescription>
                   </div>
 
-                  <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                    <Button size="lg" @click="router.push('/instructor/students')">
+                  <div class="grid gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap">
+                    <Button size="lg" class="w-full justify-center xl:w-auto" @click="router.push('/instructor/students')">
                       <Users data-icon="inline-start" />
                       <span>Open student directory</span>
                     </Button>
-                    <Button variant="outline" size="lg" @click="router.push('/instructor/exercises')">
+                    <Button variant="outline" size="lg" class="w-full justify-center xl:w-auto" @click="router.push('/instructor/exercises')">
                       <ClipboardList data-icon="inline-start" />
                       <span>Manage assignments</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="lg"
+                      class="w-full justify-center sm:col-span-2 xl:w-auto"
                       :disabled="!overview || downloading"
                       @click="handleDownloadReport"
                     >
@@ -58,15 +59,15 @@
                   </div>
                 </div>
 
-                <Card class="border-dashed shadow-none">
-                  <CardHeader class="gap-2">
+                <Card class="min-w-0 border-dashed shadow-none">
+                  <CardHeader class="min-w-0 gap-2 p-4 sm:p-6">
                     <p class="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Today
                     </p>
-                    <CardTitle class="font-(--font-display) text-4xl leading-none text-(--color-heading)">
+                    <CardTitle class="text-balance font-(--font-display) text-3xl leading-none text-(--color-heading) sm:text-4xl lg:text-3xl xl:text-4xl">
                       {{ todayLabel }}
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription class="text-pretty">
                       {{ authStore.profile?.display_name ?? 'Instructor' }} is currently viewing
                       {{ overview.total_students }} students in this class.
                     </CardDescription>
@@ -75,26 +76,26 @@
               </div>
             </CardHeader>
 
-            <CardContent class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <CardContent class="grid min-w-0 gap-3 p-4 pt-0 sm:grid-cols-2 sm:p-6 sm:pt-0 lg:grid-cols-3 xl:grid-cols-5">
               <Card
                 v-for="item in metricCards"
                 :key="item.label"
-                class="gap-0 shadow-none"
+                class="min-w-0 gap-0 shadow-none"
               >
-                <CardHeader class="gap-2">
+                <CardHeader class="min-w-0 gap-2 p-4 sm:p-6">
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    <p class="min-w-0 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-sm">
                       {{ item.label }}
                     </p>
-                    <component :is="item.icon" class="text-muted-foreground" />
+                    <component :is="item.icon" class="size-4 shrink-0 text-muted-foreground sm:size-5" />
                   </div>
                   <CardTitle
-                    class="font-(--font-display) text-3xl leading-none"
+                    class="font-(--font-display) text-2xl leading-none sm:text-3xl"
                     :class="item.tone ?? 'text-(--color-heading)'"
                   >
                     {{ item.value }}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription class="text-pretty text-xs leading-5 sm:text-sm">
                     {{ item.copy }}
                   </CardDescription>
                 </CardHeader>
@@ -102,44 +103,44 @@
             </CardContent>
           </Card>
 
-          <div class="grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]">
-            <Card class="border-border/80 bg-card/95">
-              <CardHeader class="gap-3">
+          <div class="grid min-w-0 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]">
+            <Card class="min-w-0 overflow-hidden border-border/80 bg-card/95">
+              <CardHeader class="min-w-0 gap-3 p-4 sm:p-6">
                 <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                   Weekly trend
                 </Badge>
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                <CardTitle class="text-balance wrap-break-word font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
                   Accuracy movement
                 </CardTitle>
-                <CardDescription>
+                <CardDescription class="text-pretty wrap-break-word">
                   Use the weekly curve to see whether the class is stabilizing or drifting before you plan the next set of guided reps.
                 </CardDescription>
               </CardHeader>
 
-              <CardContent>
+              <CardContent class="min-w-0 p-3 pt-0 sm:p-6 sm:pt-0">
                 <div
                   v-if="trendChartData.length"
                   ref="trendChartContainer"
-                  class="rounded-3xl border border-border/70 bg-muted/30 px-3 pt-4 pb-2"
+                  class="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-muted/30 px-1.5 pt-3 pb-2 sm:rounded-3xl sm:px-3 sm:pt-4"
                 >
                   <ChartContainer
                     :config="trendChartConfig"
-                    class="h-[230px] min-h-[230px] w-full"
+                    class="h-47.5 min-h-47.5 min-w-0 w-full overflow-hidden sm:h-57.5 sm:min-h-57.5"
                     cursor
                   >
                     <VisXYContainer
                       :data="trendChartData"
-                      :margin="{ top: 12, right: 12, bottom: 0, left: 8 }"
+                      :margin="{ top: 12, right: 4, bottom: 0, left: 0 }"
                       :y-domain="[0, 100]"
                     >
                       <VisAxis
                         type="x"
-                        :tick-values="trendChartData.map((point) => point.timestamp)"
+                        :tick-values="trendXAxisTicks"
                         :tick-format="formatTrendTick"
                         :grid-line="false"
                         :tick-line="false"
                         :domain-line="false"
-                        tick-text-font-size="12px"
+                        tick-text-font-size="11px"
                       />
                       <VisAxis
                         type="y"
@@ -181,20 +182,21 @@
                     </VisXYContainer>
                   </ChartContainer>
 
-                  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 pb-2 text-xs text-muted-foreground">
+                  <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-2 pb-2 text-xs text-muted-foreground sm:px-5 sm:gap-x-4">
                     <div
                       v-for="item in trendLegendItems"
                       :key="item.key"
-                      class="flex items-center gap-1.5"
+                      class="flex min-w-0 items-center gap-1.5"
                     >
                       <span
                         class="size-2.5 rounded-sm"
                         :style="{ backgroundColor: item.color }"
                       />
-                      <span>{{ item.label }}</span>
+                      <span class="sm:hidden">{{ item.mobileLabel }}</span>
+                      <span class="hidden sm:inline">{{ item.label }}</span>
                     </div>
                   </div>
-                  <p class="px-5 pb-2 text-xs leading-5 text-muted-foreground">
+                  <p class="px-2 pb-2 text-pretty text-xs leading-5 text-muted-foreground sm:px-5">
                     Practice volume compares each week's submissions against the busiest week shown.
                   </p>
                 </div>
@@ -209,34 +211,34 @@
               </CardContent>
             </Card>
 
-            <Card class="border-border/80 bg-card/95">
-              <CardHeader class="gap-3">
+            <Card class="min-w-0 overflow-hidden border-border/80 bg-card/95">
+              <CardHeader class="min-w-0 gap-3 p-4 sm:p-6">
                 <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                   Phoneme profile
                 </Badge>
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                <CardTitle class="text-balance wrap-break-word font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
                   Class pronunciation profile
                 </CardTitle>
-                <CardDescription>
+                <CardDescription class="text-pretty wrap-break-word">
                   These averages make it easier to decide whether timing, consonants, or vowels deserve the next coaching push.
                 </CardDescription>
               </CardHeader>
 
-              <CardContent class="flex flex-col gap-4">
+              <CardContent class="flex min-w-0 flex-col gap-3 p-4 pt-0 sm:gap-4 sm:p-6 sm:pt-0">
                 <div
                   v-for="item in phonemeRows"
                   :key="item.label"
-                  class="flex flex-col gap-2 rounded-2xl border border-border/70 bg-muted/30 p-4"
+                  class="flex min-w-0 flex-col gap-2 rounded-2xl border border-border/70 bg-muted/30 p-3 sm:p-4"
                 >
                   <div class="flex items-center justify-between gap-3">
-                    <p class="font-semibold text-(--color-heading)">{{ item.label }}</p>
+                    <p class="min-w-0 truncate font-semibold text-(--color-heading)">{{ item.label }}</p>
                     <Badge :variant="scoreVariant(item.value)" class="rounded-full px-3 py-1">
                       {{ item.value.toFixed(1) }}%
                     </Badge>
                   </div>
                   <div class="h-2 overflow-hidden rounded-full bg-border/70">
                     <div
-                      class="h-full rounded-full transition-[width] duration-300"
+                      class="h-full rounded-full"
                       :class="item.value >= 85
                         ? 'bg-emerald-500'
                         : item.value >= 70
@@ -252,24 +254,24 @@
             </Card>
           </div>
 
-          <Card v-if="sortedModuleHeatmap.length" class="border-border/80 bg-card/95">
-            <CardHeader class="gap-3">
+          <Card v-if="sortedModuleHeatmap.length" class="min-w-0 overflow-hidden border-border/80 bg-card/95">
+            <CardHeader class="min-w-0 gap-3 p-4 sm:p-6">
               <Badge variant="secondary" class="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                 Module difficulty
               </Badge>
-              <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+              <CardTitle class="text-balance wrap-break-word font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
                 Hardest modules this class
               </CardTitle>
-              <CardDescription>
+              <CardDescription class="text-pretty wrap-break-word">
                 Ranked by overall class accuracy â€” weakest modules surface first so you know where to focus your next coaching session.
               </CardDescription>
             </CardHeader>
 
-            <CardContent class="grid gap-3 lg:grid-cols-2">
+            <CardContent class="grid min-w-0 gap-3 p-4 pt-0 sm:p-6 sm:pt-0 lg:grid-cols-2">
               <div
                 v-for="module in sortedModuleHeatmap"
                 :key="module.moduleId"
-                class="flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/30 p-4"
+                class="flex min-w-0 flex-col gap-3 rounded-2xl border border-border/70 bg-muted/30 p-3 sm:p-4"
               >
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex min-w-0 items-center gap-2">
@@ -281,7 +283,7 @@
                   </Badge>
                 </div>
 
-                <div class="grid grid-cols-3 gap-3">
+                <div class="grid gap-3 sm:grid-cols-3">
                   <div
                     v-for="bar in [
                       { label: 'Mora', value: module.mora },
@@ -301,7 +303,7 @@
                     </div>
                     <div class="h-1.5 overflow-hidden rounded-full bg-border/70">
                       <div
-                        class="h-full rounded-full transition-[width] duration-300"
+                        class="h-full rounded-full"
                         :class="bar.value >= 85
                           ? 'bg-emerald-500'
                           : bar.value >= 70
@@ -318,9 +320,9 @@
             </CardContent>
           </Card>
 
-          <div class="grid gap-5 lg:grid-cols-2">
-            <Card class="border-border/80 bg-card/95">
-              <CardHeader class="gap-3">
+          <div class="grid min-w-0 gap-4 sm:gap-5 lg:grid-cols-2">
+            <Card class="min-w-0 overflow-hidden border-border/80 bg-card/95">
+              <CardHeader class="min-w-0 gap-3 p-4 sm:p-6">
                 <div class="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                     Needs attention
@@ -329,21 +331,21 @@
                     {{ overview.flagged_students.length }} flagged
                   </Badge>
                 </div>
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                <CardTitle class="text-balance wrap-break-word font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
                   Flagged students
                 </CardTitle>
-                <CardDescription>
+                <CardDescription class="text-pretty wrap-break-word">
                   Learners below {{ flagThreshold }}% are surfaced here first so you can move directly into drilldown review.
                 </CardDescription>
               </CardHeader>
 
-              <CardContent class="flex flex-col gap-2">
+              <CardContent class="flex min-w-0 flex-col gap-2 p-4 pt-0 sm:p-6 sm:pt-0">
                 <template v-if="overview.flagged_students.length">
                   <button
                     v-for="student in overview.flagged_students"
                     :key="student.uid"
                     type="button"
-                    class="group flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:cursor-pointer hover:border-rose-200/80! hover:bg-rose-50/70! active:scale-[0.99]"
+                    class="group grid w-full grid-cols-[2.75rem_minmax(0,1fr)] gap-3 rounded-2xl border border-border/70 bg-muted/30 p-3 text-left transition hover:cursor-pointer hover:border-rose-200/80! hover:bg-rose-50/70! active:scale-[0.99] sm:grid-cols-[2.75rem_minmax(0,1fr)_auto] sm:items-center sm:p-4"
                     @click="openStudentDetail(student.uid)"
                   >
                     <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-destructive/10 font-semibold text-destructive">
@@ -362,7 +364,7 @@
                       </p>
                     </div>
 
-                    <div class="flex shrink-0 items-center gap-2">
+                    <div class="col-span-2 flex shrink-0 items-center justify-between gap-2 sm:col-span-1 sm:justify-end">
                       <Badge variant="destructive" class="rounded-full px-3 py-1">
                         {{ student.overall_average.toFixed(0) }}%
                       </Badge>
@@ -381,8 +383,8 @@
               </CardContent>
             </Card>
 
-            <Card class="border-border/80 bg-card/95">
-              <CardHeader class="gap-3">
+            <Card class="min-w-0 overflow-hidden border-border/80 bg-card/95">
+              <CardHeader class="min-w-0 gap-3 p-4 sm:p-6">
                 <div class="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary" class="rounded-full px-3 py-1 uppercase tracking-[0.18em]">
                     Excelling
@@ -391,21 +393,21 @@
                     {{ topPerformers.length }} excelling
                   </Badge>
                 </div>
-                <CardTitle class="font-(--font-display) text-3xl leading-none text-(--color-heading)">
+                <CardTitle class="text-balance wrap-break-word font-(--font-display) text-2xl leading-none text-(--color-heading) sm:text-3xl">
                   Top performers
                 </CardTitle>
-                <CardDescription>
+                <CardDescription class="text-pretty wrap-break-word">
                   Students scoring {{ topPerfThreshold }}% or above, ranked highest first.
                 </CardDescription>
               </CardHeader>
 
-              <CardContent class="flex flex-col gap-2">
+              <CardContent class="flex min-w-0 flex-col gap-2 p-4 pt-0 sm:p-6 sm:pt-0">
                 <template v-if="topPerformers.length">
                   <button
                     v-for="student in topPerformers"
                     :key="student.uid"
                     type="button"
-                    class="group flex w-full items-center gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4 text-left transition hover:cursor-pointer hover:border-emerald-200/80! hover:bg-emerald-50/70! active:scale-[0.99]"
+                    class="group grid w-full grid-cols-[2.75rem_minmax(0,1fr)] gap-3 rounded-2xl border border-border/70 bg-muted/30 p-3 text-left transition hover:cursor-pointer hover:border-emerald-200/80! hover:bg-emerald-50/70! active:scale-[0.99] sm:grid-cols-[2.75rem_minmax(0,1fr)_auto] sm:items-center sm:p-4"
                     @click="openStudentDetail(student.uid)"
                   >
                     <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 font-semibold text-emerald-700">
@@ -424,7 +426,7 @@
                       </p>
                     </div>
 
-                    <div class="flex shrink-0 items-center gap-2">
+                    <div class="col-span-2 flex shrink-0 items-center justify-between gap-2 sm:col-span-1 sm:justify-end">
                       <Badge
                         variant="outline"
                         class="rounded-full border-emerald-300/70 bg-emerald-100 px-3 py-1 text-emerald-800"
@@ -546,6 +548,7 @@ const trendChartColors = [
 const trendLegendItems = Object.entries(trendChartConfig).map(([key, item]) => ({
   key,
   label: item.label,
+  mobileLabel: key === 'practiceVolume' ? 'Volume' : key === 'participation' ? 'Active' : item.label,
   color: item.color,
 }))
 
@@ -656,6 +659,14 @@ const trendChartData = computed<TrendChartPoint[]>(() => {
     participation: Math.min(100, ((week.active_students ?? 0) / totalStudents) * 100),
     practiceVolume: Math.min(100, (week.attempt_count / maxAttempts) * 100),
   }))
+})
+const trendXAxisTicks = computed(() => {
+  const points = trendChartData.value
+  if (points.length <= 4) return points.map((point) => point.timestamp)
+
+  return points
+    .filter((_, index) => index % 2 === 0 || index === points.length - 1)
+    .map((point) => point.timestamp)
 })
 
 const selectedStudent = computed(() =>

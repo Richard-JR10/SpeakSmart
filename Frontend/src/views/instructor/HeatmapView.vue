@@ -51,7 +51,7 @@
       </Alert>
 
       <template v-else>
-        <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
           <Card class="gap-0 overflow-hidden border-border/80 bg-card/95 py-0 shadow-sm shadow-rose-900/5">
             <CardHeader class="border-b border-border/70 p-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
@@ -77,8 +77,8 @@
             <CardContent class="p-0">
               <template v-if="moduleIds.length">
                 <div class="overflow-x-auto">
-                  <div class="min-w-[760px]">
-                    <div class="grid grid-cols-[minmax(200px,1.4fr)_repeat(4,minmax(118px,0.7fr))] border-b border-border/70 bg-muted/20 px-4 py-2">
+                  <div class="min-w-130">
+                    <div class="grid grid-cols-[minmax(130px,1.4fr)_repeat(4,minmax(88px,0.7fr))] border-b border-border/70 bg-muted/20 px-4 py-2">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         Module
                       </p>
@@ -94,7 +94,7 @@
                     <div
                       v-for="moduleId in moduleIds"
                       :key="moduleId"
-                      class="grid grid-cols-[minmax(200px,1.4fr)_repeat(4,minmax(118px,0.7fr))] items-stretch gap-2 border-b border-border/60 px-4 py-2 last:border-b-0 hover:bg-muted/20"
+                      class="grid grid-cols-[minmax(130px,1.4fr)_repeat(4,minmax(88px,0.7fr))] items-stretch gap-2 border-b border-border/60 px-4 py-2 last:border-b-0 hover:bg-muted/20"
                     >
                       <div class="flex min-w-0 items-center gap-3 pr-2">
                         <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
@@ -120,7 +120,7 @@
                         <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                           {{ item.label }}
                         </p>
-                        <p class="mt-1 font-(--font-display) text-2xl leading-none text-(--color-heading)">
+                        <p class="mt-1 font-(--font-display) text-xl leading-none text-(--color-heading) sm:text-2xl">
                           {{ item.value.toFixed(0) }}%
                         </p>
                       </div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-hidden bg-background">
+  <div class="min-h-screen overflow-x-clip bg-background">
     <div class="flex min-h-screen">
       <aside
         :class="desktopSidebarClass"

@@ -34,168 +34,146 @@
                 />
               </div>
 
-              <PopoverRoot>
-                <PopoverTrigger
-                  aria-label="Filter class list"
-                  class="relative inline-flex size-11 items-center justify-center rounded-xl border border-primary/35 bg-white text-primary shadow-sm shadow-rose-900/5 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30"
+              <!-- Mobile: plain button opens Sheet -->
+              <button
+                class="sm:hidden relative inline-flex size-11 items-center justify-center rounded-xl border border-primary/35 bg-white text-primary shadow-sm shadow-rose-900/5 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30"
+                aria-label="Filter class list"
+                @click="filterSheetOpen = true"
+              >
+                <Funnel class="size-4" />
+                <span
+                  v-if="activeFilterCount"
+                  class="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border border-white bg-primary text-[10px] font-semibold leading-none text-primary-foreground"
                 >
-                  <Funnel class="size-4" />
-                  <span
-                    v-if="activeFilterCount"
-                    class="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border border-white bg-primary text-[10px] font-semibold leading-none text-primary-foreground"
+                  {{ activeFilterCount }}
+                </span>
+              </button>
+
+              <!-- Desktop: Popover -->
+              <div class="hidden sm:block">
+                <PopoverRoot>
+                  <PopoverTrigger
+                    aria-label="Filter class list"
+                    class="relative inline-flex size-11 items-center justify-center rounded-xl border border-primary/35 bg-white text-primary shadow-sm shadow-rose-900/5 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30"
                   >
-                    {{ activeFilterCount }}
-                  </span>
-                </PopoverTrigger>
+                    <Funnel class="size-4" />
+                    <span
+                      v-if="activeFilterCount"
+                      class="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border border-white bg-primary text-[10px] font-semibold leading-none text-primary-foreground"
+                    >
+                      {{ activeFilterCount }}
+                    </span>
+                  </PopoverTrigger>
 
-                <PopoverPortal>
-                  <PopoverContent
-                    side="bottom"
-                    align="end"
-                    :side-offset="8"
-                    :collision-padding="12"
-                    class="z-50 flex max-h-[calc(100svh-6rem)] w-76 flex-col overflow-y-auto rounded-2xl border border-rose-200 bg-popover p-2.5 text-popover-foreground shadow-lg shadow-rose-950/10 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
-                  >
-                    <div class="flex items-center justify-between gap-3">
-                      <div>
-                        <p class="text-sm font-semibold text-(--color-heading)">Filters</p>
-                        <p class="text-xs text-muted-foreground">{{ filteredStudents.length }} visible</p>
-                      </div>
-                      <Button
-                        v-if="activeFilterCount"
-                        variant="ghost"
-                        size="sm"
-                        class="h-8 px-2 text-xs text-muted-foreground hover:text-primary"
-                        @click="clearStudentFilters"
-                      >
-                        Clear
-                      </Button>
-                    </div>
-
-                    <Separator class="my-2" />
-
-                    <div class="flex flex-col gap-2">
-                      <!-- Status + Activity side by side -->
-                      <div class="grid grid-cols-2 gap-1.5">
+                  <PopoverPortal>
+                    <PopoverContent
+                      side="bottom"
+                      align="end"
+                      :side-offset="8"
+                      :collision-padding="12"
+                      class="z-50 flex max-h-[calc(100svh-6rem)] w-76 flex-col overflow-y-auto rounded-2xl border border-rose-200 bg-popover p-2.5 text-popover-foreground shadow-lg shadow-rose-950/10 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                    >
+                      <div class="flex items-center justify-between gap-3">
                         <div>
-                          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            Status
-                          </p>
-                          <div class="grid gap-0.5">
+                          <p class="text-sm font-semibold text-(--color-heading)">Filters</p>
+                          <p class="text-xs text-muted-foreground">{{ filteredStudents.length }} visible</p>
+                        </div>
+                        <Button
+                          v-if="activeFilterCount"
+                          variant="ghost"
+                          size="sm"
+                          class="h-8 px-2 text-xs text-muted-foreground hover:text-primary"
+                          @click="clearStudentFilters"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+
+                      <Separator class="my-2" />
+
+                      <div class="flex flex-col gap-2">
+                        <div class="grid grid-cols-2 gap-1.5">
+                          <div>
+                            <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Status</p>
+                            <div class="grid gap-0.5">
+                              <button
+                                v-for="option in statusFilterOptions"
+                                :key="option.value"
+                                type="button"
+                                class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+                                :class="studentStatusFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
+                                @click="studentStatusFilter = option.value"
+                              >
+                                <span class="flex min-w-0 items-center gap-1.5">
+                                  <span class="size-1.5 shrink-0 rounded-full" :class="studentStatusFilter === option.value ? 'bg-primary-foreground/70' : option.value === 'needs-review' ? 'bg-red-500' : option.value === 'on-track' ? 'bg-emerald-500' : 'bg-muted-foreground/40'" />
+                                  <span class="truncate">{{ option.label }}</span>
+                                </span>
+                                <span class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums" :class="studentStatusFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'">{{ option.count }}</span>
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Activity</p>
+                            <div class="grid gap-0.5">
+                              <button
+                                v-for="option in activityFilterOptions"
+                                :key="option.value"
+                                type="button"
+                                class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+                                :class="activityFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
+                                @click="activityFilter = option.value"
+                              >
+                                <span class="flex min-w-0 items-center gap-1.5">
+                                  <span class="size-1.5 shrink-0 rounded-full" :class="activityFilter === option.value ? 'bg-primary-foreground/70' : option.value === 'active' ? 'bg-sky-500' : option.value === 'no-attempts' ? 'bg-rose-400' : 'bg-muted-foreground/40'" />
+                                  <span class="truncate">{{ option.label }}</span>
+                                </span>
+                                <span class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums" :class="activityFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'">{{ option.count }}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Score</p>
+                          <div class="grid grid-cols-2 gap-0.5">
                             <button
-                              v-for="option in statusFilterOptions"
+                              v-for="option in scoreFilterOptions"
                               :key="option.value"
                               type="button"
-                              data-slot="filter-option"
                               class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
-                              :class="studentStatusFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
-                              @click="studentStatusFilter = option.value"
+                              :class="scoreBandFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
+                              @click="scoreBandFilter = option.value"
                             >
                               <span class="flex min-w-0 items-center gap-1.5">
-                                <span
-                                  class="size-1.5 shrink-0 rounded-full"
-                                  :class="studentStatusFilter === option.value ? 'bg-primary-foreground/70' : option.value === 'needs-review' ? 'bg-red-500' : option.value === 'on-track' ? 'bg-emerald-500' : 'bg-muted-foreground/40'"
-                                />
+                                <span class="size-1.5 shrink-0 rounded-full" :class="scoreBandDotClass(option.value, scoreBandFilter === option.value)" />
                                 <span class="truncate">{{ option.label }}</span>
                               </span>
-                              <span
-                                class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums"
-                                :class="studentStatusFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
-                              >
-                                {{ option.count }}
-                              </span>
+                              <span class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums" :class="scoreBandFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'">{{ option.count }}</span>
                             </button>
                           </div>
                         </div>
 
                         <div>
-                          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            Activity
-                          </p>
-                          <div class="grid gap-0.5">
+                          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sort</p>
+                          <div class="grid grid-cols-2 gap-0.5">
                             <button
-                              v-for="option in activityFilterOptions"
+                              v-for="option in sortOptions"
                               :key="option.value"
                               type="button"
-                              data-slot="filter-option"
-                              class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
-                              :class="activityFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
-                              @click="activityFilter = option.value"
+                              class="flex items-center justify-between gap-1 rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+                              :class="studentSort === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
+                              @click="studentSort = option.value"
                             >
-                              <span class="flex min-w-0 items-center gap-1.5">
-                                <span
-                                  class="size-1.5 shrink-0 rounded-full"
-                                  :class="activityFilter === option.value ? 'bg-primary-foreground/70' : option.value === 'active' ? 'bg-sky-500' : option.value === 'no-attempts' ? 'bg-rose-400' : 'bg-muted-foreground/40'"
-                                />
-                                <span class="truncate">{{ option.label }}</span>
-                              </span>
-                              <span
-                                class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums"
-                                :class="activityFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
-                              >
-                                {{ option.count }}
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Score in 2-col grid -->
-                      <div>
-                        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Score
-                        </p>
-                        <div class="grid grid-cols-2 gap-0.5">
-                          <button
-                            v-for="option in scoreFilterOptions"
-                            :key="option.value"
-                            type="button"
-                            data-slot="filter-option"
-                            class="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
-                            :class="scoreBandFilter === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
-                            @click="scoreBandFilter = option.value"
-                          >
-                            <span class="flex min-w-0 items-center gap-1.5">
-                              <span
-                                class="size-1.5 shrink-0 rounded-full"
-                                :class="scoreBandDotClass(option.value, scoreBandFilter === option.value)"
-                              />
                               <span class="truncate">{{ option.label }}</span>
-                            </span>
-                            <span
-                              class="ml-1 shrink-0 rounded-full border px-1 py-0.5 text-[9px] font-semibold leading-none tabular-nums"
-                              :class="scoreBandFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
-                            >
-                              {{ option.count }}
-                            </span>
-                          </button>
+                              <Check v-if="studentSort === option.value" class="size-3 shrink-0" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-
-                      <!-- Sort in 2-col grid -->
-                      <div>
-                        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Sort
-                        </p>
-                        <div class="grid grid-cols-2 gap-0.5">
-                          <button
-                            v-for="option in sortOptions"
-                            :key="option.value"
-                            type="button"
-                            data-slot="filter-option"
-                            class="flex items-center justify-between gap-1 rounded-lg px-2 py-1 text-left text-xs transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
-                            :class="studentSort === option.value ? 'bg-primary text-primary-foreground hover:bg-primary' : 'text-(--color-heading) hover:bg-rose-50'"
-                            @click="studentSort = option.value"
-                          >
-                            <span class="truncate">{{ option.label }}</span>
-                            <Check v-if="studentSort === option.value" class="size-3 shrink-0" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </PopoverPortal>
-              </PopoverRoot>
+                    </PopoverContent>
+                  </PopoverPortal>
+                </PopoverRoot>
+              </div>
             </div>
           </div>
 
@@ -375,6 +353,119 @@
         :drilldown="drilldown"
         :loading="drilldownLoading"
       />
+
+      <!-- Mobile filter sheet -->
+      <Sheet v-model:open="filterSheetOpen">
+        <SheetContent side="bottom" class="flex max-h-[85svh] flex-col gap-0 rounded-t-2xl border-border/80 p-0">
+          <!-- Handle -->
+          <div class="flex shrink-0 justify-center pb-2 pt-3">
+            <div class="h-1 w-10 rounded-full bg-border" />
+          </div>
+
+          <!-- Header -->
+          <div class="flex shrink-0 items-center justify-between gap-3 px-4 pb-3">
+            <div>
+              <SheetTitle class="text-sm font-semibold text-(--color-heading)">Filters</SheetTitle>
+              <p class="text-xs text-muted-foreground">{{ filteredStudents.length }} visible</p>
+            </div>
+            <Button
+              v-if="activeFilterCount"
+              variant="ghost"
+              size="sm"
+              class="h-8 px-2 text-xs text-muted-foreground hover:text-primary"
+              @click="clearStudentFilters"
+            >
+              Clear
+            </Button>
+          </div>
+
+          <Separator class="shrink-0" />
+
+          <!-- Filter groups — scrollable -->
+          <div class="flex flex-1 flex-col gap-3 overflow-y-auto p-4 pb-8">
+            <!-- Status -->
+            <div>
+              <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Status</p>
+              <div class="grid gap-1">
+                <button
+                  v-for="option in statusFilterOptions"
+                  :key="option.value"
+                  type="button"
+                  class="flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+                  :class="studentStatusFilter === option.value ? 'bg-primary text-primary-foreground' : 'text-(--color-heading) hover:bg-rose-50'"
+                  @click="studentStatusFilter = option.value"
+                >
+                  <span class="flex min-w-0 items-center gap-2">
+                    <span class="size-2 shrink-0 rounded-full" :class="studentStatusFilter === option.value ? 'bg-primary-foreground/70' : option.value === 'needs-review' ? 'bg-red-500' : option.value === 'on-track' ? 'bg-emerald-500' : 'bg-muted-foreground/40'" />
+                    <span class="truncate">{{ option.label }}</span>
+                  </span>
+                  <span class="ml-2 shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums" :class="studentStatusFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'">{{ option.count }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Activity -->
+            <div>
+              <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Activity</p>
+              <div class="grid gap-1">
+                <button
+                  v-for="option in activityFilterOptions"
+                  :key="option.value"
+                  type="button"
+                  class="flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+                  :class="activityFilter === option.value ? 'bg-primary text-primary-foreground' : 'text-(--color-heading) hover:bg-rose-50'"
+                  @click="activityFilter = option.value"
+                >
+                  <span class="flex min-w-0 items-center gap-2">
+                    <span class="size-2 shrink-0 rounded-full" :class="activityFilter === option.value ? 'bg-primary-foreground/70' : option.value === 'active' ? 'bg-sky-500' : option.value === 'no-attempts' ? 'bg-rose-400' : 'bg-muted-foreground/40'" />
+                    <span class="truncate">{{ option.label }}</span>
+                  </span>
+                  <span class="ml-2 shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums" :class="activityFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'">{{ option.count }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Score -->
+            <div>
+              <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Score</p>
+              <div class="grid grid-cols-2 gap-1">
+                <button
+                  v-for="option in scoreFilterOptions"
+                  :key="option.value"
+                  type="button"
+                  class="flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+                  :class="scoreBandFilter === option.value ? 'bg-primary text-primary-foreground' : 'text-(--color-heading) hover:bg-rose-50'"
+                  @click="scoreBandFilter = option.value"
+                >
+                  <span class="flex min-w-0 items-center gap-2">
+                    <span class="size-2 shrink-0 rounded-full" :class="scoreBandDotClass(option.value, scoreBandFilter === option.value)" />
+                    <span class="truncate">{{ option.label }}</span>
+                  </span>
+                  <span class="ml-2 shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums" :class="scoreBandFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'">{{ option.count }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Sort -->
+            <div>
+              <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sort</p>
+              <div class="grid grid-cols-2 gap-1">
+                <button
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  type="button"
+                  class="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+                  :class="studentSort === option.value ? 'bg-primary text-primary-foreground' : 'text-(--color-heading) hover:bg-rose-50'"
+                  @click="studentSort = option.value"
+                >
+                  <span class="truncate">{{ option.label }}</span>
+                  <Check v-if="studentSort === option.value" class="size-3.5 shrink-0" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   </InstructorLayout>
 </template>
@@ -400,6 +491,11 @@ import {
 
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import StudentDetailDialog from '@/components/instructor/StudentDetailDialog.vue'
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { getAllStudents, getStudentDrillDown } from '@/api/analytics'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -441,6 +537,7 @@ const studentStatusFilter = ref<StudentStatusFilter>('all')
 const scoreBandFilter = ref<ScoreBandFilter>('all')
 const activityFilter = ref<ActivityFilter>('all')
 const studentSort = ref<StudentSort>('name-asc')
+const filterSheetOpen = ref(false)
 const selectedStudentUid = ref<string | null>(null)
 const drilldown = ref<StudentDrillDown | null>(null)
 const drilldownLoading = ref(false)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { CalendarClock, Check, Funnel, Search, Trash2 } from 'lucide-vue-next'
 import {
   SelectContent,
@@ -21,6 +22,14 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from '@/components/ui/sheet'
+
+const filterSheetOpen = ref(false)
 
 type AssignmentSetFilter = 'needs-grading' | 'active' | 'completed' | 'all'
 type AssignmentSetStatus = 'needs-grading' | 'active' | 'completed'
@@ -138,50 +147,66 @@ function handleFilterUpdate(value: unknown) {
           />
         </div>
 
-        <SelectRoot
-          :model-value="filter"
-          @update:model-value="handleFilterUpdate"
+        <!-- Mobile: plain button opens Sheet -->
+        <button
+          class="sm:hidden relative inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30"
+          aria-label="Filter assignment sets"
+          @click="filterSheetOpen = true"
         >
-          <SelectTrigger
-            aria-label="Filter assignment sets"
-            class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
-          >
-            <Funnel class="size-4 shrink-0" />
-          </SelectTrigger>
+          <Funnel class="size-4 shrink-0" />
+          <span
+            v-if="filter !== 'all'"
+            class="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full border border-white bg-primary text-[9px] font-semibold leading-none text-primary-foreground"
+          >1</span>
+        </button>
 
-          <SelectPortal>
-            <SelectContent
-              position="popper"
-              side="bottom"
-              align="end"
-              :side-offset="8"
-              :align-offset="0"
-              :collision-padding="12"
-              class="z-50 w-64 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-lg data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+        <!-- Desktop: Select dropdown -->
+        <div class="hidden sm:block">
+          <SelectRoot
+            :model-value="filter"
+            @update:model-value="handleFilterUpdate"
+          >
+            <SelectTrigger
+              aria-label="Filter assignment sets"
+              class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
             >
-              <SelectViewport class="p-1">
-                <SelectItem
-                  v-for="option in filterOptions"
-                  :key="option.value"
-                  :value="option.value"
-                  class="group relative flex cursor-default select-none items-center rounded-lg py-2 pr-9 pl-3 text-sm outline-none transition-colors focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! data-[highlighted]:bg-muted data-[highlighted]:outline-none data-[highlighted]:ring-0 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                >
-                  <SelectItemText>
-                    <span class="flex min-w-0 items-center gap-2">
-                      <span class="truncate">{{ option.label }}</span>
-                      <span class="rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums text-primary group-data-[state=checked]:border-primary-foreground/35 group-data-[state=checked]:bg-primary-foreground/20 group-data-[state=checked]:text-primary-foreground">
-                        {{ option.count }}
+              <Funnel class="size-4 shrink-0" />
+            </SelectTrigger>
+
+            <SelectPortal>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="end"
+                :side-offset="8"
+                :align-offset="0"
+                :collision-padding="12"
+                class="z-50 w-64 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-lg data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+              >
+                <SelectViewport class="p-1">
+                  <SelectItem
+                    v-for="option in filterOptions"
+                    :key="option.value"
+                    :value="option.value"
+                    class="group relative flex cursor-default select-none items-center rounded-lg py-2 pr-9 pl-3 text-sm outline-none transition-colors focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! data-[highlighted]:bg-muted data-[highlighted]:outline-none data-[highlighted]:ring-0 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  >
+                    <SelectItemText>
+                      <span class="flex min-w-0 items-center gap-2">
+                        <span class="truncate">{{ option.label }}</span>
+                        <span class="rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums text-primary group-data-[state=checked]:border-primary-foreground/35 group-data-[state=checked]:bg-primary-foreground/20 group-data-[state=checked]:text-primary-foreground">
+                          {{ option.count }}
+                        </span>
                       </span>
-                    </span>
-                  </SelectItemText>
-                  <SelectItemIndicator class="absolute right-2 flex size-4 items-center justify-center">
-                    <Check class="size-4" />
-                  </SelectItemIndicator>
-                </SelectItem>
-              </SelectViewport>
-            </SelectContent>
-          </SelectPortal>
-        </SelectRoot>
+                    </SelectItemText>
+                    <SelectItemIndicator class="absolute right-2 flex size-4 items-center justify-center">
+                      <Check class="size-4" />
+                    </SelectItemIndicator>
+                  </SelectItem>
+                </SelectViewport>
+              </SelectContent>
+            </SelectPortal>
+          </SelectRoot>
+        </div>
       </div>
     </CardHeader>
 
@@ -290,4 +315,48 @@ function handleFilterUpdate(value: unknown) {
       </div>
     </CardContent>
   </Card>
+
+  <!-- Mobile filter sheet -->
+  <Sheet v-model:open="filterSheetOpen">
+    <SheetContent side="bottom" class="flex max-h-[85svh] flex-col gap-0 rounded-t-2xl border-border/80 p-0">
+      <div class="flex shrink-0 justify-center pb-2 pt-3">
+        <div class="h-1 w-10 rounded-full bg-border" />
+      </div>
+
+      <div class="flex shrink-0 items-center justify-between gap-3 px-4 pb-3">
+        <div>
+          <SheetTitle class="text-sm font-semibold text-(--color-heading)">Filter assignments</SheetTitle>
+          <p class="text-xs text-muted-foreground">{{ items.length }} shown</p>
+        </div>
+        <Button
+          v-if="filter !== 'all'"
+          variant="ghost"
+          size="sm"
+          class="h-8 px-2 text-xs text-muted-foreground hover:text-primary"
+          @click="emit('update:filter', 'all')"
+        >
+          Clear
+        </Button>
+      </div>
+
+      <Separator class="shrink-0" />
+
+      <div class="flex flex-1 flex-col gap-1 overflow-y-auto p-4 pb-8">
+        <button
+          v-for="option in filterOptions"
+          :key="option.value"
+          type="button"
+          class="flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+          :class="filter === option.value ? 'bg-primary text-primary-foreground' : 'text-(--color-heading) hover:bg-muted/50'"
+          @click="emit('update:filter', option.value); filterSheetOpen = false"
+        >
+          <span class="truncate">{{ option.label }}</span>
+          <span
+            class="ml-2 shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums"
+            :class="filter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
+          >{{ option.count }}</span>
+        </button>
+      </div>
+    </SheetContent>
+  </Sheet>
 </template>

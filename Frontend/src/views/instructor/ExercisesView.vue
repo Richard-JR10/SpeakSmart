@@ -115,50 +115,66 @@
                     />
                   </div>
 
-                  <SelectRoot
-                    :model-value="submissionFilter"
-                    @update:model-value="handleSubmissionFilterUpdate"
+                  <!-- Mobile: plain button opens Sheet -->
+                  <button
+                    class="sm:hidden relative inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30"
+                    aria-label="Filter student review queue"
+                    @click="submissionFilterSheetOpen = true"
                   >
-                    <SelectTrigger
-                      aria-label="Filter student review queue"
-                      class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
-                    >
-                      <Funnel class="size-4 shrink-0" />
-                    </SelectTrigger>
+                    <Funnel class="size-4 shrink-0" />
+                    <span
+                      v-if="submissionFilter !== 'all'"
+                      class="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full border border-white bg-primary text-[9px] font-semibold leading-none text-primary-foreground"
+                    >1</span>
+                  </button>
 
-                    <SelectPortal>
-                      <SelectContent
-                        position="popper"
-                        side="bottom"
-                        align="end"
-                        :side-offset="8"
-                        :align-offset="0"
-                        :collision-padding="12"
-                        class="z-50 min-w-56 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-lg data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                  <!-- Desktop: Select dropdown -->
+                  <div class="hidden sm:block">
+                    <SelectRoot
+                      :model-value="submissionFilter"
+                      @update:model-value="handleSubmissionFilterUpdate"
+                    >
+                      <SelectTrigger
+                        aria-label="Filter student review queue"
+                        class="inline-flex size-10 items-center justify-center rounded-xl border border-primary/35 text-primary shadow-sm shadow-primary/10 outline-none ring-1 ring-primary/10 transition hover:cursor-pointer hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:border-primary/70 data-[state=open]:bg-secondary data-[state=open]:text-primary data-[state=open]:ring-primary/25"
                       >
-                        <SelectViewport class="p-1">
-                          <SelectItem
-                            v-for="option in submissionFilterOptions"
-                            :key="option.value"
-                            :value="option.value"
-                            class="group relative flex cursor-default select-none items-center rounded-lg py-2 pr-9 pl-3 text-sm outline-none transition-colors focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! data-highlighted:bg-muted data-highlighted:outline-none data-highlighted:ring-0 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                          >
-                            <SelectItemText>
-                              <span class="flex min-w-0 items-center gap-2">
-                                <span class="truncate">{{ option.label }}</span>
-                                <span class="rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums text-primary group-data-[state=checked]:border-primary-foreground/35 group-data-[state=checked]:bg-primary-foreground/20 group-data-[state=checked]:text-primary-foreground">
-                                  {{ option.count }}
+                        <Funnel class="size-4 shrink-0" />
+                      </SelectTrigger>
+
+                      <SelectPortal>
+                        <SelectContent
+                          position="popper"
+                          side="bottom"
+                          align="end"
+                          :side-offset="8"
+                          :align-offset="0"
+                          :collision-padding="12"
+                          class="z-50 min-w-56 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-lg data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                        >
+                          <SelectViewport class="p-1">
+                            <SelectItem
+                              v-for="option in submissionFilterOptions"
+                              :key="option.value"
+                              :value="option.value"
+                              class="group relative flex cursor-default select-none items-center rounded-lg py-2 pr-9 pl-3 text-sm outline-none transition-colors focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! data-highlighted:bg-muted data-highlighted:outline-none data-highlighted:ring-0 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                            >
+                              <SelectItemText>
+                                <span class="flex min-w-0 items-center gap-2">
+                                  <span class="truncate">{{ option.label }}</span>
+                                  <span class="rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums text-primary group-data-[state=checked]:border-primary-foreground/35 group-data-[state=checked]:bg-primary-foreground/20 group-data-[state=checked]:text-primary-foreground">
+                                    {{ option.count }}
+                                  </span>
                                 </span>
-                              </span>
-                            </SelectItemText>
-                            <SelectItemIndicator class="absolute right-2 flex size-4 items-center justify-center">
-                              <Check class="size-4" />
-                            </SelectItemIndicator>
-                          </SelectItem>
-                        </SelectViewport>
-                      </SelectContent>
-                    </SelectPortal>
-                  </SelectRoot>
+                              </SelectItemText>
+                              <SelectItemIndicator class="absolute right-2 flex size-4 items-center justify-center">
+                                <Check class="size-4" />
+                              </SelectItemIndicator>
+                            </SelectItem>
+                          </SelectViewport>
+                        </SelectContent>
+                      </SelectPortal>
+                    </SelectRoot>
+                  </div>
                 </div>
               </div>
 
@@ -306,6 +322,50 @@
         </Card>
         </div>
       </template>
+
+      <!-- Mobile submission filter sheet -->
+      <Sheet v-model:open="submissionFilterSheetOpen">
+        <SheetContent side="bottom" class="flex max-h-[85svh] flex-col gap-0 rounded-t-2xl border-border/80 p-0">
+          <div class="flex shrink-0 justify-center pb-2 pt-3">
+            <div class="h-1 w-10 rounded-full bg-border" />
+          </div>
+
+          <div class="flex shrink-0 items-center justify-between gap-3 px-4 pb-3">
+            <div>
+              <SheetTitle class="text-sm font-semibold text-(--color-heading)">Filter students</SheetTitle>
+              <p class="text-xs text-muted-foreground">{{ filteredReviewGroups.length }} visible</p>
+            </div>
+            <Button
+              v-if="submissionFilter !== 'all'"
+              variant="ghost"
+              size="sm"
+              class="h-8 px-2 text-xs text-muted-foreground hover:text-primary"
+              @click="setSubmissionFilter('all')"
+            >
+              Clear
+            </Button>
+          </div>
+
+          <Separator class="shrink-0" />
+
+          <div class="flex flex-1 flex-col gap-1 overflow-y-auto p-4 pb-8">
+            <button
+              v-for="option in submissionFilterOptions"
+              :key="option.value"
+              type="button"
+              class="flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:cursor-pointer"
+              :class="submissionFilter === option.value ? 'bg-primary text-primary-foreground' : 'text-(--color-heading) hover:bg-muted/50'"
+              @click="setSubmissionFilter(option.value); submissionFilterSheetOpen = false"
+            >
+              <span class="truncate">{{ option.label }}</span>
+              <span
+                class="ml-2 shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums"
+                :class="submissionFilter === option.value ? 'border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
+              >{{ option.count }}</span>
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <AssignmentStudentReviewDialog
         :open="reviewModalOpen"
@@ -669,6 +729,11 @@ import {
 } from 'reka-ui'
 
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import AssignmentSetNavigator from '@/components/instructor/assignments/AssignmentSetNavigator.vue'
 import AssignmentStudentQueueTable from '@/components/instructor/assignments/AssignmentStudentQueueTable.vue'
 import AssignmentStudentReviewDialog from '@/components/instructor/assignments/AssignmentStudentReviewDialog.vue'
@@ -745,6 +810,7 @@ const selectedExerciseId = ref<string | null>(null)
 const selectedReviewStudentUid = ref<string | null>(null)
 const reviewModalOpen = ref(false)
 const submissionFilter = ref<SubmissionFilter>('all')
+const submissionFilterSheetOpen = ref(false)
 const submissionSearch = ref('')
 const submissionPage = ref(1)
 const assignmentSearch = ref('')

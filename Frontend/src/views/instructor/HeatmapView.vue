@@ -22,17 +22,29 @@
               </CardDescription>
             </div>
 
-            <div class="w-full rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 lg:max-w-xs">
-              <div class="flex items-center justify-between gap-3">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Score range
-                </p>
-                <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span>Low</span>
-                  <span class="h-2.5 w-20 rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-600" />
-                  <span>Strong</span>
+            <div class="flex w-full flex-col gap-3 lg:max-w-md lg:items-end">
+              <div class="w-full rounded-2xl border border-border/70 bg-muted/25 px-4 py-3">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Score range
+                  </p>
+                  <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>Low</span>
+                    <span class="h-2.5 w-20 rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-600" />
+                    <span>Strong</span>
+                  </div>
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                class="w-full lg:w-auto"
+                :disabled="!moduleIds.length || downloading"
+                @click="handleDownloadReport"
+              >
+                <Download data-icon="inline-start" />
+                <span>{{ downloading ? 'Preparing...' : 'Download report' }}</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -230,6 +242,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   BookMarked,
   ChartNoAxesCombined,
+  Download,
   ShieldCheck,
   TriangleAlert,
 } from 'lucide-vue-next'
@@ -238,6 +251,7 @@ import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import { getPhonemeHeatmap } from '@/api/analytics'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -246,8 +260,10 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
 import { useModulesStore } from '@/stores/modules'
+import { downloadHeatmapReport } from '@/utils/reports/heatmapReport'
 
 type HeatmapRow = {
   mora_timing_avg: number
@@ -256,12 +272,14 @@ type HeatmapRow = {
   overall_avg: number
 }
 
+const authStore = useAuthStore()
 const classesStore = useClassesStore()
 const modulesStore = useModulesStore()
 
 const heatmapData = ref<Record<string, HeatmapRow>>({})
 const loading = ref(false)
 const error = ref<string | null>(null)
+const downloading = ref(false)
 
 const phonemeKeys = ['mora_timing_avg', 'consonant_avg', 'vowel_avg'] as const
 const phonemeLabels: Record<(typeof phonemeKeys)[number], string> = {
@@ -337,6 +355,33 @@ function cellStyle(score: number) {
   return {
     backgroundColor: 'rgba(35, 116, 92, 0.34)',
     borderColor: 'rgba(35, 116, 92, 0.54)',
+  }
+}
+
+function handleDownloadReport() {
+  if (!moduleIds.value.length || downloading.value) return
+
+  downloading.value = true
+  try {
+    downloadHeatmapReport({
+      modules: moduleIds.value.map((moduleId) => ({
+        moduleId,
+        title: moduleName(moduleId),
+        timing: moduleScore(moduleId, 'mora_timing_avg'),
+        consonants: moduleScore(moduleId, 'consonant_avg'),
+        vowels: moduleScore(moduleId, 'vowel_avg'),
+        overall: moduleScore(moduleId, 'overall_avg'),
+      })),
+      topErrors: topErrors.value.map((item) => ({
+        moduleTitle: moduleName(item.moduleId),
+        phonemeLabel: phonemeLabels[item.phoneme],
+        score: item.score,
+      })),
+      className: classesStore.activeClass?.name ?? null,
+      instructorName: authStore.profile?.display_name ?? null,
+    })
+  } finally {
+    downloading.value = false
   }
 }
 

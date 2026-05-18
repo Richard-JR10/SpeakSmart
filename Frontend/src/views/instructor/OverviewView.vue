@@ -37,7 +37,7 @@
                     </CardDescription>
                   </div>
 
-                  <div class="flex flex-col gap-3 sm:flex-row">
+                  <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                     <Button size="lg" @click="router.push('/instructor/students')">
                       <Users data-icon="inline-start" />
                       <span>Open student directory</span>
@@ -45,6 +45,15 @@
                     <Button variant="outline" size="lg" @click="router.push('/instructor/exercises')">
                       <ClipboardList data-icon="inline-start" />
                       <span>Manage assignments</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      :disabled="!overview || downloading"
+                      @click="handleDownloadReport"
+                    >
+                      <Download data-icon="inline-start" />
+                      <span>{{ downloading ? 'Preparing...' : 'Download report' }}</span>
                     </Button>
                   </div>
                 </div>
@@ -110,6 +119,7 @@
               <CardContent>
                 <div
                   v-if="trendChartData.length"
+                  ref="trendChartContainer"
                   class="rounded-3xl border border-border/70 bg-muted/30 px-3 pt-4 pb-2"
                 >
                   <ChartContainer
@@ -459,6 +469,7 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardList,
+  Download,
   TrendingUp,
   TriangleAlert,
   Trophy,
@@ -493,6 +504,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
 import { useModulesStore } from '@/stores/modules'
 import type { ClassOverview, PhonemeBreakdown, StudentDrillDown, StudentStat } from '@/types'
+import { downloadOverviewReport } from '@/utils/reports/overviewReport'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -508,6 +520,8 @@ const selectedStudentUid = ref<string | null>(null)
 const drilldown = ref<StudentDrillDown | null>(null)
 const drilldownLoading = ref(false)
 const detailModalOpen = ref(false)
+const downloading = ref(false)
+const trendChartContainer = ref<HTMLElement | null>(null)
 const flagThreshold = 60
 const topPerfThreshold = 85
 const trendChartConfig = {
@@ -650,6 +664,41 @@ const selectedStudent = computed(() =>
   ?? null,
 )
 
+
+async function handleDownloadReport() {
+  if (!overview.value || downloading.value) return
+
+  downloading.value = true
+  try {
+    await downloadOverviewReport({
+      metrics: metricCards.value.map((card) => ({
+        label: card.label,
+        value: card.value,
+        copy: card.copy,
+      })),
+      phonemeBars: phonemeRows.value.map((row) => ({
+        label: row.label,
+        value: row.value,
+      })),
+      modules: sortedModuleHeatmap.value.map((module) => ({
+        title: module.title,
+        overall: module.overall,
+        mora: module.mora,
+        consonant: module.consonant,
+        vowel: module.vowel,
+      })),
+      flaggedStudents: overview.value.flagged_students,
+      topPerformers: topPerformers.value,
+      flagThreshold,
+      topPerformerThreshold: topPerfThreshold,
+      trendChartElement: trendChartContainer.value,
+      className: classesStore.activeClass?.name ?? null,
+      instructorName: authStore.profile?.display_name ?? null,
+    })
+  } finally {
+    downloading.value = false
+  }
+}
 
 async function openStudentDetail(uid: string) {
   selectedStudentUid.value = uid

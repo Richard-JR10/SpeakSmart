@@ -23,6 +23,17 @@
             </div>
 
             <div class="grid w-full grid-cols-[minmax(0,1fr)_2.75rem] items-center gap-2 lg:max-w-md">
+              <Button
+                variant="outline"
+                size="sm"
+                class="col-span-2 h-11 w-full border-primary/35 bg-white text-primary shadow-xs shadow-rose-900/5 hover:bg-primary/10 hover:text-primary sm:ml-auto sm:w-auto"
+                :disabled="!students.length || downloading"
+                @click="handleDownloadReport"
+              >
+                <Download data-icon="inline-start" />
+                <span>{{ downloading ? 'Preparing...' : 'Download report' }}</span>
+              </Button>
+
               <Label for="student-search" class="sr-only">Search students</Label>
               <div class="flex h-11 items-center gap-2 rounded-xl border border-rose-200 bg-white/85 px-3 shadow-xs shadow-rose-900/5 transition focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
                 <Search class="size-4 text-muted-foreground" />
@@ -475,6 +486,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   ChartColumn,
   Check,
+  Download,
   Eye,
   Funnel,
   Search,
@@ -519,14 +531,17 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
 import type { StudentDrillDown, StudentStat } from '@/types'
+import { downloadStudentsReport } from '@/utils/reports/studentsReport'
 
 type StudentStatusFilter = 'all' | 'needs-review' | 'on-track'
 type ScoreBandFilter = 'all' | 'high' | 'steady' | 'watch' | 'at-risk'
 type ActivityFilter = 'all' | 'active' | 'no-attempts'
 type StudentSort = 'name-asc' | 'score-asc' | 'score-desc' | 'attempts-desc' | 'streak-desc'
 
+const authStore = useAuthStore()
 const classesStore = useClassesStore()
 
 const students = ref<StudentStat[]>([])
@@ -542,6 +557,7 @@ const selectedStudentUid = ref<string | null>(null)
 const drilldown = ref<StudentDrillDown | null>(null)
 const drilldownLoading = ref(false)
 const detailModalOpen = ref(false)
+const downloading = ref(false)
 
 const filteredStudents = computed(() => {
   const query = search.value.trim().toLowerCase()
@@ -749,6 +765,47 @@ function progressToneClass(student: StudentStat) {
   return 'bg-emerald-600'
 }
 
+
+function buildActiveFilterSummary(): { label: string; value: string }[] {
+  const summary: { label: string; value: string }[] = []
+  const searchValue = search.value.trim()
+  if (searchValue) summary.push({ label: 'Search', value: searchValue })
+  if (studentStatusFilter.value !== 'all') {
+    const option = statusFilterOptions.value.find((opt) => opt.value === studentStatusFilter.value)
+    if (option) summary.push({ label: 'Status', value: option.label })
+  }
+  if (scoreBandFilter.value !== 'all') {
+    const option = scoreFilterOptions.value.find((opt) => opt.value === scoreBandFilter.value)
+    if (option) summary.push({ label: 'Score band', value: option.label })
+  }
+  if (activityFilter.value !== 'all') {
+    const option = activityFilterOptions.value.find((opt) => opt.value === activityFilter.value)
+    if (option) summary.push({ label: 'Activity', value: option.label })
+  }
+  if (studentSort.value !== 'name-asc') {
+    const option = sortOptions.find((opt) => opt.value === studentSort.value)
+    if (option) summary.push({ label: 'Sort', value: option.label })
+  }
+  return summary
+}
+
+function handleDownloadReport() {
+  if (!students.value.length || downloading.value) return
+
+  downloading.value = true
+  try {
+    downloadStudentsReport({
+      students: filteredStudents.value,
+      totalStudents: students.value.length,
+      flaggedCount: flaggedCount.value,
+      filters: buildActiveFilterSummary(),
+      className: classesStore.activeClass?.name ?? null,
+      instructorName: authStore.profile?.display_name ?? null,
+    })
+  } finally {
+    downloading.value = false
+  }
+}
 
 async function openStudentDetail(uid: string) {
   const classId = classesStore.activeClassId

@@ -21,10 +21,20 @@
               </CardDescription>
             </div>
 
-            <Button @click="showForm = true">
-              <Plus data-icon="inline-start" />
-              <span>New assignment</span>
-            </Button>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                variant="outline"
+                :disabled="!selectedExercise || !filteredReviewGroups.length || downloading"
+                @click="handleDownloadReport"
+              >
+                <Download data-icon="inline-start" />
+                <span>{{ downloading ? 'Preparing...' : 'Download report' }}</span>
+              </Button>
+              <Button @click="showForm = true">
+                <Plus data-icon="inline-start" />
+                <span>New assignment</span>
+              </Button>
+            </div>
           </div>
 
           <div class="grid overflow-hidden rounded-2xl border border-border/70 bg-muted/20 md:grid-cols-4">
@@ -701,6 +711,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Download,
   LoaderCircle,
   Plus,
   Funnel,
@@ -766,9 +777,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import InstructorLayout from '@/layouts/InstructorLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import { useClassesStore } from '@/stores/classes'
 import { useModulesStore } from '@/stores/modules'
 import type { Exercise, InstructorAssignmentSubmission, Phrase, StudentStat } from '@/types'
+import { downloadExercisesReport, type ExerciseStudentStatus } from '@/utils/reports/exercisesReport'
 
 type SubmissionFilter = 'all' | 'pending' | 'graded'
 type AssignmentSetFilter = 'needs-grading' | 'active' | 'completed' | 'all'
@@ -790,10 +803,12 @@ interface AssignmentSetNavigatorItem {
 
 const PAGE_SIZE = 12
 
+const authStore = useAuthStore()
 const classesStore = useClassesStore()
 const modulesStore = useModulesStore()
 
 const exercises = ref<Exercise[]>([])
+const downloading = ref(false)
 const students = ref<StudentStat[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -1197,6 +1212,70 @@ function openBulkReviewConfirm() {
   if (!selectedBulkReviewGroups.value.length || bulkReviewSaving.value) return
   bulkReviewError.value = null
   bulkReviewConfirmOpen.value = true
+}
+
+function handleDownloadReport() {
+  const exercise = selectedExercise.value
+  const item = selectedAssignmentItem.value
+  if (!exercise || !item || downloading.value) return
+
+  const rows = filteredReviewGroups.value.map((group) => ({
+    studentName: group.studentDisplayName,
+    status: assignmentGroupStatus(group) as ExerciseStudentStatus,
+    teacherScore: assignmentTeacherOverallSafe(group),
+    submittedCount: group.submittedCount,
+    requiredCount: group.requiredCount,
+    releasedAt: latestReleasedAt(group),
+  }))
+
+  const filters: { label: string; value: string }[] = []
+  const search = submissionSearch.value.trim()
+  if (search) filters.push({ label: 'Search', value: search })
+  if (submissionFilter.value !== 'all') {
+    const option = submissionFilterOptions.value.find((opt) => opt.value === submissionFilter.value)
+    if (option) filters.push({ label: 'Queue filter', value: option.label })
+  }
+
+  const dueLabel = item.dueDate
+    ? `${isAssignmentOverdue(item) ? 'Overdue ' : ''}${formatAssignmentDate(item.dueDate)}`
+    : 'No due date'
+
+  downloading.value = true
+  try {
+    downloadExercisesReport({
+      assignmentTitle: exercise.title,
+      summaryItems: [
+        { label: 'Due', value: dueLabel },
+        { label: 'Complete', value: `${item.completionPercent.toFixed(0)}%` },
+        { label: 'Submissions', value: String(item.submittedCount) },
+        { label: 'Pending', value: String(item.pendingCount) },
+        { label: 'Graded', value: String(item.gradedCount) },
+      ],
+      rows,
+      filters,
+      className: classesStore.activeClass?.name ?? null,
+      instructorName: authStore.profile?.display_name ?? null,
+    })
+  } finally {
+    downloading.value = false
+  }
+}
+
+function assignmentTeacherOverallSafe(group: import('@/components/instructor/assignments/assignmentReview').AssignmentReviewGroup): number | null {
+  const scores = group.phrases
+    .filter((phrase) => phrase.submission?.released_at)
+    .map((phrase) => phrase.submission?.teacher_accuracy_score)
+    .filter((score): score is number => score != null)
+  if (!scores.length) return null
+  return scores.reduce((total, score) => total + score, 0) / scores.length
+}
+
+function latestReleasedAt(group: import('@/components/instructor/assignments/assignmentReview').AssignmentReviewGroup): string | null {
+  const releases = group.phrases
+    .map((phrase) => phrase.submission?.released_at)
+    .filter((value): value is string => Boolean(value))
+  if (!releases.length) return null
+  return releases.sort().at(-1) ?? null
 }
 
 function selectExercise(exerciseId: string) {
